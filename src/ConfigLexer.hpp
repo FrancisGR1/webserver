@@ -1,48 +1,26 @@
-#pragma once
-#include "webserver.hpp"
-
-struct Token
-{
-	enum Type
-	{
-		Service,
-		Location,
-		Directive,
-		Parameter,
-		Semicolon,
-		LBrace,
-		RBrace,
-		Eof,
-		Invalid
-	};
-
-	Token(Token::Type type, std::string value)
-		: type(type)
-		, value(value)
-	{}
-
-
-	Token::Type type;
-	std::string value;
-};
-
-std::string token_type_to_string(Token::Type type);
-std::ostream& operator<<(std::ostream& os, const Token& t);
+#ifndef CONFIGLEXER_HPP
+# define CONFIGLEXER_HPP
+#include <string>
+#include <ostream>
+#include <vector>
+#include "ConfigTypes.hpp"
 
 class ConfigLexer
 {
 	public:
 		ConfigLexer(const std::string& file_content);
 
-		const Token& next_token() const;
-		void print() const;
+		const Token advance();
+
 		friend std::ostream& operator<<(std::ostream& os, const ConfigLexer& lexer);
 
 
 	private:
 		std::vector<Token> m_tokens;
+		size_t m_token_idx = 0;
 
-		void	tokenize(std::string& str);
-		Token::Type classify_token(const std::string& str);
+		void	tokenize(std::string& str, size_t start_pos);
 		bool	is_directive(const std::string& str);
 };
+
+#endif //CONFIGLEXER_HPP

@@ -1,39 +1,14 @@
-#include "webserver.hpp"
+#include "ConfigLexer.hpp"
+#include <cctype>
 
-//@QUESTION: não há melhor forma de organizar isto do que ser free func?
-std::string token_type_to_string(Token::Type type) 
-{
-	switch(type) 
-	{
-		case Token::Type::Service:   return "Service";
-		case Token::Type::Location:  return "Location";
-		case Token::Type::Directive: return "Directive";
-		case Token::Type::Parameter: return "Parameter";
-		case Token::Type::Semicolon: return "Semicolon";
-		case Token::Type::LBrace:    return "LBrace";
-		case Token::Type::RBrace:    return "RBrace";
-		case Token::Type::Eof:       return "Eof";
-		default:                     return "Invalid";
-	}
-}
-
-std::ostream& operator<<(std::ostream& os, const Token& t)
-{
-	//@TODO: alinhar
-	os << std::left               
-	   << std::setw(12)   
-	   << token_type_to_string(t.type)
-	   << " -> "
-	   << t.value;
-	return os;
-};
+// ==============================================================
+// ConfigLexer class
+// ==============================================================
 
 ConfigLexer::ConfigLexer(const std::string& file_content)
 {
 	std::string build_string = ""; 
 
-	Logger::trace("Lexer start");
-	Logger::trace(file_content);
 	size_t idx = 0;
 	while (idx < file_content.size())
 	{
@@ -41,15 +16,15 @@ ConfigLexer::ConfigLexer(const std::string& file_content)
 
 		if (std::isspace(c))
 		{
-			tokenize(build_string);
+			tokenize(build_string, idx);
 			idx++;
 		}
 		else if  (c == '{' || c == '}' || c == ';')
 		{
-			tokenize(build_string);
+			tokenize(build_string, idx);
 
 			std::string char_to_str(1, c);
-			tokenize(char_to_str);
+			tokenize(char_to_str, idx);
 			idx++;
 		}
 		else if (c == '#')
@@ -64,69 +39,31 @@ ConfigLexer::ConfigLexer(const std::string& file_content)
 			idx++;
 		}
 	}
-	tokenize(build_string);
-	m_tokens.push_back(Token(Token::Type::Eof, "Eof"));
+	tokenize(build_string, idx);
+	m_tokens.push_back(Token(Token::Type::Eof, "Eof", idx));
 }
 
-void ConfigLexer::tokenize(std::string& str)
+const Token ConfigLexer::advance()
+{
+	if (m_token_idx >= m_tokens.size())
+		return m_tokens[m_token_idx];
+	else
+	{
+		const Token tok = m_tokens[m_token_idx];
+		m_token_idx++;
+		return tok;
+	}
+}
+
+void ConfigLexer::tokenize(std::string& str, size_t start_pos)
 {
 	if (str.empty())
 		return ;
 
-	Token::Type type = classify_token(str);
-	m_tokens.push_back(Token(type, str));
+	m_tokens.push_back(Token(str, start_pos));
 
 	str.clear();
 }
-
-Token::Type ConfigLexer::classify_token(const std::string& str)
-{
-	static const std::string server   = "service";
-	static const std::string location = "location";
-	static const std::set<std::string> delimiters  = { "{", "}", ";" };
-
-	if (is_directive(str))
-	{
-		return Token::Type::Directive;
-	}
-	else if (str == server)
-	{
-		return Token::Type::Service;
-	}
-	else if (str == location)
-	{
-		return Token::Type::Location;
-	}
-	else if (delimiters.count(str))
-	{
-		if (str == "{")
-			return Token::Type::LBrace;
-		if (str == "}")
-			return Token::Type::RBrace;
-		if (str == ";")
-			return Token::Type::Semicolon;
-	}
-	else
-	{
-		return Token::Type::Parameter;
-	}
-	return Token::Type::Invalid;
-}
-
-bool ConfigLexer::is_directive(const std::string& str)
-{
-	static const std::set<std::string> directive = 
-	{ 
-		"listen", "server_name", "max_body_size", 
-		"error_page", "root", "methods", 
-		"default_file", "listing", "upload", 
-		"upload_dir", "cgi", "redirect" 
-	};
-
-	bool found = directive.count(str) > 0;
-	return (found);
-}
-
 
 std::ostream& operator<<(std::ostream& os, const ConfigLexer& lexer)
 {
@@ -136,4 +73,3 @@ std::ostream& operator<<(std::ostream& os, const ConfigLexer& lexer)
 	}
 	return os;
 }
-
