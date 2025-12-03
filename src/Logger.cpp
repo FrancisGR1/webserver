@@ -1,10 +1,14 @@
+#include <fstream>
+#include <ostream>
+#include <iostream>
+#include <cstdarg>
 #include "Logger.hpp"
 
 std::ostream* Logger::m_log_stream = &std::cout;
 std::ofstream* Logger::m_file_stream;
 std::vector<std::ofstream*> Logger::m_opened_files;
 
-Logger::LogLevel Logger::m_global_level = Logger::INFO;
+Logger::LogLevel Logger::m_global_level = Logger::FATAL;
 
 void Logger::trace(const char* fmt, ...)
 {	
@@ -104,14 +108,14 @@ void Logger::setGlobalLevel(LogLevel level)
 void Logger::vlog(LogLevel level, const char* fmt, va_list args)
 {
 	char buffer[5000];
-	vsnprintf(buffer, sizeof(buffer), fmt, args);
+	std::vsnprintf(buffer, sizeof(buffer), fmt, args);
 
 	if (m_log_stream == &std::cout)
 		(*m_log_stream) << logLeveltoColor(level) << "[" << logLeveltoString(level) << "] " << "\033[0m";
 	else
 		(*m_log_stream) << "[" << logLeveltoString(level) << "] ";
 
-	(*m_log_stream) << buffer << std::endl;
+	(*m_log_stream) << buffer << "\n";
 }
 
 

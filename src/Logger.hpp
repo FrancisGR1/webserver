@@ -1,17 +1,12 @@
-#include <iostream>
-#include <fstream>
-#include <unordered_map>
-#include <vector>
+#ifndef LOGGER_HPP
+# define LOGGER_HPP
+
 #include <string>
-#include <cstdio>
-#include <cstdarg>
+#include <vector>
 
 class Logger 
 {
 	public: 
-
-	Logger() = delete;
-
 	// https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
 	enum LogLevel
 	{
@@ -41,7 +36,6 @@ class Logger
 
 
 	private:
-
 	static std::ostream* m_log_stream;
 	static std::ofstream* m_file_stream;
 	static std::vector<std::ofstream*> m_opened_files;
@@ -49,10 +43,12 @@ class Logger
 	static LogLevel m_global_level;
 
 	static void vlog(LogLevel level, const char* fmt, va_list args);
-	template<typename Tlog> void tlog(LogLevel level, const Tlog& to_log);
+	template<typename Tlog> static void tlog(LogLevel level, const Tlog& to_log);
 	static bool shouldLog(LogLevel level);
 	static std::string logLeveltoString(LogLevel level);
 	static std::string logLeveltoColor(LogLevel level);
 };
 
-#include "Logger_templates.cpp"
+#include "Logger_templates.hpp"
+
+# endif //LOGGER_HPP

@@ -1,0 +1,190 @@
+[36m[Trace] [0mLexer start
+[36m[Trace] [0m# Novo
+service {
+    listen 127.0.0.1:8080;
+    server_name main_server;
+    max_body_size 1000000;        # service-wide
+    error_page 404 /errors/404.html;
+    error_page 500 /errors/500.html;
+
+    # Route 1: root
+    location / {
+        root root/;
+        methods GET POST DELETE;
+        default_file index.html;
+        listing on;
+    }
+
+    # Route 2: upload
+    location /upload {
+        root root/uploads/;
+        methods POST;
+        upload on;
+        upload_dir upload_dir/;
+    }
+
+    # Route 3: CGI
+    location /scripts {
+        root root/cgi-bin/;
+        methods GET POST;
+        cgi .py path_to_py.py;
+    }
+}
+
+'0'Service--->service
+'1'LBrace--->{
+'2'Directive--->listen
+'3'Parameter--->127.0.0.1:8080
+'4'Semicolon--->;
+'5'Directive--->server_name
+'6'Parameter--->main_server
+'7'Semicolon--->;
+'8'Directive--->max_body_size
+'9'Parameter--->1000000
+'10'Semicolon--->;
+'11'Directive--->error_page
+'12'Parameter--->404
+'13'Parameter--->/errors/404.html
+'14'Semicolon--->;
+'15'Directive--->error_page
+'16'Parameter--->500
+'17'Parameter--->/errors/500.html
+'18'Semicolon--->;
+'19'Location--->location
+'20'Parameter--->/
+'21'LBrace--->{
+'22'Directive--->root
+'23'Parameter--->root/
+'24'Semicolon--->;
+'25'Directive--->methods
+'26'Parameter--->GET
+'27'Parameter--->POST
+'28'Parameter--->DELETE
+'29'Semicolon--->;
+'30'Directive--->default_file
+'31'Parameter--->index.html
+'32'Semicolon--->;
+'33'Directive--->listing
+'34'Parameter--->on
+'35'Semicolon--->;
+'36'RBrace--->}
+'37'Location--->location
+'38'Parameter--->/upload
+'39'LBrace--->{
+'40'Directive--->root
+'41'Parameter--->root/uploads/
+'42'Semicolon--->;
+'43'Directive--->methods
+'44'Parameter--->POST
+'45'Semicolon--->;
+'46'Directive--->upload
+'47'Parameter--->on
+'48'Semicolon--->;
+'49'Directive--->upload_dir
+'50'Parameter--->upload_dir/
+'51'Semicolon--->;
+'52'RBrace--->}
+'53'Location--->location
+'54'Parameter--->/scripts
+'55'LBrace--->{
+'56'Directive--->root
+'57'Parameter--->root/cgi-bin/
+'58'Semicolon--->;
+'59'Directive--->methods
+'60'Parameter--->GET
+'61'Parameter--->POST
+'62'Semicolon--->;
+'63'Directive--->cgi
+'64'Parameter--->.py
+'65'Parameter--->path_to_py.py
+'66'Semicolon--->;
+'67'RBrace--->}
+'68'RBrace--->}
+'69'Eof--->Eof
+[34m[Debug] [0mMain end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+service {
+listen 127.0.0.1:8080 ;
+server_name main_server ;
+max_body_size 1000000 ;
+error_page 404 /errors/404.html ;
+error_page 500 /errors/500.html ;
+location / {
+root root/ ;
+methods GET
+POST
+DELETE
+;
+default_file
+index.html
+;
+listing
+on
+;
+}
+location
+/upload
+{
+root
+root/uploads/
+;
+methods
+POST
+;
+upload
+on
+;
+upload_dir
+upload_dir/
+;
+}
+location
+/scripts
+{
+root
+root/cgi-bin/
+;
+methods
+GET
+POST
+;
+cgi
+.py
+path_to_py.py
+;
+}
+}
+Eof
+[34m[Debug] [0mMain end
+
+interface   "listen", 
+string      "server_name", 
+number      "max_body_size", 
+error       "error_page",
+directory   "root", "methods", 
+file        "default_file",
+directory   "listing",
+boolean     "upload", 
+directory   "upload_dir",
+cgi         "cgi",
+redirect    "redirect" 

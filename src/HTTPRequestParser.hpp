@@ -11,7 +11,8 @@ struct Parser
 	{
 		// === Start line ===
 		StartLineMethod,
-		StartLineTarget,
+		StartLineTargetPath,
+		StartLineTargetQuery,
 		StartLineProtocolVersion,
 		StartLineCR,
 
@@ -26,10 +27,11 @@ struct Parser
 		Body,
 		BodyCR,
 		// Body - chunked
+		BodyChunkSize,
+		BodyChunkSizeExtension,
+		BodyChunkSizeCR,
 		BodyChunkData,
 		BodyChunkDataCR,
-		BodyChunkSize,
-		BodyChunkSizeCR,
 		// Body - trailing headers
 		BodyChunkTrailerKey,
 		BodyChunkTrailerValue,
@@ -49,7 +51,8 @@ class HTTPRequestParser
 		HTTPRequestParser();
 
 		void feed(const char* raw);
-		bool is_done() const;
+		bool done() const;
+		bool error() const;
 		HTTPRequest get() const;
 		void clear();
 
@@ -58,23 +61,27 @@ class HTTPRequestParser
 		HTTPRequest request;
 		// HTTP elements
 		std::string m_method;
-		std::string m_target;
+		std::string m_target_path;
+		std::string m_target_query;
 		std::string m_protocol_version;
 		std::map<std::string, std::string> m_headers;
 		std::string m_body;
-		long m_content_length;
 
 
 		// info for the moment of parsing
 		Parser::State m_state;
 		size_t m_idx;
-		char m_ch;
+		unsigned char m_ch;
 		std::string m_error;
 		long m_error_code;
 		// store temporary values
 		std::string m_buffer;
 		std::string m_header_key;
 		std::string m_header_value;
+		// body data
+		long m_content_length;
+		std::string m_chunk_size_str;
+		size_t m_chunk_size;
 
 		// is parsing over?
 		bool m_done;

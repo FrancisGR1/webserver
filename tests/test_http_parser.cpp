@@ -107,3 +107,11 @@ int main() {
 	
 		std::cout << "Body: " << req.body() << "\n";
 }
+
+bool ConfigParser::is_directive(const std::string& str)
+{
+
+	return (ConfigKeywords::directive.count(str) > 0);
+}
+
+

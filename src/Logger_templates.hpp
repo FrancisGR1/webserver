@@ -1,4 +1,10 @@
+#ifndef LOGGER_TEMPLATES_HPP
+# define LOGGER_TEMPLATES_HPP
+
 //@TODO: mudar extensão para .tpp -> incluir .tpp na extensões de cpp
+
+#include <iostream>
+#include "Logger.hpp"
 
 template<typename logT>
 void Logger::trace(const logT& to_log)
@@ -20,5 +26,6 @@ void Logger::tlog(LogLevel level, const Tlog& to_log)
 	else
 		(*m_log_stream) << "[" << logLeveltoString(level) << "] ";
 
-	(*m_log_stream) << to_log << std::endl;
+	(*m_log_stream) << __FILE__ << " " << __LINE__ << " " << to_log << std::endl;
 }
+# endif //LOGGER_TEMPLATES_HPP
