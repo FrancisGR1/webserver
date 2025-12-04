@@ -8,75 +8,75 @@ std::ostream* Logger::m_log_stream = &std::cout;
 std::ofstream* Logger::m_file_stream;
 std::vector<std::ofstream*> Logger::m_opened_files;
 
-Logger::LogLevel Logger::m_global_level = Logger::FATAL;
+Log::Level Logger::m_global_level = Log::Level::Trace;
 
 void Logger::trace(const char* fmt, ...)
 {	
-	if (shouldLog(TRACE))
+	if (should_log(Log::Level::Trace))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(TRACE, fmt, args);
+		vlog(Log::Level::Trace, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::debug(const char* fmt, ...)
 {	
-	if (shouldLog(DEBUG))
+	if (should_log(Log::Level::Debug))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(DEBUG, fmt, args);
+		vlog(Log::Level::Debug, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::info(const char* fmt, ...)
 {	
-	if (shouldLog(INFO))
+	if (should_log(Log::Level::Info))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(INFO, fmt, args);
+		vlog(Log::Level::Info, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::warn(const char* fmt, ...)
 {	
-	if (shouldLog(WARN))
+	if (should_log(Log::Level::Warn))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(WARN, fmt, args);
+		vlog(Log::Level::Warn, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::error(const char* fmt, ...)
 {	
-	if (shouldLog(ERROR))
+	if (should_log(Log::Level::Error))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(ERROR, fmt, args);
+		vlog(Log::Level::Error, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::fatal(const char* fmt, ...)
 {	
-	if (shouldLog(FATAL))
+	if (should_log(Log::Level::Fatal))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(FATAL, fmt, args);
+		vlog(Log::Level::Fatal, fmt, args);
 		va_end(args);
 	}
 };
 
-void Logger::setOutput(const char* file)
+void Logger::set_output(const char* file)
 {
 	m_file_stream->open(file, std::ios::out | std::ios::app);
 	if (!m_file_stream->is_open())
@@ -91,7 +91,7 @@ void Logger::setOutput(const char* file)
 	m_log_stream = m_file_stream;
 }
 
-void Logger::closeOutput()
+void Logger::close_output()
 {
 	for (int i = 0; i < m_opened_files.size(); i++)
 	{
@@ -100,58 +100,58 @@ void Logger::closeOutput()
 	}
 }
 
-void Logger::setGlobalLevel(LogLevel level)
+void Logger::set_global_level(Log::Level level)
 {
 	m_global_level = level;
 }
 
-void Logger::vlog(LogLevel level, const char* fmt, va_list args)
+void Logger::vlog(Log::Level level, const char* fmt, va_list args)
 {
 	char buffer[5000];
 	std::vsnprintf(buffer, sizeof(buffer), fmt, args);
 
 	if (m_log_stream == &std::cout)
-		(*m_log_stream) << logLeveltoColor(level) << "[" << logLeveltoString(level) << "] " << "\033[0m";
+		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << "\033[0m";
 	else
-		(*m_log_stream) << "[" << logLeveltoString(level) << "] ";
+		(*m_log_stream) << "[" << log_level_to_string(level) << "] ";
 
 	(*m_log_stream) << buffer << "\n";
 }
 
 
-bool Logger::shouldLog(LogLevel level)
+bool Logger::should_log(Log::Level level)
 {
-	if (level <= m_global_level)
+	if (level >= m_global_level)
 		return true;
 	return (false);
 };
 
-std::string Logger::logLeveltoString(LogLevel level)
+std::string Logger::log_level_to_string(Log::Level level)
 {
 	switch (level)
 	{
-		case TRACE: return "Trace";
-		case DEBUG: return "Debug";
-		case INFO:  return "Info";
-		case WARN:  return "Warn";
-		case ERROR: return "Error";
-		case FATAL: return "Fatal";
+		case Log::Level::Trace: return "Trace";
+		case Log::Level::Debug: return "Debug";
+		case Log::Level::Info:  return "Info";
+		case Log::Level::Warn:  return "Warn";
+		case Log::Level::Error: return "Error";
+		case Log::Level::Fatal: return "Fatal";
 		default: return "None";
 	}
 	return ("None");
 }
 
-std::string Logger::logLeveltoColor(LogLevel level)
+std::string Logger::log_level_to_color(Log::Level level)
 {
 	switch (level)
 	{
-		case TRACE: return "\033[36m";  // Cyan
-		case DEBUG: return "\033[34m";  // Blue
-		case INFO:  return "\033[32m";  // Green
-		case WARN:  return "\033[33m";  // Yellow
-		case ERROR: return "\033[31m";  // Red
-		case FATAL: return "\033[91m";  // Bright red
-		default:    return "\033[0m";   // Reset
+		case Log::Level::Trace: return "\033[36m";  // Cyan
+		case Log::Level::Debug: return "\033[34m";  // Blue
+		case Log::Level::Info:  return "\033[32m";  // Green
+		case Log::Level::Warn:  return "\033[33m";  // Yellow
+		case Log::Level::Error: return "\033[31m";  // Red
+		case Log::Level::Fatal: return "\033[91m";  // Bright red
+		default:    		return "\033[0m";   // Reset
 	}
 	return "\033[0m";
 }

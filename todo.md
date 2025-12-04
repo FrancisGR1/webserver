@@ -8,13 +8,11 @@
 # HTTP - Receber Pedido
 - [ ] Processamento
     - [ ] melhorar log erros
-    - [ ] passar espaços (ascii 32)
-    - [ ] verificar se header existe antes de inserir
-    - [ ] lidar com restos no buffer depois de S::Done ou S::Error
+    - [x] verificar se header existe antes de inserir
     - [x] processar chunked body
     - [x] ignorar trailing headers
-    - [ ] overload do feed() com chars
-    - [ ] clear() - o que fazer com restos do próximo request no buffer?
+    - [x] overload do feed() com chars
+    - [ ] clear()
 - [ ] Implementar testes tabela
 
 # HTTP - Enviar Pedido

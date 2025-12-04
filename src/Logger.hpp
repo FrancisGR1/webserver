@@ -4,20 +4,24 @@
 #include <string>
 #include <vector>
 
+struct Log
+{
+	// https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+	enum Level
+	{
+		Trace = 0,  // very specific parts of procedures
+		Debug,  // helpful diagnostics
+		Info,   // useful information
+		Warn,   // can potentially cause weird behavior
+		Error,  // error fatal to the operation 
+		Fatal,  // error fatal to the application
+		None
+	};
+};
+
 class Logger 
 {
 	public: 
-	// https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-	enum LogLevel
-	{
-		TRACE,  //very specific parts of procedures
-		DEBUG,  //helpful diagnostics
-		INFO,   //useful information
-		WARN,   //can potentially cause weird behavior
-		ERROR,  //error fatal to the operation 
-		FATAL,  //error fatal to the application
-		NONE
-	};
 
 	static void trace(const char* fmt, ...); 
 	static void debug(const char* fmt, ...); 
@@ -29,10 +33,10 @@ class Logger
 	template<typename logT> static void trace(const logT& to_log);
 	template<typename logT> static void debug(const logT& to_log);
 
-	static void setOutput(const char* file);
-	static void closeOutput();
+	static void set_output(const char* file);
+	static void close_output();
 
-	static void setGlobalLevel(LogLevel level);
+	static void set_global_level(Log::Level level);
 
 
 	private:
@@ -40,15 +44,15 @@ class Logger
 	static std::ofstream* m_file_stream;
 	static std::vector<std::ofstream*> m_opened_files;
 
-	static LogLevel m_global_level;
+	static Log::Level m_global_level;
 
-	static void vlog(LogLevel level, const char* fmt, va_list args);
-	template<typename Tlog> static void tlog(LogLevel level, const Tlog& to_log);
-	static bool shouldLog(LogLevel level);
-	static std::string logLeveltoString(LogLevel level);
-	static std::string logLeveltoColor(LogLevel level);
+	static void vlog(Log::Level level, const char* fmt, va_list args);
+	template<typename Tlog> static void tlog(Log::Level level, const Tlog& to_log);
+	static bool should_log(Log::Level level);
+	static std::string log_level_to_string(Log::Level level);
+	static std::string log_level_to_color(Log::Level level);
 };
 
 #include "Logger_templates.hpp"
 
-# endif //LOGGER_HPP
+# endif // LOGGER_HPP
