@@ -5,22 +5,23 @@
 
 #include <iostream>
 #include "Logger.hpp"
+#include "constants.hpp"
 
 template<typename logT>
 void Logger::trace(const logT& to_log)
 {
-	if (should_log(Log::Level::Trace))
+	if (should_log(Log::Trace))
 	{
-		tlog(Log::Level::Trace, to_log);
+		tlog(Log::Trace, to_log);
 	}
 }
 
 template<typename logT>
 void Logger::debug(const logT& to_log)
 {
-	if (should_log(Log::Level::Debug))
+	if (should_log(Log::Debug))
 	{
-		tlog(Log::Level::Debug, to_log);
+		tlog(Log::Debug, to_log);
 	}
 }
 
@@ -28,7 +29,7 @@ template<typename Tlog>
 void Logger::tlog(Log::Level level, const Tlog& to_log)
 {
 	if (m_log_stream == &std::cout)
-		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << "\033[0m";
+		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << constants::RESET;
 	else
 		(*m_log_stream) << "[" << log_level_to_string(level) << "] ";
 	(*m_log_stream) << to_log << "\n";

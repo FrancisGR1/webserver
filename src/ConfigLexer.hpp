@@ -17,7 +17,7 @@ class ConfigLexer
 
 	private:
 		std::vector<Token> m_tokens;
-		size_t m_token_idx = 0;
+		size_t m_token_idx;
 
 		void	tokenize(std::string& str, size_t start_pos);
 		bool	is_directive(const std::string& str);

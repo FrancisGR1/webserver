@@ -14,39 +14,15 @@
 
 namespace ConfigKeywords
 {
-	static const std::set<std::string> delimiters  = 
-	{ 
-		"{", 
-		"}", 
-		";" 
-	};
+    const std::set<std::string> make_delimiters();
+    const std::set<std::string> make_block();
+    const std::set<std::string> make_directive();
+    const std::set<std::string> make_cgi_extensions();
 
-	static const std::set<std::string> block = 
-	{ 
-		"service", 
-		"location"
-	};
-
-	static const std::set<std::string> directive = 
-	{ 
-		"listen", 
-		"server_name", 
-		"max_body_size", 
-		"error_page",
-		"root", "methods", 
-		"default_file",
-		"listing",
-		"upload", 
-		"upload_dir",
-		"cgi",
-		"redirect" 
-	};
-
-	static const std::set<std::string> cgi_extensions =
-	{
-		".py"
-		// add extensions here
-	};
+    const std::set<std::string> delimiters = make_delimiters();
+    const std::set<std::string> block = make_block();
+    const std::set<std::string> directive = make_directive();
+    const std::set<std::string> cgi_extensions = make_cgi_extensions();
 }
 
 // ==============================================================
@@ -97,9 +73,9 @@ struct Token
 	{}
 
 	Token(std::string value, size_t start_pos)
-		: value(value)
+		: type(classify())
+		, value(value)
 		, start_pos(start_pos)
-		, type(classify())
 	{}
 
 	//classifies its type
@@ -112,9 +88,9 @@ struct Token
 	std::string to_literal() const;
 
 
+	Token::Type type;
 	std::string value;
 	size_t start_pos;
-	Token::Type type;
 };
 
 std::ostream& operator<<(std::ostream& os, const Token& t);
@@ -139,20 +115,21 @@ struct Directive
 
 struct LocationConfig
 {
+	LocationConfig();
 	// exclusive to location block scope
 	std::string name;
 	std::set<std::string> methods;
 	std::string root_dir;
 	std::string upload_dir;
-	bool enable_dir_listing = false;
-	bool enable_upload_files = false;
+	bool enable_dir_listing;
+	bool enable_upload_files;
 	std::string default_file;
 	std::map<std::string, std::string> cgis;
 
 	// can be set in location or service scope
 	std::map<size_t, std::string> error_pages;
 	std::map<size_t, std::string> redirections;
-	size_t max_body_size = 1000000;
+	size_t max_body_size;
 
 	void set(Directive& directive);
 };
@@ -161,6 +138,7 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& lc);
 
 struct ServiceConfig
 {
+	ServiceConfig();
 	//exclusive to service block scope
 	std::string server_name;
 	std::vector<Listener> listeners;
@@ -169,7 +147,7 @@ struct ServiceConfig
 	// can be set in location or service scope
 	std::map<size_t, std::string> error_pages;
 	std::map<size_t, std::string> redirections;
-	size_t max_body_size = 1000000;
+	size_t max_body_size;
 
 	void set(Directive& directive);
 	void set(LocationConfig& location);

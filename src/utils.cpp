@@ -3,7 +3,7 @@
 
 namespace utils
 {
-	std::vector<std::string> split_string(const std::string& str, char delimiter)
+	std::vector<std::string> str_split(const std::string& str, char delimiter)
 	{
 		std::vector<std::string> split;
 		

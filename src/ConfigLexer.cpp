@@ -1,3 +1,4 @@
+#include "ConfigTypes.hpp"
 #include "ConfigLexer.hpp"
 #include <cctype>
 
@@ -6,6 +7,7 @@
 // ==============================================================
 
 ConfigLexer::ConfigLexer(const std::string& file_content)
+	: m_token_idx(0)
 {
 	std::string build_string = ""; 
 
@@ -40,7 +42,7 @@ ConfigLexer::ConfigLexer(const std::string& file_content)
 		}
 	}
 	tokenize(build_string, idx);
-	m_tokens.push_back(Token(Token::Type::Eof, "Eof", idx));
+	m_tokens.push_back(Token(Token::Eof, "Eof", idx));
 }
 
 const Token ConfigLexer::advance()

@@ -1,8 +1,8 @@
 #include "Logger.hpp"
 #include "Config.hpp"
 #include <iostream>
-//#include "HttpRequest.hpp"
-//#include "HttpRequestParser.hpp"
+#include "HttpRequest.hpp"
+#include "HttpRequestParser.hpp"
 
 
 const char *default_conf = "config/default.conf";
@@ -26,20 +26,27 @@ int main(int argc, char *argv[])
 		std::cerr << e.what() << "\n";
 	}
 
-	//HttpRequestParser parser;
+	HttpRequestParser parser;
 
-	//const char* raw_request =
-	//	"GET /location HTTP/1.1\r\n"
-	//	"Host: example.com\r\n"
-	//	"Connection: keep-alive\r\n"
-	//	"User-Agent: TestClient/1.0\r\n"
-	//	"Content-Length: 11\r\n"
-	//	"\r\n"
-	//	"Hello World";
-	//parser.feed(raw_request);
-	//HttpRequest req = parser.get();
-	//Logger::trace(req);
-	//parser.clear();
+	const char* raw_request =
+		"GET /location HTTP/1.1\r\n"
+		"Host: example.com\r\n"
+		"Connection: keep-alive\r\n"
+		"User-Agent: TestClient/1.0\r\n"
+		"Content-Length: 11\r\n"
+		"\r\n"
+		"Hello World";
+	parser.feed(raw_request);
+	if (parser.error())
+	{
+		std::cerr << "Error when parsing!\n";
+	}
+	else
+	{
+		HttpRequest req = parser.get();
+		Logger::trace(req);
+	}
+	parser.clear();
 
 
 	//const char* chunked_request =
@@ -106,6 +113,6 @@ int main(int argc, char *argv[])
 	//	Logger::trace(req);
 	//}
 	//
-	//Logger::debug("Main end");
-	//return 0;
+	Logger::debug("Main end");
+	return 0;
 }

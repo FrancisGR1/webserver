@@ -3,75 +3,76 @@
 #include <iostream>
 #include <cstdarg>
 #include "Logger.hpp"
+#include "constants.hpp"
 
 std::ostream* Logger::m_log_stream = &std::cout;
 std::ofstream* Logger::m_file_stream;
 std::vector<std::ofstream*> Logger::m_opened_files;
 
-Log::Level Logger::m_global_level = Log::Level::Trace;
+Log::Level Logger::m_global_level = Log::Trace;
 
 void Logger::trace(const char* fmt, ...)
 {	
-	if (should_log(Log::Level::Trace))
+	if (should_log(Log::Trace))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(Log::Level::Trace, fmt, args);
+		vlog(Log::Trace, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::debug(const char* fmt, ...)
 {	
-	if (should_log(Log::Level::Debug))
+	if (should_log(Log::Debug))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(Log::Level::Debug, fmt, args);
+		vlog(Log::Debug, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::info(const char* fmt, ...)
 {	
-	if (should_log(Log::Level::Info))
+	if (should_log(Log::Info))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(Log::Level::Info, fmt, args);
+		vlog(Log::Info, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::warn(const char* fmt, ...)
 {	
-	if (should_log(Log::Level::Warn))
+	if (should_log(Log::Warn))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(Log::Level::Warn, fmt, args);
+		vlog(Log::Warn, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::error(const char* fmt, ...)
 {	
-	if (should_log(Log::Level::Error))
+	if (should_log(Log::Error))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(Log::Level::Error, fmt, args);
+		vlog(Log::Error, fmt, args);
 		va_end(args);
 	}
 };
 
 void Logger::fatal(const char* fmt, ...)
 {	
-	if (should_log(Log::Level::Fatal))
+	if (should_log(Log::Fatal))
 	{
 		va_list args;
 		va_start(args, fmt);
-		vlog(Log::Level::Fatal, fmt, args);
+		vlog(Log::Fatal, fmt, args);
 		va_end(args);
 	}
 };
@@ -93,7 +94,7 @@ void Logger::set_output(const char* file)
 
 void Logger::close_output()
 {
-	for (int i = 0; i < m_opened_files.size(); i++)
+	for (size_t i = 0; i < m_opened_files.size(); i++)
 	{
 		std::ofstream* file = m_opened_files.at(i);
 		file->close();
@@ -111,7 +112,7 @@ void Logger::vlog(Log::Level level, const char* fmt, va_list args)
 	std::vsnprintf(buffer, sizeof(buffer), fmt, args);
 
 	if (m_log_stream == &std::cout)
-		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << "\033[0m";
+		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << constants::RESET;
 	else
 		(*m_log_stream) << "[" << log_level_to_string(level) << "] ";
 
@@ -130,12 +131,12 @@ std::string Logger::log_level_to_string(Log::Level level)
 {
 	switch (level)
 	{
-		case Log::Level::Trace: return "Trace";
-		case Log::Level::Debug: return "Debug";
-		case Log::Level::Info:  return "Info";
-		case Log::Level::Warn:  return "Warn";
-		case Log::Level::Error: return "Error";
-		case Log::Level::Fatal: return "Fatal";
+		case Log::Trace: return "Trace";
+		case Log::Debug: return "Debug";
+		case Log::Info:  return "Info";
+		case Log::Warn:  return "Warn";
+		case Log::Error: return "Error";
+		case Log::Fatal: return "Fatal";
 		default: return "None";
 	}
 	return ("None");
@@ -145,13 +146,13 @@ std::string Logger::log_level_to_color(Log::Level level)
 {
 	switch (level)
 	{
-		case Log::Level::Trace: return "\033[36m";  // Cyan
-		case Log::Level::Debug: return "\033[34m";  // Blue
-		case Log::Level::Info:  return "\033[32m";  // Green
-		case Log::Level::Warn:  return "\033[33m";  // Yellow
-		case Log::Level::Error: return "\033[31m";  // Red
-		case Log::Level::Fatal: return "\033[91m";  // Bright red
-		default:    		return "\033[0m";   // Reset
+		case Log::Trace: return constants::CYAN;
+		case Log::Debug: return constants::BLUE;
+		case Log::Info:  return constants::GREEN;
+		case Log::Warn:  return constants::YELLOW;
+		case Log::Error: return constants::RED;
+		case Log::Fatal: return constants::BRIGHT_RED;
+		default:    		return constants::RESET;
 	}
-	return "\033[0m";
+	return constants::RESET;
 }
