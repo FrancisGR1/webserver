@@ -48,4 +48,4 @@ class ConfigParser
 		void expect(const Token& t, Token::Type expected_type, char expected_ch, size_t pos);
 };
 
-#endif //CONFIGPARSER_HPP
+#endif // CONFIGPARSER_HPP
