@@ -1,4 +1,4 @@
-#include "constants.hpp"
+#include "core/constants.hpp"
 #include "ConfigTypes.hpp"
 #include <cstdlib>
 #include <iomanip>
@@ -56,6 +56,18 @@ namespace ConfigKeywords
 // ==============================================================
 // Token struct
 // ==============================================================
+
+Token::Token(Token::Type type, std::string value, size_t start_pos)
+		: value(value)
+		, type(type)
+		, start_pos(start_pos)
+{}
+
+Token::Token(std::string value, size_t start_pos)
+		: value(value)
+		, type(classify())
+		, start_pos(start_pos)
+{}
 
 std::string Token::to_string() const
 {
@@ -195,19 +207,25 @@ void Token::classify_directive()
 	else if (value == "upload")        type = Token::DirectiveUpload;
 	else if (value == "upload_dir")    type = Token::DirectiveUploadDir;
 	else if (value == "cgi")           type = Token::DirectiveCgi;
-	else if (value == "return")      type = Token::DirectiveRedirect;
+	else if (value == "return")        type = Token::DirectiveRedirect;
 	else                               type = Token::DirectiveParameter;
 }
 
+
+Route::Route(StatusCode::Code code, std::string path)
+	: code(code)
+	, path(path) {}
 
 // ==============================================================
 // LocationConfig struct
 // ==============================================================
 
 LocationConfig::LocationConfig()
-	: enable_dir_listing(false)
+	: name("")
+	, enable_dir_listing(false)
 	, enable_upload_files(false)
-	, max_body_size(constants::MAX_BODY_SIZE)
+	, redirection(StatusCode::None, "")
+	, max_body_size(constants::max_body_size)
 {}
 
 void LocationConfig::set(Directive& directive)
@@ -259,7 +277,8 @@ void LocationConfig::set(Directive& directive)
 		case Token::DirectiveRedirect:
 			{
 				size_t code = atoi(directive.args.at(0).c_str());
-				redirections[code] = directive.args.at(1);
+				redirection.code = static_cast<StatusCode::Code>(code);
+				redirection.path = directive.args.at(1);
 				break;
 			}
 		case Token::DirectiveMaxBodySize:
@@ -303,11 +322,9 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& lc)
 		os << "\t\t" << it->first << " - " << it->second << "\n";
 	}
 
-	os << "\tRedirections:\n";
-	for (std::map<size_t, std::string>::const_iterator it = lc.redirections.begin(); it != lc.redirections.end(); it++)
-	{
-		os << "\t\t" << it->first << " - " << it->second << "\n";
-	}
+	lc.redirection.code 
+	? os << "\tRedirection: " << lc.redirection.code << ": " << lc.redirection.path << "\n"
+	: os << "\tRedirection:\n";
 	os << "\tMax Body Size: " << lc.max_body_size << "\n";
 
 	return os;
@@ -318,7 +335,8 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& lc)
 // ==============================================================
 
 ServiceConfig::ServiceConfig()
-	: max_body_size(constants::MAX_BODY_SIZE)
+	: redirection(StatusCode::None, "")
+	, max_body_size(constants::max_body_size)
 {}
 
 void ServiceConfig::set(Directive& directive)
@@ -340,7 +358,8 @@ void ServiceConfig::set(Directive& directive)
 		case Token::DirectiveRedirect:
 			{
 				size_t code = atoi(directive.args.at(0).c_str());
-				redirections[code] = directive.args.at(1);
+				redirection.code = static_cast<StatusCode::Code>(code);
+				redirection.path = directive.args.at(1);
 				break;
 			}
 		case Token::DirectiveMaxBodySize:
@@ -377,11 +396,9 @@ std::ostream& operator<<(std::ostream& os, const ServiceConfig& service)
 		os << "\t" << it->first << " - " << it->second << "\n";
 	}
 
-	os << "Redirections:\n";
-	for (std::map<size_t, std::string>::const_iterator it = service.redirections.begin(); it != service.redirections.end(); it++)
-	{
-		os << "\t" << it->first << " - " << it->second << "\n";
-	}
+	service.redirection.code 
+	? os << "\tRedirection: " << service.redirection.code << ": " << service.redirection.path << "\n"
+	: os << "\tRedirection:\n";
 
 	os << "Max body size: " << service.max_body_size << "\n";
 

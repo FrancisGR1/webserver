@@ -62,7 +62,8 @@ void ConfigLexer::tokenize(std::string& str, size_t start_pos)
 	if (str.empty())
 		return ;
 
-	m_tokens.push_back(Token(str, start_pos));
+	Token tok(str,start_pos);
+	m_tokens.push_back(tok);
 
 	str.clear();
 }

@@ -1,11 +1,13 @@
 #include <string>
 #include <ostream>
 #include <cstdlib>
-#include "utils.hpp"
+
+#include "core/utils.hpp"
 #include "ConfigTypes.hpp"
 #include "ConfigLexer.hpp"
 #include "ConfigParser.hpp"
 #include "Config.hpp"
+#include "http/StatusCode.hpp"
 
 ConfigParser::ConfigParser(ConfigLexer& lexer)
 	: m_lexer(lexer)
@@ -133,16 +135,16 @@ void ConfigParser::parse_directive(Token& t, Token::Type context, Directive& dir
 			parse_server_name(t, directive);
 			break;
 
-			case Token::DirectiveUploadDir: parse_upload_dir(t, directive);       break;
-			case Token::DirectiveMaxBodySize: parse_max_body_size(t, directive);  break;
-			case Token::DirectiveErrorPage: parse_error_page(t, directive);       break;
-			case Token::DirectiveRoot: parse_root(t, directive);                  break;
-			case Token::DirectiveMethods: parse_methods(t, directive);            break;
-			case Token::DirectiveDefaultFile: parse_default_file(t, directive);   break;
-			case Token::DirectiveListing: parse_listing(t, directive);            break;
-			case Token::DirectiveUpload: parse_upload(t, directive);              break;
-			case Token::DirectiveCgi: parse_cgi(t, directive);                    break;
-			case Token::DirectiveRedirect: parse_redirect(t, directive);          break;
+		case Token::DirectiveUploadDir:   parse_upload_dir(t, directive);     break;
+		case Token::DirectiveMaxBodySize: parse_max_body_size(t, directive);  break;
+		case Token::DirectiveErrorPage:   parse_error_page(t, directive);     break;
+		case Token::DirectiveRoot:        parse_root(t, directive);           break;
+		case Token::DirectiveMethods:     parse_methods(t, directive);        break;
+		case Token::DirectiveDefaultFile: parse_default_file(t, directive);   break;
+		case Token::DirectiveListing:     parse_listing(t, directive);        break;
+		case Token::DirectiveUpload:      parse_upload(t, directive);         break;
+		case Token::DirectiveCgi:         parse_cgi(t, directive);            break;
+		case Token::DirectiveRedirect:    parse_redirect(t, directive);       break;
 
 		default: 
 			throw std::runtime_error("Invalid6\n");
@@ -387,7 +389,7 @@ void ConfigParser::parse_redirect(Token& t, Directive& directive)
 	if (!utils::str_isdigit(redirect_code_tok.value))
 		throw std::runtime_error("Invalid17\n");
 	size_t code = atoi(redirect_code_tok.value.c_str());
-	if (code < 300 || code > 399)
+	if (!StatusCode::is_redirection(code))
 		throw std::runtime_error("Invalid18\n");
 
 	const Token redirect_path_tok = m_lexer.advance();

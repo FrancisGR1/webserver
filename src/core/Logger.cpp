@@ -112,7 +112,7 @@ void Logger::vlog(Log::Level level, const char* fmt, va_list args)
 	std::vsnprintf(buffer, sizeof(buffer), fmt, args);
 
 	if (m_log_stream == &std::cout)
-		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << constants::RESET;
+		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << constants::reset;
 	else
 		(*m_log_stream) << "[" << log_level_to_string(level) << "] ";
 
@@ -146,13 +146,13 @@ std::string Logger::log_level_to_color(Log::Level level)
 {
 	switch (level)
 	{
-		case Log::Trace: return constants::CYAN;
-		case Log::Debug: return constants::BLUE;
-		case Log::Info:  return constants::GREEN;
-		case Log::Warn:  return constants::YELLOW;
-		case Log::Error: return constants::RED;
-		case Log::Fatal: return constants::BRIGHT_RED;
-		default:    		return constants::RESET;
+		case Log::Trace: return constants::cyan;
+		case Log::Debug: return constants::blue;
+		case Log::Info:  return constants::green;
+		case Log::Warn:  return constants::yellow;
+		case Log::Error: return constants::red;
+		case Log::Fatal: return constants::bright_red;
+		default:    		return constants::reset;
 	}
-	return constants::RESET;
+	return constants::reset;
 }

@@ -1,4 +1,5 @@
 NAME     = webserv
+LIB      = libwebserv.a
 
 CC       = c++
 OBJ_DIR  = obj
@@ -6,21 +7,26 @@ VERSION  = -std=c++98
 CFLAGS   = -Werror -Wall -Wextra
 DEBUG    = -g
 OPTIMIZE = -O3
-FLAGS    = $(VERSION) $(CFLAGS) $(DEBUG)
+INC      = -Isrc
+FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG)
 
 SOURCES  = \
-	  src/Config.cpp \
-	  src/ConfigLexer.cpp \
-	  src/ConfigParser.cpp \
-	  src/ConfigTypes.cpp \
-	  src/constants.cpp \
-	  src/HttpRequest.cpp \
-	  src/HttpRequestParser.cpp \
-	  src/Logger.cpp \
-	  src/main.cpp \
-	  src/utils.cpp
+	   src/main.cpp \
+	  \
+	  src/config/Config.cpp \
+	  src/config/ConfigLexer.cpp \
+	  src/config/ConfigParser.cpp \
+	  src/config/ConfigTypes.cpp \
+	  src/http/HttpRequest.cpp \
+	  src/http/HttpRequestParser.cpp \
+	  src/http/HttpResponse.cpp \
+	  src/http/StatusCode.cpp \
+	  src/core/Logger.cpp \
+	  src/core/MimeTypes.cpp \
+	  src/core/Path.cpp \
+	  src/core/constants.cpp \
+	  src/core/utils.cpp
 
-HEADERS = -Isrc
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
 OBJ     += $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter-out src/%.cpp, $(SOURCES)))
@@ -30,17 +36,21 @@ all: $(NAME)
 $(NAME): $(OBJ)
 	$(CC) $(FLAGS) $(OBJ) -o $(NAME)
 
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
+$(OBJ_DIR)/%.o: src/%.cpp
+	@mkdir -p $(dir $@)
+	$(CC) $(FLAGS) -c $< -o $@
 
-$(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
-	$(CC) $(FLAGS) $(HEADERS) -c $< -o $@
+$(LIB): $(filter-out $(OBJ_DIR)/main.o,$(OBJ))
+	ar rcs $@ $^
+
+lib: $(LIB)
 
 clean:
 	rm -rf $(OBJ_DIR)
 
 fclean: clean
 	rm -f $(NAME)
+	rm -f $(LIB)
 
 re: fclean all
 

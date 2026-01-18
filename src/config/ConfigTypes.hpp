@@ -7,6 +7,9 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <utility>
+
+#include "http/StatusCode.hpp"
 
 // ==============================================================
 // Keywords namespace
@@ -66,17 +69,8 @@ struct Token
 		DirectiveRedirect
 	};
 
-	Token(Token::Type type, std::string value, size_t start_pos)
-		: type(type)
-		, value(value)
-		, start_pos(start_pos)
-	{}
-
-	Token(std::string value, size_t start_pos)
-		: type(classify())
-		, value(value)
-		, start_pos(start_pos)
-	{}
+	Token(Token::Type type, std::string value, size_t start_pos);
+	Token(std::string value, size_t start_pos);
 
 	//classifies its type
 	Token::Type classify();
@@ -88,18 +82,29 @@ struct Token
 	std::string to_literal() const;
 
 
-	Token::Type type;
 	std::string value;
+	Token::Type type;
 	size_t start_pos;
 };
 
 std::ostream& operator<<(std::ostream& os, const Token& t);
 std::string token_type_to_literal(Token::Type type);
 
+// ==============================================================
+// Config Types
+// ==============================================================
 struct Listener
 {
 	std::string host;
 	size_t port;
+};
+
+struct Route
+{
+	Route(StatusCode::Code code, std::string path);
+
+	StatusCode::Code code;
+	std::string path;
 };
 
 struct Directive
@@ -119,6 +124,7 @@ struct LocationConfig
 	// exclusive to location block scope
 	std::string name;
 	std::set<std::string> methods;
+	//@TODO: mudar para Path
 	std::string root_dir;
 	std::string upload_dir;
 	bool enable_dir_listing;
@@ -126,9 +132,9 @@ struct LocationConfig
 	std::string default_file;
 	std::map<std::string, std::string> cgis;
 
-	// can be set in location or service scope
+	// can be set in LocationConfig or ServiceConfig scope
 	std::map<size_t, std::string> error_pages;
-	std::map<size_t, std::string> redirections;
+	Route redirection;
 	size_t max_body_size;
 
 	void set(Directive& directive);
@@ -144,9 +150,9 @@ struct ServiceConfig
 	std::vector<Listener> listeners;
 	std::map<std::string, LocationConfig> locations;
 
-	// can be set in location or service scope
+	// can be set in LocationConfig or ServiceConfig scope
 	std::map<size_t, std::string> error_pages;
-	std::map<size_t, std::string> redirections;
+	Route redirection;
 	size_t max_body_size;
 
 	void set(Directive& directive);

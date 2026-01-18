@@ -29,7 +29,7 @@ template<typename Tlog>
 void Logger::tlog(Log::Level level, const Tlog& to_log)
 {
 	if (m_log_stream == &std::cout)
-		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << constants::RESET;
+		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << constants::reset;
 	else
 		(*m_log_stream) << "[" << log_level_to_string(level) << "] ";
 	(*m_log_stream) << to_log << "\n";

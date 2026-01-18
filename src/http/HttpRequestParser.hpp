@@ -3,6 +3,8 @@
 
 #include <string>
 #include <map>
+
+#include "StatusCode.hpp"
 #include "HttpRequest.hpp"
 
 struct Parser
@@ -25,7 +27,6 @@ struct Parser
 		// === Body ===
 		// Body - full string
 		Body,
-		BodyCR,
 		// Body - chunked
 		BodyChunkSize,
 		BodyChunkSizeExtension,
@@ -53,8 +54,8 @@ class HttpRequestParser
 		void feed(const char* raw);
 		void feed(char c);
 		bool done() const;
-		bool error() const;
 		HttpRequest get() const;
+		bool error() const;
 		void clear();
 
 	private:
@@ -65,14 +66,13 @@ class HttpRequestParser
 		std::string m_protocol_version;
 		std::map<std::string, std::string> m_headers;
 		std::string m_body;
+		StatusCode::Code m_status_code;
 
 
 		// info for the moment of parsing
 		Parser::State m_state;
 		size_t m_idx;
 		unsigned char m_ch;
-		std::string m_error;
-		long m_error_code;
 		// store temporary values
 		std::string m_buffer;
 		std::string m_header_key;
@@ -86,6 +86,11 @@ class HttpRequestParser
 		bool m_done;
 
 		void parse();
+		
+		// header specific char validation
+		bool is_tchar(char c);
+		bool is_vchar(char c);
+		bool is_ows(char c);
 };
 
 #endif // HTTPREQUESTPARSER_HPP

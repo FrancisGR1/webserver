@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "config/ConfigParser.hpp"
+
 namespace http = boost::beast::http;
 
 struct test_case
@@ -29,7 +31,6 @@ std::vector<test_case> load_tests(std::stringstream &file_content)
 	ParseState state = ParseState::IN_TITLE;
 	std::string line;
 
-	size_t idx = 0;
 	while (std::getline(file_content, line))
 	{
 		switch (state)
@@ -53,6 +54,7 @@ std::vector<test_case> load_tests(std::stringstream &file_content)
 				}
 				continue;
 			}
+			default: {} 
 		}
 	}
 	test_data.push_back(tc);

@@ -5,6 +5,8 @@
 #include <ostream>
 #include <map>
 
+#include "StatusCode.hpp"
+
 class HttpRequest
 {
 	public:
@@ -14,7 +16,8 @@ class HttpRequest
 				const std::string& target_query,
 				const std::string& protocol_version,
 				const std::map<std::string, std::string>& headers,
-				const std::string& body);
+				const std::string& body,
+				StatusCode::Code c);
 
 		const std::string& method() const;
 		const std::string& target_path() const;
@@ -22,9 +25,10 @@ class HttpRequest
 		const std::string& protocol_version() const;
 		const std::map<std::string, std::string>& headers() const;
 		const std::string& body() const;
-
 		const std::string& contains_header(std::string header) const;
-	
+		bool bad_request() const;
+		StatusCode::Code status_code() const;
+
 	private:
 		std::string m_method;
 		std::string m_target_path;
@@ -32,8 +36,7 @@ class HttpRequest
 		std::string m_protocol_version;
 		std::map<std::string, std::string> m_headers;
 		std::string m_body;
-
-		void normalize_header(std::string& str);
+		StatusCode::Code m_status_code;
 };
 
 std::ostream& operator<<(std::ostream& os, const HttpRequest& request);

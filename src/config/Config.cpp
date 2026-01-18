@@ -1,5 +1,4 @@
-#include <sstream>
-#include <fstream>
+#include "core/utils.hpp"
 #include "Config.hpp"
 #include "ConfigLexer.hpp"
 #include "ConfigParser.hpp"
@@ -12,14 +11,11 @@ Config::Config() {}
 
 Config::Config(const char *file_path)
 {
-	std::ifstream file(file_path);
-	if (!file)
-		throw std::runtime_error("Cannot open configurations' file");
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	m_file_content = buffer.str();
+	//@TODO: criar func em utils: file_to_str
+	m_file_content = utils::file_to_str(file_path);
 }
 
+//@TODO: colocar isto dentro do construtor?
 void Config::load()
 {
 	ConfigLexer lexer(m_file_content);
