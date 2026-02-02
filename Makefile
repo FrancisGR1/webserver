@@ -54,6 +54,9 @@ fclean: clean
 
 re: fclean all
 
+#watch:
+#implementar: https://stackoverflow.com/questions/7539563/is-there-a-smarter-alternative-to-watch-make
+
 TESTS_DIR = tests/
 .PHONY: tests
 tests:

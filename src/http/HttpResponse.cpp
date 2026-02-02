@@ -312,7 +312,7 @@ std::string HttpResponse::resolved_target(LocationConfig& lc)
 			{
 				throw HttpResponseException(
 						StatusCode::BadRequest, 
-						"Target path tried to escape root:"
+						"Target path tried to escape root"
 						);
 			}
 		}
@@ -617,6 +617,7 @@ void HttpResponse::apply_DELETE(const Path& path, const LocationConfig& location
 				location
 				);
 	}
+	build_delete_response();
 }
 
 void HttpResponse::build_delete_response()

@@ -9,6 +9,7 @@
 - [ ] Limpar código morto
 - [ ] Separar ConfigType.* em vários ficheiros?
 - [ ] mudar nomes: listing = autoindex, default_file = index, upload_dir = upload_storage, 
+- [ ] estrutura do diretório - https://wiki.debian.org/Nginx/DirectoryStructure
 
 # HTTP - Receber Pedido
 - [x] Processamento
