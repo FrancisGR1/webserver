@@ -1,14 +1,23 @@
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++17 -lboost_system \
            -I../src
+LIB=../libwebserv.a
 
 LDFLAGS = -L.. -lwebserv
 
-TESTS = test_http_parser main
+TESTS = quick #test_http_parser main
 
-all: $(TESTS)
+all: $(TESTS) lib
+	@echo $(TESTS)
+	@echo $(LIB)
 
-main: main.cpp
+lib: $(LIB)
+	cd .. && $(MAKE) lib
+
+quick: quick_tests_main.cpp lib
+	$(CXX) $(CXXFLAGS) $< $(LDFLAGS) -o $@
+
+main: main.cpp lib
 	$(CXX) $(CXXFLAGS) $< $(LDFLAGS) -o $@
 
 test_http_parser: test_http_parser.cpp
