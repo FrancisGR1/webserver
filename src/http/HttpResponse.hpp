@@ -13,17 +13,41 @@
 class HttpResponse
 {
 	public:
+		// response body type
+		struct BodyType
+		{
+			enum Type
+			{
+				String = 0,
+				File,
+				Cgi,
+				Non,
+			};
+		};
+
 		HttpResponse(const HttpRequest& request, const ServiceConfig& service);
-		const std::string& get() const;
+
+		BodyType::Type body_type() const;
+		const std::string& status_line_str() const;
+		const std::string  headers_str() const;
+		const std::string& body_str() const;
+		const Path&        body_file_path() const;
+		int                body_fd() const;
+
 
 	private:
 		const ServiceConfig& m_service;
 		const HttpRequest& m_request;
-		std::string m_response;
+		std::string m_response; //@TODO: eliminar
+
 		StatusCode::Code m_status_code;
 		std::string m_status_line;
 		std::map<std::string, std::string> m_headers;
-		std::string m_body;
+
+		BodyType::Type m_body_type;
+		std::string m_body; // POST, DELETE
+		int m_body_fd; // CGI (post)
+		Path m_body_file_path; // GET
 
 		void apply_method(const Path& path, const LocationConfig& location);
 
@@ -31,7 +55,8 @@ class HttpResponse
 		void apply_GET(const Path& path, const LocationConfig& location);
 		void build_response(const Path& path);
 		void build_redirection_response(const Route& redirection);
-		void write_body(const Path& path);
+		void set_body(const std::string& string);
+		void set_body(const Path& path);
 		void write_listing_dir_body(const Path& path);
 		void write_headers(const std::string& content_type);
 

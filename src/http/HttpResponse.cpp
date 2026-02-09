@@ -21,6 +21,9 @@ HttpResponse::HttpResponse(const HttpRequest& request, const ServiceConfig& serv
 	: m_service(service)
 	, m_request(request)
 	, m_status_code(StatusCode::OK)
+	, m_body_type(BodyType::Non)
+	, m_body_fd(-1)
+	, m_body_file_path("")
 {
 	try
 	{
@@ -57,14 +60,21 @@ HttpResponse::HttpResponse(const HttpRequest& request, const ServiceConfig& serv
 }
 
 
-const std::string& HttpResponse::get() const { return m_response; }
+// get response data
+HttpResponse::BodyType::Type HttpResponse::body_type() const { return m_body_type; }
+const std::string& HttpResponse::status_line_str() const     { return m_status_line; }
+const std::string HttpResponse::headers_str() const          { return headers_to_str(); }
+const std::string& HttpResponse::body_str() const            { return m_body; }
+const Path& HttpResponse::body_file_path() const             { return m_body_file_path; }
+int HttpResponse::body_fd() const                            { return m_body_fd; }
 
+
+// build response
 void HttpResponse::build_response(const Path& path)
 {
-	write_body(path);
+	set_body(path);
 	write_status_line();
 	write_headers(path.mime);
-	m_response = m_status_line + headers_to_str() + m_body;
 }
 
 void HttpResponse::build_redirection_response(const Route& redirection)
@@ -74,8 +84,6 @@ void HttpResponse::build_redirection_response(const Route& redirection)
 	m_headers["Location"] = redirection.path;
 	m_headers["Connection"] = "close"; // @NOTE: HTTP1.0 closes by default
 	m_headers["Date"] = http_date();
-
-	m_response = m_status_line + headers_to_str();
 }
 
 void HttpResponse::build_post_response(const Path& uploaded)
@@ -83,19 +91,20 @@ void HttpResponse::build_post_response(const Path& uploaded)
 	// status
 	write_status_line(StatusCode::Created);
 	// JSON body
-	m_body = "{"
+	std::string json = \
+		"{"
 		"\"status\": \"success\","
 		"\"filename\": \"" + uploaded.resolved + "\","
 		"\"size\": " + utils::to_string(uploaded.resolved.size()) +
 		"}";
+
+	set_body(json);
 	// headers
 	m_headers["Location"] = uploaded.resolved;
 	m_headers["Connection"] = "close"; // @NOTE: HTTP1.0 closes by default
 	m_headers["Date"] = http_date();
 	m_headers["Content-Type"] = "application/json";
 	m_headers["Content-Length"] = utils::to_string(uploaded.resolved.size());
-
-	m_response = m_status_line + headers_to_str();
 }
 
 void HttpResponse::build_error_response(StatusCode::Code code, const LocationConfig& lc)
@@ -140,17 +149,18 @@ void HttpResponse::build_error_response(StatusCode::Code code)
 	std::string title = 
 		utils::to_string(error) + " " + 
 		StatusCode::to_string(code);
-	m_body = 
+	// HTML body
+	std::string html = \
 		"<html>\n" 
 		"<head><title>" + title + "</title></head>\n" 
 		"<body>\n" 
 		"<center><h1>"  + title + "</h1></center>\n" 
 		"</body>\n" 
 		"</html>\n";
+	set_body(html);
 
+	// headers
 	write_headers("text/html");
-
-	m_response = m_status_line + headers_to_str() + m_body;
 }
 
 
@@ -171,16 +181,30 @@ void HttpResponse::write_status_line(StatusCode::Code code)
 //@NOTE: this comes after writing the body
 void HttpResponse::write_headers(const std::string& content_type)
 {
+	//@TODO: isto está confuso, 
+	//é melhor dividir entre uma func write_default_headers 
+	//e outra write_content_type?
 	m_headers["Connection"] = "close"; // @NOTE: HTTP1.0 closes by default
 	m_headers["Content-Length"] = utils::to_string(m_body.size());
 	m_headers["Content-Type"] = content_type;
 	m_headers["Date"] = http_date();
 }
 
-void HttpResponse::write_body(const Path& path)
+void HttpResponse::set_body(const std::string& string)
+{
+	m_body_type = HttpResponse::BodyType::String;
+	m_body = string;
+}
+
+//@TODO: mudar nome?
+void HttpResponse::set_body(const Path& path)
 {
 	if (path.is_regular_file)
-		m_body = utils::file_to_str(path.resolved.c_str());
+	{
+		m_body_type = HttpResponse::BodyType::File;
+		m_body_file_path = path;
+		//m_body = utils::file_to_str(path.resolved.c_str());
+	}
 	else if (path.is_directory)
 		write_listing_dir_body(path);
 	else  //@TODO: este erro é necessário?
@@ -261,6 +285,7 @@ void HttpResponse::write_listing_dir_body(const Path& path)
 	closedir(dir);
 
 	m_body += "</pre><hr></body>\n</html>\n";
+	m_body_type = BodyType::String;
 }
 
 std::string HttpResponse::http_date()
@@ -352,6 +377,7 @@ std::string HttpResponse::resolved_target(LocationConfig& lc)
 	return resolved_path;
 }
 
+// execute the request depending on the method
 void HttpResponse::apply_method(const Path& path, const LocationConfig& location)
 {
 	if (m_request.method() == "GET")
@@ -627,30 +653,38 @@ void HttpResponse::build_delete_response()
 	// headers
 	m_headers["Connection"] = "close"; // @NOTE: HTTP1.0 closes by default
 	m_headers["Date"] = http_date();
-
-	m_response = m_status_line + headers_to_str();
 }
 
 std::ostream& operator<<(std::ostream& os, const HttpResponse& response)
 {
 	os << "Response:\n";
-	os << response.get() << "\n";
+	os << response.status_line_str();
+	os << response.headers_str();
+	if (response.body_type() == HttpResponse::BodyType::String)
+	{
+		os << response.body_str();
+	}
+	else if (response.body_type() == HttpResponse::BodyType::File)
+		os << response.body_file_path().resolved;
+	else if (response.body_type() == HttpResponse::BodyType::Cgi)
+		os << "@TODO: implement cgi";
+	os << "\n";
 	return os;
 }
 
 // HttpResponseException
 HttpResponse::HttpResponseException::HttpResponseException(StatusCode::Code code, const std::string& msg, const LocationConfig& lc)
 	: m_status(code)
-	, m_location(lc)
-	, m_msg(msg) {}
+	  , m_location(lc)
+	  , m_msg(msg) {}
 
 HttpResponse::HttpResponseException::HttpResponseException(StatusCode::Code code, const std::string& msg)
 	: m_status(code)
-	, m_location()
-	, m_msg(msg) {}
+	  , m_location()
+	  , m_msg(msg) {}
 
-StatusCode::Code HttpResponse::HttpResponseException::status() const { return m_status; }
-const LocationConfig& HttpResponse::HttpResponseException::location() const { return m_location; }
-const std::string& HttpResponse::HttpResponseException::msg() const { return m_msg; }
+	  StatusCode::Code HttpResponse::HttpResponseException::status() const { return m_status; }
+	  const LocationConfig& HttpResponse::HttpResponseException::location() const { return m_location; }
+	  const std::string& HttpResponse::HttpResponseException::msg() const { return m_msg; }
 
-HttpResponse::HttpResponseException::~HttpResponseException() throw() {}
+	  HttpResponse::HttpResponseException::~HttpResponseException() throw() {}
