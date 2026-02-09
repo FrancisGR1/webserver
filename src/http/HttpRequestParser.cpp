@@ -81,7 +81,7 @@ void HttpRequestParser::clear()
 void HttpRequestParser::parse()
 {
 	typedef Parser S; // S = state
-	for (; m_state != S::Error && m_idx < m_buffer.size(); m_idx++)
+	for (; m_state != S::Error && m_state != S::Done && m_idx < m_buffer.size(); m_idx++)
 	{
 		m_ch = m_buffer.at(m_idx);
 		switch (m_state)
@@ -430,7 +430,8 @@ void HttpRequestParser::parse()
 					m_chunk_size_str.clear();
 					if (m_chunk_size == 0)  
 					{
-						m_state = S::BodyChunkTrailerCR;
+						//@TODO: testar
+						m_state = S::BodyChunkTrailerKey;
 					}
 					else 			
 					{
@@ -475,10 +476,17 @@ void HttpRequestParser::parse()
 					m_chunk_size = 0;
 				}
 				break;
-			case S:: BodyChunkTrailerKey:
+			case S::BodyChunkTrailerKey:
 				if (m_ch == '\r')
 				{
-					m_state = S::BodyChunkTrailerEndCR;
+					if (m_header_key.size() == 0)
+					{
+						m_state = S::BodyChunkTrailerEndCR;
+					}
+					else
+					{
+						m_state = S::BodyChunkTrailerCR;
+					}
 				}
 				else if (m_ch == ':')
 				{
@@ -512,6 +520,7 @@ void HttpRequestParser::parse()
 					m_header_key.clear();
 					m_header_value.clear();
 					m_state = S::BodyChunkTrailerCR;
+
 				}
 				else if (is_vchar(m_ch) || is_ows(m_ch))
 				{
@@ -525,7 +534,7 @@ void HttpRequestParser::parse()
 				}
 				break;
 			case S::BodyChunkTrailerCR:
-				if (m_ch != '\r')
+				if (m_ch != '\n')
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
@@ -533,7 +542,7 @@ void HttpRequestParser::parse()
 				}
 				else
 				{
-					m_state = S::BodyChunkTrailerEndCR;
+					m_state = S::BodyChunkTrailerKey;
 				}
 				break;
 			case S::BodyChunkTrailerEndCR:
