@@ -4,9 +4,10 @@
 
 bool	Webserver::is_running = true;
 
-Webserver::Webserver()
+Webserver::Webserver(const Config &config) : config_(config)
 {
-
+	//std::string host = config_.services[0].listeners[0].host;
+	//size_t port = config_.services[0].listeners[0].port;
 }
 
 Webserver::~Webserver()

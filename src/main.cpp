@@ -1,8 +1,18 @@
 #include <iostream>
 
+#include <csignal> /* handle signal */
 #include "core/constants.hpp"
 #include "core/Logger.hpp"
 #include "config/Config.hpp"
+#include "server/Webserver.hpp"
+#include "server/Client.hpp"
+
+void	handle_signal(int sig)
+{
+	(void)sig;
+	Webserver::is_running = false;
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -15,4 +25,12 @@ int main(int argc, char *argv[])
 	Config config(file_path);
 	config.load();
 	Logger::trace(config);
+
+	Webserver server(config);
+
+	signal(SIGINT, handle_signal);
+
+	server.startServer();
+
+	return (0);
 }
