@@ -23,7 +23,30 @@ Path::Path(const std::string& resolved_path)
 	, stat_errno(0)
 	, resolved(resolved_path)
 {
+	init(resolved_path);
+}
 
+Path::Path(const char* resolved_path)
+	: exists(false)
+	, mime(MimeTypes::from_path(resolved_path))
+	, ends_with_slash(false)
+	, is_directory(false)
+	, is_regular_file(false)
+	, is_cgi(false)
+	, can_read(false)
+	, can_write(false)
+	, can_execute(false)
+	, size(0)
+	, mtime(0)
+	, stat_errno(0)
+	, resolved(resolved_path)
+{
+	const std::string rp = resolved_path;
+	init(rp);
+}
+
+void Path::init(const std::string& resolved_path)
+{
 	if (!resolved_path.empty() &&
 			resolved_path.at(resolved_path.size() - 1) == '/')
 		ends_with_slash = true;
@@ -73,4 +96,5 @@ Path::Path(const std::string& resolved_path)
 	// data
 	size  = st.st_size;
 	mtime = st.st_mtime;
+
 }

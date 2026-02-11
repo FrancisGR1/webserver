@@ -4,9 +4,12 @@
 #include <string>
 #include <sys/types.h>
 
+//@TODO: tornar class
 struct Path
 {
 	Path(const std::string& resolved_path);
+	Path(const char* resolved_path);
+	void init(const std::string& resolved_path);
 
 	//@TODO:
 	//string raw
