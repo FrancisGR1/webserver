@@ -4,11 +4,19 @@
 #include <map>
 #include <string>
 
+#include "core/Path.hpp"
+#include "http/HttpRequest.hpp"
+#include "config/ConfigTypes.hpp"
+#include "CgiHandler.hpp"
+
 // https://datatracker.ietf.org/doc/html/rfc3875
 class CgiHandler
 {
 	public:
 	private:
+		const HttpRequest& m_request; 
+		const ServiceConfig& m_service; 
+		const Path& m_script;
 		std::map<std::string, std::string> m_env;
 
 		std::map<std::string, std::string> init_default_env();
