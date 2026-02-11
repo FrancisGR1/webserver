@@ -74,6 +74,7 @@ void Path::init(const std::string& resolved_path)
 		size_t py_end = dot + 3;
 		// script path
 		std::string cgi_path = resolved_path.substr(0, py_end);
+		mime = MimeTypes::from_path(cgi_path);
 		// script info
 		if (py_end < resolved_path.length())
 			cgi_info = resolved_path.substr(py_end);
