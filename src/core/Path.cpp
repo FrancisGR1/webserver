@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <ctime>      
 
-#include "constants.hpp"
 #include "MimeTypes.hpp"
 #include "Path.hpp"
 

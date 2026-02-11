@@ -13,13 +13,15 @@
 class CgiHandler
 {
 	public:
+		CgiHandler(const HttpRequest& request, const ServiceConfig& service, const Path& script);
+
 	private:
 		const HttpRequest& m_request; 
 		const ServiceConfig& m_service; 
 		const Path& m_script;
 		std::map<std::string, std::string> m_env;
-
-		std::map<std::string, std::string> init_default_env();
+		std::map<std::string, std::string> init_env();
+		std::string to_uppercase_and_underscore(const std::string& str);
 };
 
 /*
