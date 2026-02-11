@@ -1,6 +1,9 @@
 #ifndef PATH_HPP
 #define PATH_HPP
+
 #include <string>
+#include <sys/types.h>
+
 struct Path
 {
 	Path(const std::string& resolved_path);
