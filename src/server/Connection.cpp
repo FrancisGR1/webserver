@@ -1,59 +1,59 @@
-#include "Client.hpp"
+#include "Connection.hpp"
 #include "Webserver.hpp"
 #include <cstdlib>
 
-Client::Client(int client_fd) : client_fd_(client_fd)
+Connection::Connection(int sock) : sock_(sock)
 { 
 
 }
 
-Client::~Client()
+Connection::~Connection()
 {
-	if (client_fd_ >= 0)
-		close(client_fd_);
+	if (sock_ >= 0)
+		close(sock_);
 }
 
 /* getters and setters */
 
-int	Client::getClient_fd()
+int	Connection::getSock()
 { 
-	return (client_fd_);
+	return (sock_);
 }
 
-void	Client::setClient_fd(int client_fd)
+void	Connection::setSock(int sock)
 {
-	client_fd_ = client_fd;
+	sock_ = sock;
 }
 
-std::string	&Client::getRequest()
+std::string	&Connection::getRequest()
 {
 	return (request_);
 }
 
-void	Client::setRequest(const std::string &request)
+void	Connection::setRequest(const std::string &request)
 {
 	request_ = request;
 }
 
-std::string	&Client::getResponse()
+std::string	&Connection::getResponse()
 {
 	return (response_);
 }
 
-void	Client::setResponse(const std::string &response)
+void	Connection::setResponse(const std::string &response)
 {
 	response_ = response;
 }
 
 /* member fuctions */
 
-void	Client::readRequest()
+void	Connection::readRequest()
 {
 	char	buffer[4096];
 	ssize_t	bytes;
 
 	/* ler header completo */
-	while ((bytes = recv(client_fd_, buffer, sizeof(buffer), 0)) > 0)
+	while ((bytes = recv(sock_, buffer, sizeof(buffer), 0)) > 0)
 	{
 		request_.append(buffer, bytes);
 		if (request_.find("\r\n\r\n") != std::string::npos)
@@ -81,7 +81,7 @@ void	Client::readRequest()
 	size_t	body_received = request_.size() - body_start;
 	while (body_received < content_length)
 	{
-		bytes = recv(client_fd_, buffer, sizeof(buffer), 0);
+		bytes = recv(sock_, buffer, sizeof(buffer), 0);
 		if (bytes <= 0)
 			break ;
 		request_.append(buffer, bytes);
@@ -89,9 +89,9 @@ void	Client::readRequest()
 	}
 }
 
-void	Client::handle()
+void	Connection::handle()
 {
-	/* apos aceitar o client, leio o que o foi passado */
+	/* apos aceitar a conexao com o client, leio o que o foi passado */
 	readRequest();
 
 	/* aqui fazer o parser do request */
@@ -105,5 +105,5 @@ void	Client::handle()
 		"Content-Type: text/plain\r\n"
 		"\r\n"
 		"Hello World!\n";
-	send(client_fd_, response.c_str(), response.length(), 0);
+	send(sock_, response.c_str(), response.length(), 0);
 }

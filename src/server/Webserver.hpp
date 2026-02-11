@@ -11,11 +11,11 @@
 class Webserver
 {
 	private:
-		const Config		&config_;
-		int					server_fd;
+		int					server_socket;
 		int					opt_value;
-		int					server_config;
+		int					socket_config;
 		struct sockaddr_in	addr;
+		const Config		&config_;
 
 	public:
 		Webserver(const Config &config_);

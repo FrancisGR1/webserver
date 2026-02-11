@@ -5,7 +5,7 @@
 #include "core/Logger.hpp"
 #include "config/Config.hpp"
 #include "server/Webserver.hpp"
-#include "server/Client.hpp"
+#include "server/Connection.hpp"
 
 void	handle_signal(int sig)
 {

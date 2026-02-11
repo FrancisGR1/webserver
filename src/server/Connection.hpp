@@ -1,22 +1,22 @@
-#ifndef CLIENT_HPP
-#define CLIENT_HPP
+#ifndef CONNECTION_HPP
+#define CONNECTION_HPP
 
 #include <iostream>
 
-class Client
+class Connection
 {
 	private:
-		int			client_fd_;
+		int			sock_;
 		std::string	request_;
 		std::string	response_;
 
 	public:
-		Client(int socket);
-		~Client();
+		Connection(int sock);
+		~Connection();
 
 		/* getters e setters */
-		int			getClient_fd();
-		void		setClient_fd(int socket);
+		int			getSock();
+		void		setSock(int sock);
 		std::string	&getRequest();
 		void		setRequest(const std::string &request);
 		std::string	&getResponse();
@@ -26,4 +26,4 @@ class Client
 		void		readRequest();
 };
 
-#endif /* CLIENT_HPP */
+#endif /* CONNECTION_HPP */
