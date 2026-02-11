@@ -11,16 +11,18 @@ all: $(TESTS) lib
 	@echo $(TESTS)
 	@echo $(LIB)
 
-lib: $(LIB)
+$(LIB):
 	cd .. && $(MAKE) lib
 
-quick: quick_tests_main.cpp lib
+lib: $(LIB)
+
+quick: quick_tests_main.cpp $(LIB)
 	$(CXX) $(CXXFLAGS) $< $(LDFLAGS) -o $@
 
-main: main.cpp lib
+main: main.cpp $(LIB)
 	$(CXX) $(CXXFLAGS) $< $(LDFLAGS) -o $@
 
-test_http_parser: test_http_parser.cpp
+test_http_parser: test_http_parser.cpp $(LIB)
 	$(CXX) $(CXXFLAGS) $< $(LDFLAGS) -o $@
 
 clean:
