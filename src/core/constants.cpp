@@ -12,6 +12,7 @@ namespace constants
     const char* reset = "\033[0m";
 
     // server
+    const char* server_name = "webserv/1.0";
     //
     // - configuration
     const char* default_conf = "config/default.conf";
