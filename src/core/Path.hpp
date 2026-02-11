@@ -21,6 +21,11 @@ struct Path
 	//is absolute
 	//is relative
 
+	// cgi
+	std::string cgi_path;
+	std::string cgi_info;
+	std::string cgi_name;
+
 	bool can_read;
 	bool can_write;
 	bool can_execute;

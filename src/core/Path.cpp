@@ -45,12 +45,22 @@ Path::Path(const std::string& resolved_path)
 		is_regular_file = true;
 
 	// check cgi extension
-	size_t dot = resolved_path.find_last_of('.');
+	size_t dot = resolved_path.find_first_of('.');
 	if (dot != std::string::npos)
 	{
-		std::string ext = resolved_path.substr(dot + 1);
-		if (ext == constants::py_ext)
-			is_cgi = true;
+		is_cgi = true;
+		size_t py_end = dot + 3;
+		// script path
+		std::string cgi_path = resolved_path.substr(0, py_end);
+		// script info
+		if (py_end < resolved_path.length())
+			cgi_info = resolved_path.substr(py_end);
+		// script name
+		size_t last_slash = cgi_path.rfind('/');
+		if (last_slash != std::string::npos)
+			cgi_name = cgi_path.substr(last_slash + 1);
+		else
+			cgi_name = cgi_path;
 	}
 
 	// check permissions
