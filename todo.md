@@ -13,7 +13,6 @@
 
 # HTTP - Receber Pedido
 - [x] Processamento
-    - [ ] melhorar log erros
     - [x] verificar se header existe antes de inserir
     - [x] lidar com restos no buffer depois de S::Done ou S::Error
     - [x] processar chunked body
@@ -21,6 +20,7 @@
     - [x] overload do feed() com chars
     - [x] clear()
     - [ ] "/" path dever ser ilegal
+    - [ ] melhorar log erros
 - [ ] Implementar testes em tabela
 
 # HTTP - Resposta
@@ -29,6 +29,9 @@
 - [x] DELETE
 
 # CGI
+- [ ] lidar com programas infinitos, crashes, aborts, etc. Construir uma sandbox
+- [ ] converter raw string em respostas?
+
 # Gestão Eventos
 # Gestão Clientes
 
@@ -39,4 +42,4 @@
 - [x] Fazer Makefile
 
 # Outros
-- [ ] Diagrama
+- [ ] Melhor diagrama

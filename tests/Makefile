@@ -7,9 +7,7 @@ LDFLAGS = -L.. -lwebserv
 
 TESTS = quick #test_http_parser main
 
-all: $(TESTS) lib
-	@echo $(TESTS)
-	@echo $(LIB)
+all: $(TESTS) $(LIB)
 
 $(LIB):
 	cd .. && $(MAKE) lib
