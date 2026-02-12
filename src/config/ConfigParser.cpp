@@ -181,7 +181,7 @@ void ConfigParser::parse_listener(Token& t, Directive& directive)
 	directive.start_pos = listen_tok.start_pos;
 	directive.name = listen_tok.value;
 	directive.listen.host = host;
-	directive.listen.port = port;
+	directive.listen.port = port_str;
 
 	t = m_lexer.advance();
 	expect(t, Token::Semicolon);

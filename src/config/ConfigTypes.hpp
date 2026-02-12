@@ -96,7 +96,7 @@ std::string token_type_to_literal(Token::Type type);
 struct Listener
 {
 	std::string host;
-	size_t port;
+	std::string port;
 };
 
 struct Route
