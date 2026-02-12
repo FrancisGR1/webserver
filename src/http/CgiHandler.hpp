@@ -14,13 +14,19 @@ class CgiHandler
 {
 	public:
 		CgiHandler(const HttpRequest& request, const ServiceConfig& service, const Path& script);
+		const std::string& get() const;
 
 	private:
 		const HttpRequest& m_request; 
 		const ServiceConfig& m_service; 
 		const Path& m_script;
 		std::map<std::string, std::string> m_env;
+		std::string m_output;
+
 		std::map<std::string, std::string> init_env();
+		void exec();
+
+		// util
 		std::string to_uppercase_and_underscore(const std::string& str);
 };
 
