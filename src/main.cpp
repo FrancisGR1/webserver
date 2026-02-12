@@ -11,8 +11,15 @@ int main(int argc, char *argv[])
 		Logger::error("./webserv <configurations_path>.conf");
 		return 1;
 	}
-	const char* file_path = argc == 2 ? argv[1] : constants::default_conf;
-	Config config(file_path);
-	config.load();
-	Logger::trace(config);
+	try
+	{
+		const char* file_path = argc == 2 ? argv[1] : constants::default_conf;
+		Config config(file_path);
+		config.load();
+		Logger::trace(config);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Error: " << e.what() << "\n";
+	}
 }
