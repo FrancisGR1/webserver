@@ -21,6 +21,7 @@ SOURCES  = \
 	  src/http/HttpRequestParser.cpp \
 	  src/http/HttpResponse.cpp \
 	  src/http/StatusCode.cpp \
+	  src/http/CgiHandler.cpp \
 	  src/core/Logger.cpp \
 	  src/core/MimeTypes.cpp \
 	  src/core/Path.cpp \

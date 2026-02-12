@@ -4,9 +4,12 @@
 #include <string>
 #include <sys/types.h>
 
+//@TODO: tornar class
 struct Path
 {
 	Path(const std::string& resolved_path);
+	Path(const char* resolved_path);
+	void init(const std::string& resolved_path);
 
 	//@TODO:
 	//string raw
@@ -20,9 +23,8 @@ struct Path
 	bool is_directory;
 	bool is_regular_file;
 	bool is_cgi;
-	//@TODO:
-	//is absolute
-	//is relative
+	bool is_absolute;
+	bool is_relative;
 
 	// cgi
 	std::string cgi_path;
@@ -45,4 +47,7 @@ struct Path
 	//write
 	//resolve
 };
+
+std::ostream& operator<<(std::ostream& os, const Path& path);
+
 #endif // PATH_HPP

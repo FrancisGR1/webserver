@@ -16,6 +16,7 @@ namespace constants
 	extern const char* reset;
 
 	// server
+	extern const char* server_name;
 	extern const char* default_conf;
 	extern const char* server_http_version;
 	extern const std::string py_ext;

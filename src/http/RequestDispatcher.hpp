@@ -1,0 +1,6 @@
+class RequestDispatcher
+{
+	public:
+	private:
+}
+
