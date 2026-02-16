@@ -3,7 +3,8 @@
 #include <string>
 #include <ostream>
 #include <vector>
-#include "ConfigTypes.hpp"
+#include "config/ConfigTypes.hpp"
+#include "Token.hpp"
 
 class ConfigLexer
 {

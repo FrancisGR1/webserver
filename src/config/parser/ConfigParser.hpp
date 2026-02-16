@@ -3,8 +3,9 @@
 
 #include <string>
 #include <ostream>
-#include "ConfigTypes.hpp"
-#include "Config.hpp"
+#include "config/types/LocationConfig.hpp"
+#include "config/ConfigTypes.hpp"
+#include "config/Config.hpp"
 
 class ConfigLexer;
 class Config;

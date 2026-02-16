@@ -1,7 +1,7 @@
 #include "core/utils.hpp"
-#include "Config.hpp"
-#include "ConfigLexer.hpp"
-#include "ConfigParser.hpp"
+#include "config/parser/ConfigLexer.hpp"
+#include "config/parser/ConfigParser.hpp"
+#include "config/Config.hpp"
 
 // ==============================================================
 // Config class

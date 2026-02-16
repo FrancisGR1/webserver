@@ -3,11 +3,12 @@
 #include <cstdlib>
 
 #include "core/utils.hpp"
-#include "ConfigTypes.hpp"
-#include "ConfigLexer.hpp"
-#include "ConfigParser.hpp"
-#include "Config.hpp"
 #include "http/StatusCode.hpp"
+#include "config/ConfigTypes.hpp"
+#include "ConfigLexer.hpp"
+#include "config/parser/ConfigParser.hpp"
+#include "config/types/LocationConfig.hpp"
+#include "config/Config.hpp"
 
 ConfigParser::ConfigParser(ConfigLexer& lexer)
 	: m_lexer(lexer)
