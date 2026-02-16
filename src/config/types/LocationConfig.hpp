@@ -9,6 +9,7 @@
 #include "config/types/Directive.hpp"
 #include "config/ConfigTypes.hpp"
 
+//@TODO mudar variáveis para vars privadas
 class LocationConfig
 {
 	public:

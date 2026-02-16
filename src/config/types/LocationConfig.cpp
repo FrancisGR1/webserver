@@ -1,6 +1,12 @@
 #include <cstdlib>
+#include <sstream>
+#include <set>
+#include <string>
+#include <map>
 
 #include "core/constants.hpp"
+#include "http/StatusCode.hpp"
+#include "Directive.hpp"
 #include "LocationConfig.hpp"
 
 LocationConfig::LocationConfig()
