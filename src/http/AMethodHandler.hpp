@@ -4,6 +4,7 @@
 #include <string>
 
 #include "config/ConfigTypes.hpp"
+#include "HttpRequestContext.hpp"
 #include "HttpResponse.hpp"
 
 class AMethodHandler
@@ -11,7 +12,7 @@ class AMethodHandler
 	public:
 		//type - POST, GET, DELETE
 		virtual ssize_t send(int socket_fd) const = 0;
-		virtual HttpResponse handle(const HttpRequest& request, const ServiceConfig& service) const = 0;
+		virtual HttpResponse handle(const HttpRequest& request, const HttpRequestContext& ctx) const = 0;
 		virtual ~AMethodHandler() = 0;
 };
 

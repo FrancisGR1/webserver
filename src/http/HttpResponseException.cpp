@@ -1,4 +1,5 @@
 #include "config/ConfigTypes.hpp"
+#include "config/types/LocationConfig.hpp"
 #include "StatusCode.hpp"
 #include "HttpResponseException.hpp"
 

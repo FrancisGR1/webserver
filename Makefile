@@ -14,20 +14,29 @@ SOURCES  = \
 	   src/main.cpp \
 	  \
 	  src/config/Config.cpp \
-	  src/config/ConfigLexer.cpp \
-	  src/config/ConfigParser.cpp \
 	  src/config/ConfigTypes.cpp \
+	  src/config/types/ServiceConfig.cpp \
+	  src/config/types/LocationConfig.cpp \
+	  src/config/types/Route.cpp \
+	  src/config/parser/ConfigLexer.cpp \
+	  src/config/parser/ConfigParser.cpp \
+	  src/config/parser/Token.cpp \
 	  src/http/HttpRequest.cpp \
+	  src/http/RequestDispatcher.cpp \
+	  src/http/HttpRequestConfig.cpp \
+	  src/http/HttpRequestContext.cpp \
 	  src/http/HttpRequestParser.cpp \
 	  src/http/HttpResponse.cpp \
+	  src/http/HttpResponseException.cpp \
 	  src/http/StatusCode.cpp \
+	  src/http/AMethodHandler.cpp \
+	  src/http/PostHandler.cpp \
 	  src/http/CgiHandler.cpp \
 	  src/core/Logger.cpp \
 	  src/core/MimeTypes.cpp \
 	  src/core/Path.cpp \
 	  src/core/constants.cpp \
 	  src/core/utils.cpp
-
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
 OBJ     += $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter-out src/%.cpp, $(SOURCES)))

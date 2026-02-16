@@ -8,6 +8,7 @@
 - [ ] Múltiplas configurações para testes
 - [ ] Limpar código morto
 - [ ] Separar ConfigType.* em vários ficheiros?
+- [ ] Mudar LocationConfig e ServiceConfig para classes, incluir exists() em LocationConfig
 - [ ] mudar nomes: listing = autoindex, default_file = index, upload_dir = upload_storage, 
 - [ ] estrutura do diretório - https://wiki.debian.org/Nginx/DirectoryStructure
 
@@ -37,6 +38,7 @@
 
 # Logger
 - [x] Print básico
+- [ ] O logger deve ser instanciável
 
 # Compilação
 - [x] Fazer Makefile

@@ -1,5 +1,5 @@
 #ifndef HTTPRESPONSE_HPP
-#define HTTPRESPONSE_HPP
+# define HTTPRESPONSE_HPP
 
 #include <string>
 #include <map>
@@ -7,8 +7,11 @@
 
 #include "core/Path.hpp"
 #include "config/ConfigTypes.hpp"
+#include "config/types/LocationConfig.hpp"
+#include "config/types/ServiceConfig.hpp"
 #include "StatusCode.hpp"
 #include "HttpRequest.hpp"
+#include "HttpResponseException.hpp"
 
 class HttpResponse
 {
@@ -81,25 +84,6 @@ class HttpResponse
 		std::string headers_to_str() const;
 		std::string resolved_target(LocationConfig& lc);
 
-		class HttpResponseException : public std::exception
-	{
-		public:
-			explicit HttpResponseException(StatusCode::Code code, const std::string& msg);
-			explicit HttpResponseException(StatusCode::Code code, const std::string& msg, const LocationConfig& lc);
-			StatusCode::Code status() const;
-			const LocationConfig& location() const;
-			const std::string& msg() const;
-
-			virtual ~HttpResponseException() throw();
-
-		private:
-			StatusCode::Code m_status;
-			LocationConfig m_location;
-			std::string m_msg;
-
-			//illegal
-			HttpResponseException();
-	};
 
 };
 

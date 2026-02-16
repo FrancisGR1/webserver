@@ -5,6 +5,7 @@
 #include <string>
 
 #include "core/Path.hpp"
+#include "config/types/ServiceConfig.hpp"
 #include "http/HttpRequest.hpp"
 #include "config/ConfigTypes.hpp"
 #include "CgiHandler.hpp"

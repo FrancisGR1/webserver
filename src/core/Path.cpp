@@ -10,9 +10,9 @@
 #include "Path.hpp"
 
 // Path
-Path::Path(const std::string& resolved_path)
+Path::Path(const std::string& raw_path)
 	: exists(false)
-	, mime(MimeTypes::from_path(resolved_path))
+	, mime(MimeTypes::from_path(raw_path))
 	, ends_with_slash(false)
 	, is_directory(false)
 	, is_regular_file(false)
@@ -25,14 +25,14 @@ Path::Path(const std::string& resolved_path)
 	, size(0)
 	, mtime(0)
 	, stat_errno(0)
-	, resolved(resolved_path)
+	, resolved(raw_path)
 {
-	init(resolved_path);
+	init(raw_path);
 }
 
-Path::Path(const char* resolved_path)
+Path::Path(const char* raw_path)
 	: exists(false)
-	, mime(MimeTypes::from_path(resolved_path))
+	, mime(MimeTypes::from_path(raw_path))
 	, ends_with_slash(false)
 	, is_directory(false)
 	, is_regular_file(false)
@@ -45,14 +45,17 @@ Path::Path(const char* resolved_path)
 	, size(0)
 	, mtime(0)
 	, stat_errno(0)
-	, resolved(resolved_path)
+	, resolved(raw_path)
 {
-	init(resolved_path);
+	init(raw_path);
 }
 
-void Path::init(const std::string& resolved_path)
+void Path::init(const std::string& raw_path)
 {
-	resolved = resolved_path;
+	if (raw_path.empty())
+		return;
+
+	resolved = raw_path;
 	if (!resolved.empty() && resolved.at(resolved.size() - 1) == '/')
 		ends_with_slash = true;
 
