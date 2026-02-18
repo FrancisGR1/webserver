@@ -64,7 +64,7 @@ HttpResponse::HttpResponse(const HttpRequest& request, const ServiceConfig& serv
 // get response data
 HttpResponse::BodyType::Type HttpResponse::body_type() const { return m_body_type; }
 const std::string& HttpResponse::status_line_str() const     { return m_status_line; }
-const std::string HttpResponse::headers_str() const          { return headers_to_str(); }
+const std::string HttpResponse::headers_str() const          { return utils::map_to_str(m_headers); }
 const std::string& HttpResponse::body_str() const            { return m_body; }
 const Path& HttpResponse::body_file_path() const             { return m_body_file_path; }
 int HttpResponse::body_fd() const                            { return m_body_fd; }
@@ -302,18 +302,6 @@ std::string HttpResponse::http_date()
 			&gmt);
 
 	return std::string(buf);
-}
-
-std::string HttpResponse::headers_to_str() const
-{
-	std::string headers;
-
-	for (std::map<std::string, std::string>::const_iterator it = m_headers.begin(); it != m_headers.end(); ++it)
-	{
-		headers += it->first + ": " + it->second + "\r\n";
-	}
-
-	return headers;
 }
 
 std::string HttpResponse::resolved_target(LocationConfig& lc)

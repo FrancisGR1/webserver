@@ -1,8 +1,6 @@
 #ifndef AMETHODHANDLER_HPP
 #define AMETHODHANDLER_HPP
 
-#include <string>
-
 #include "config/ConfigTypes.hpp"
 #include "HttpRequestContext.hpp"
 #include "HttpResponse.hpp"

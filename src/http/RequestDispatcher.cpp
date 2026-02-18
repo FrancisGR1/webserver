@@ -14,10 +14,16 @@
 #include "HttpRequestContext.hpp"
 #include "RequestDispatcher.hpp"
 #include "PostHandler.hpp"
+#include "GetHandler.hpp"
+#include "DeleteHandler.hpp"
+#include "ErrorHandler.hpp"
 
 
 RequestDispatcher::RequestDispatcher()
-	: m_post_handler() {}
+	: m_post_handler()
+	, m_get_handler()
+	, m_delete_handler()
+	, m_error_handler() {}
 
 HttpResponse RequestDispatcher::dispatch(const HttpRequest& request, const ServiceConfig& service) const
 {
@@ -117,6 +123,8 @@ std::string RequestDispatcher::resolved_target(const std::string& req_path, cons
 
 const AMethodHandler& RequestDispatcher::select_handler(const HttpRequest& request) const
 {
-	(void) request;
-	return m_post_handler;
+	if (request.method() == "GET")    return m_get_handler;
+	if (request.method() == "POST")   return m_post_handler;
+	if (request.method() == "DELETE") return m_delete_handler;
+	return m_error_handler;
 }

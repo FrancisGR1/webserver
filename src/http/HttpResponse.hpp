@@ -81,7 +81,6 @@ class HttpResponse
 		void write_status_line();
 		void write_status_line(StatusCode::Code code);
 		std::string http_date();
-		std::string headers_to_str() const;
 		std::string resolved_target(LocationConfig& lc);
 
 
