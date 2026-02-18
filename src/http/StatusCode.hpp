@@ -3,6 +3,7 @@
 
 #include <string>
 
+// @TODO mudar para classe
 struct StatusCode
 {
 

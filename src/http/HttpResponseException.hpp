@@ -19,7 +19,7 @@ class HttpResponseException : public std::exception
 
 	private:
 		StatusCode::Code m_status;
-		LocationConfig m_location;
+		LocationConfig m_location; //@TODO isto deve ser um pointer
 		std::string m_msg;
 
 		// illegal

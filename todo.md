@@ -23,11 +23,15 @@
     - [ ] "/" path dever ser ilegal
     - [ ] melhorar log erros
 - [ ] Implementar testes em tabela
+- [ ] Enum de métodos/string correspondente http como StatusCode e Token
 
 # HTTP - Resposta
 - [x] GET    
 - [x] POST
 - [x] DELETE
+- [ ] Reimplementar arquitetura - criar classes mais concretas e dividir responsabilidades
+- [ ] Reorganizar ficheiros
+- [ ] Reimplementar body da resposta. Transformar num interface implementado concretamente por?
 
 # CGI
 - [ ] lidar com programas infinitos, crashes, aborts, etc. Construir uma sandbox

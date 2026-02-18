@@ -41,6 +41,7 @@ struct Path
 	//@QUESTION @TODO: eliminar?
 	int stat_errno;
 
+	//@TODO substituir por str()
 	std::string resolved;
 
 	//@TODO: funções
