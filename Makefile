@@ -13,6 +13,12 @@ FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG)
 SOURCES  = \
 	   src/main.cpp \
 	  \
+	  src/core/Logger.cpp \
+	  src/core/MimeTypes.cpp \
+	  src/core/Path.cpp \
+	  src/core/constants.cpp \
+	  src/core/utils.cpp \
+	  \
 	  src/config/Config.cpp \
 	  src/config/ConfigTypes.cpp \
 	  src/config/types/ServiceConfig.cpp \
@@ -21,6 +27,7 @@ SOURCES  = \
 	  src/config/parser/ConfigLexer.cpp \
 	  src/config/parser/ConfigParser.cpp \
 	  src/config/parser/Token.cpp \
+	  \
 	  src/http/HttpRequest.cpp \
 	  src/http/RequestDispatcher.cpp \
 	  src/http/HttpRequestConfig.cpp \
@@ -31,12 +38,12 @@ SOURCES  = \
 	  src/http/StatusCode.cpp \
 	  src/http/AMethodHandler.cpp \
 	  src/http/PostHandler.cpp \
+	  src/http/GetHandler.cpp \
+	  src/http/DeleteHandler.cpp \
+	  src/http/ErrorHandler.cpp \
 	  src/http/CgiHandler.cpp \
-	  src/core/Logger.cpp \
-	  src/core/MimeTypes.cpp \
-	  src/core/Path.cpp \
-	  src/core/constants.cpp \
-	  src/core/utils.cpp
+	  src/http/IBody.cpp \
+	  src/http/StringBody.cpp
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
 OBJ     += $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter-out src/%.cpp, $(SOURCES)))
