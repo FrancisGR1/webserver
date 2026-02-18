@@ -1,15 +1,19 @@
+#include <sstream>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 #include "core/constants.hpp"
+#include "core/utils.hpp"
 #include "NewHttpResponse.hpp"
 
 NewHttpResponse::NewHttpResponse(StatusCode::Code status)
 	: m_status(status)
+	, m_status_line(make_status_line())
 	, m_body(NULL) 
 	, m_send_phase(NewHttpResponse::StatusPhase)
 	, m_offset(0)
 {
-	//@TODO default headers
+	//@QUESTION can we set default headers?
 }
 
 void NewHttpResponse::set_header(const std::string& key, const std::string& value)
@@ -25,33 +29,77 @@ void NewHttpResponse::set_body(IBody* body)
 
 StatusCode::Code NewHttpResponse::status() const { return m_status; }
 
-ssize_t NewHttpResponse::send(int fd) const
+ssize_t NewHttpResponse::send(int fd)
 {
 	switch (m_send_phase)
 	{
 		case StatusPhase:
-			std::string status_line =  constants::server_http_version + " " +
-						   m_status + " " +
-						   StatusCode::to_string(m_status) + "\r\n";
-			return ::send(fd, status_line.c_str(), status_line.size(), 0);
+			{
+				ssize_t sent = ::send(fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
+				if (sent + m_offset == m_status_line.size())
+				{
+					m_send_phase = HeadersPhase;
+					m_offset = 0;
+					m_headers_str = utils::map_to_str(m_headers);
+				}
+				else
+				{
+					m_offset += sent;
+				}
 
+				return sent;
+			}
 		case HeadersPhase:
-			std::string headers = utils::map_to_str(m_headers);
-			return ::send(fd, headers.c_str(), headers.size(), 0);
+			{
+				ssize_t sent = ::send(fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, 0);
+				if (sent + m_offset == m_headers_str.size())
+				{
+					m_send_phase = BodyPhase;
+					m_offset = 0;
+				}
+				else
+				{
+					m_offset += sent;
+				}
 
+				return sent;
+			}
 		case BodyPhase: 
-			return m_body->send(fd);
+			{
+				return (m_body ? m_body->send(fd) : 0);
+			}
+		default:
+			{
+				return 0;
+			}
 	}
-
-	return 0;
 }
 
 bool NewHttpResponse::done() const
 {
-	return m_send_phase == SendPhase::Done;
+	return m_send_phase == Done;
 }
 
 NewHttpResponse::~NewHttpResponse()
 {
 	delete m_body;
+}
+
+std::string NewHttpResponse::make_status_line()
+{
+	std::string status_line;
+
+	// version
+	status_line = constants::server_http_version;
+	status_line += " ";
+
+	// code
+	std::stringstream ss;
+	ss << m_status;
+	status_line += ss.str() + " ";
+
+	// reason
+	status_line += StatusCode::to_string(m_status) + "\r\n";
+
+	return status_line;
 }
