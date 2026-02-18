@@ -113,4 +113,16 @@ namespace utils
 		va_end(args);
 		return std::string(buffer);
 	}
+
+	std::string map_to_str(std::map<std::string, std::string>headers)
+	{
+		std::string str;
+
+		for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+		{
+			str += it->first + ": " + it->second + "\r\n";
+		}
+
+		return str;
+	}
 } // namespace utils
