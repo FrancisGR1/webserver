@@ -7,7 +7,6 @@
 #include "config/types/LocationConfig.hpp"
 #include "config/types/ServiceConfig.hpp"
 #include "config/ConfigTypes.hpp"
-#include "HttpRequest.hpp"
 
 class HttpRequestConfig
 {
@@ -21,10 +20,14 @@ class HttpRequestConfig
 		const LocationConfig* location() const;
 		const Route& redirection() const;
 
+		bool is_cgi() const;
+		bool is_redirected() const;
 		bool allows_method(const std::string& method) const;
 		bool allows_autoindex() const;
 		bool allows_upload() const;
 		bool has_upload_dir() const;
+
+		Path upload_dir() const;
 		Path get_error_page(size_t code) const;
 		Path get_cgi_path(const std::string& extension);
 		//@TODO: get listener (a connection é que tem de dar isto)

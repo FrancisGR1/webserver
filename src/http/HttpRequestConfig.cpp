@@ -4,6 +4,7 @@
 #include "config/types/LocationConfig.hpp"
 #include "config/types/ServiceConfig.hpp"
 #include "config/ConfigTypes.hpp"
+#include "StatusCode.hpp"
 #include "HttpRequestConfig.hpp"
 
 HttpRequestConfig::HttpRequestConfig(const ServiceConfig& service, const Path& path)
@@ -17,8 +18,11 @@ HttpRequestConfig::HttpRequestConfig(const ServiceConfig& service, const Locatio
 	, m_location(&location) {}
 
 const ServiceConfig& HttpRequestConfig::service() const { return  m_service; }
+
 const Path& HttpRequestConfig::path() const { return  m_server_path; }
+
 bool HttpRequestConfig::has_location() const { return  m_location != NULL; }
+
 const LocationConfig* HttpRequestConfig::location() const { return  m_location; }
 
 const Route& HttpRequestConfig::redirection() const
@@ -27,6 +31,16 @@ const Route& HttpRequestConfig::redirection() const
 		return m_location->redirection;
 	else
 		return m_service.redirection;
+}
+
+bool HttpRequestConfig::is_cgi() const { return m_server_path.is_cgi; }
+
+
+bool HttpRequestConfig::is_redirected() const
+{  
+	if (m_location)
+		return StatusCode::is_redirection(m_location->redirection.code);
+	return StatusCode::is_redirection(m_service.redirection.code);
 }
 
 bool HttpRequestConfig::allows_method(const std::string& method) const
@@ -54,6 +68,13 @@ bool HttpRequestConfig::has_upload_dir() const
 	if (m_location) 
 		return !m_location->upload_dir.empty();
 	return false;
+}
+
+Path HttpRequestConfig::upload_dir() const
+{
+	if (m_location)
+		return m_location->upload_dir;
+	return Path(NULL);
 }
 
 Path HttpRequestConfig::get_error_page(size_t code) const
