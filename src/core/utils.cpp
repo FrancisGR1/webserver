@@ -1,7 +1,9 @@
-#include "utils.hpp"
 #include <sstream>
 #include <fstream>
 #include <cstdarg>
+#include <ctime>
+
+#include "utils.hpp"
 
 namespace utils
 {
@@ -125,4 +127,20 @@ namespace utils
 
 		return str;
 	}
+
+	std::string http_date()
+	{
+		char buf[63];
+		std::time_t now = std::time(NULL);
+		std::tm gmt;
+
+		gmtime_r(&now, &gmt);
+
+		std::strftime(buf, sizeof(buf),
+				"%a, %d %b %Y %H:%M:%S GMT",
+				&gmt);
+
+		return std::string(buf);
+	}
+
 } // namespace utils
