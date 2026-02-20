@@ -3,17 +3,26 @@
 #include "HttpRequestContext.hpp"
 #include "DeleteHandler.hpp"
 
-DeleteHandler::DeleteHandler() {};
-
-ssize_t DeleteHandler::send(int socket_fd) const
+DeleteHandler::DeleteHandler(const HttpRequest& request, const HttpRequestContext& ctx)
 {
-	(void) socket_fd;
-	return 1;
+	(void) request;
+	(void) ctx;
 }
 
-HttpResponse DeleteHandler::handle(const HttpRequest& request, const HttpRequestContext& ctx) const
+void DeleteHandler::process()
 {
-	return HttpResponse(request, ctx.config().service());
 }
 
-DeleteHandler::~DeleteHandler() {};
+bool DeleteHandler::done() const
+{
+	return true;
+}
+
+const NewHttpResponse& DeleteHandler::response() const
+{
+	return m_response;
+}
+
+DeleteHandler::~DeleteHandler()
+{
+}

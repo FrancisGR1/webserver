@@ -19,16 +19,14 @@
 #include "ErrorHandler.hpp"
 
 
-RequestDispatcher::RequestDispatcher()
-	: m_post_handler()
-	, m_get_handler()
-	, m_delete_handler()
-	, m_error_handler() {}
+RequestDispatcher::RequestDispatcher() {}
 
-HttpResponse RequestDispatcher::dispatch(const HttpRequest& request, const ServiceConfig& service) const
+AMethodHandler* RequestDispatcher::dispatch(const HttpRequest& request, const ServiceConfig& service) const
 {
 	try
 	{
+		// @NOTE: this code (request validation and route resolution) should not be responsibility of the dispatcher
+
 		if (request.bad_request())
 		{
 			throw HttpResponseException(request.status_code(), "Bad request status code");
@@ -45,8 +43,12 @@ HttpResponse RequestDispatcher::dispatch(const HttpRequest& request, const Servi
 		LocationConfig location = service.locations.at(path.resolved);
 		HttpRequestConfig cfg(service, location, path);
 		HttpRequestContext ctx(cfg); //@TODO: adicionar ligação, cookies, session manager
-		const AMethodHandler& handler = select_handler(request);
-		return handler.handle(request, ctx);
+
+		// choose method
+		if (request.method() == "GET")    return new GetHandler(request, ctx);
+		if (request.method() == "POST")   return new PostHandler(request, ctx);
+		if (request.method() == "DELETE") return new DeleteHandler(request, ctx);
+		return new ErrorHandler(StatusCode::InternalServerError);
 	}
 	catch (const HttpResponseException& e)
 	{
@@ -58,7 +60,7 @@ HttpResponse RequestDispatcher::dispatch(const HttpRequest& request, const Servi
 		//@TODO: return ErrorHandler(StatusCode::InternalServerError);
 		Logger::error("Response: Server Error...");
 	}
-	return HttpResponse(request, service);
+	return new ErrorHandler(StatusCode::InternalServerError);
 }
 
 std::string RequestDispatcher::resolved_target(const std::string& req_path, const ServiceConfig& service) const
@@ -67,7 +69,7 @@ std::string RequestDispatcher::resolved_target(const std::string& req_path, cons
 		req_path[req_path.size() - 1] == '/';
 
 	// transform request path into clean path
-	const std::vector<std::string>& segments = utils::str_split(req_path, '/');
+	const std::vector<std::string>& segments = utils::str_split(req_path, "/");
 	std::vector<std::string> legal_segments;
 	for (size_t i = 0; i < segments.size(); ++i)
 	{
@@ -119,12 +121,4 @@ std::string RequestDispatcher::resolved_target(const std::string& req_path, cons
 	}
 
 	return resolved_path;
-}
-
-const AMethodHandler& RequestDispatcher::select_handler(const HttpRequest& request) const
-{
-	if (request.method() == "GET")    return m_get_handler;
-	if (request.method() == "POST")   return m_post_handler;
-	if (request.method() == "DELETE") return m_delete_handler;
-	return m_error_handler;
 }

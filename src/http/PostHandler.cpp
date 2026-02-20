@@ -10,17 +10,16 @@
 
 unsigned long long PostHandler::m_uploaded_file_index;
 
-PostHandler::PostHandler() {};
+PostHandler::PostHandler(const HttpRequest& request, const HttpRequestContext& ctx) 
+	: m_request(request)
+	, m_ctx(ctx)
+	, m_done(false)
+	, m_cgi(request, ctx)
+{}
 
-ssize_t PostHandler::send(int socket_fd) const
+void PostHandler::process()
 {
-	(void) socket_fd;
-	return 1;
-}
-
-HttpResponse PostHandler::handle(const HttpRequest& request, const HttpRequestContext& ctx) const
-{
-	const HttpRequestConfig& config = ctx.config();
+	const HttpRequestConfig& config = m_ctx.config();
 
 	if (!config.allows_method("POST"))
 	{
@@ -32,7 +31,11 @@ HttpResponse PostHandler::handle(const HttpRequest& request, const HttpRequestCo
 
 	if (config.is_redirected())
 	{
-		// @TODO redirecionar
+		m_response.set_status(StatusCode::MovedPermanently);
+		m_response.set_header("Location", config.redirection().path);
+		m_response.set_header("Connection", "close");
+		m_response.set_header("Date", utils::http_date());
+		m_done = true;
 	}
 	else if (config.is_cgi())
 	{
@@ -41,28 +44,44 @@ HttpResponse PostHandler::handle(const HttpRequest& request, const HttpRequestCo
 	{
 		// get upload dir path and check if it's uploadable
 		Path upload_dir = config.upload_dir();
-		is_uploadable(request, config, upload_dir);
+		is_uploadable(m_request, config, upload_dir);
 
-		// create a name for the new uploaded file
+		// create a name for the new file to be uploaded
 		std::string file_name = utils::to_string(m_uploaded_file_index++) + ".data";
-		std::string upload_path = utils::join_paths(upload_dir.resolved, file_name);
+		Path upload = utils::join_paths(upload_dir.resolved, file_name);
 
 		// open file
 		std::ofstream file;
-		file.open(upload_path.c_str());
+		file.open(upload.resolved.c_str());
 		if (!file.is_open())
 		{
 			throw HttpResponseException(
 					StatusCode::InternalServerError,
-					utils::fmt("Failed when creating uploaded file: '%s'", upload_path.c_str())
+					utils::fmt("Failed when creating uploaded file: '%s'", upload.resolved.c_str())
 					);
 		}
 		
 		// write to file
-		file << request.body();
+		file << m_request.body();
 
+		// make http m_response
+		m_response.set_status(StatusCode::Created);
+		// body
+		std::string json = \
+				   "{"
+				   "\"status\": \"success\","
+				   "\"filename\": \"" + upload.resolved + "\","
+				   "\"size\": " + utils::to_string(upload.resolved.size()) +
+				   "}";
+		m_response.set_body(json);
+		// headers
+		m_response.set_header("Location", upload.resolved);
+		m_response.set_header("Connection", "close"); // @NOTE: HTTP1.0 closes by default;
+		m_response.set_header("Date", utils::http_date());
+		m_response.set_header("Content-Type", "application/json");
+		m_response.set_header("Content-Length", utils::to_string(json.size()));
 
-		//@TODO: AQUI - imlpementar http response
+		m_done = true;
 	}
 	else
 	{
@@ -73,12 +92,19 @@ HttpResponse PostHandler::handle(const HttpRequest& request, const HttpRequestCo
 				*config.location()
 				);
 	}
-
-	// should never reach here
-	return HttpResponse(request, ctx.config().service());
 }
 
-// @TODO isto não pode pertencer a Path? Path file; file.is_uploadbale() é mais limpo;
+bool PostHandler::done() const
+{
+	return m_done;
+}
+
+const NewHttpResponse& PostHandler::response() const
+{
+	return m_response;
+}
+
+// @TODO isto não pode pertencer a Path? Path file; file.is_uploadable() é mais limpo;
 void PostHandler::is_uploadable(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir) const
 {
 	if (!config.has_upload_dir())

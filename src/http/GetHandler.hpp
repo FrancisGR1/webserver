@@ -2,16 +2,21 @@
 #define GETHANDLER_HPP
 
 #include "config/ConfigTypes.hpp"
-#include "HttpResponse.hpp"
+#include "NewHttpResponse.hpp"
+#include "HttpRequestContext.hpp"
 #include "AMethodHandler.hpp"
 
 class GetHandler : public AMethodHandler 
 {
 	public:
-		GetHandler();
-		ssize_t send(int socket_fd) const;
-		HttpResponse handle(const HttpRequest& request, const HttpRequestContext& ctx) const;
+		GetHandler(const HttpRequest& request, const HttpRequestContext& ctx);
+		void process();
+		bool done() const;
+		const NewHttpResponse& response() const;
 		~GetHandler();
+
+	private:
+		NewHttpResponse m_response;
 };
 
 #endif // GETHANDLER_HPP

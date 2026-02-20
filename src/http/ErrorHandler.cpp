@@ -3,17 +3,25 @@
 #include "HttpRequestContext.hpp"
 #include "ErrorHandler.hpp"
 
-ErrorHandler::ErrorHandler() {};
-
-ssize_t ErrorHandler::send(int socket_fd) const
+ErrorHandler::ErrorHandler(StatusCode::Code code)
 {
-	(void) socket_fd;
-	return 1;
+	(void) code;
 }
 
-HttpResponse ErrorHandler::handle(const HttpRequest& request, const HttpRequestContext& ctx) const
+void ErrorHandler::process()
 {
-	return HttpResponse(request, ctx.config().service());
 }
 
-ErrorHandler::~ErrorHandler() {};
+bool ErrorHandler::done() const
+{
+	return true;
+}
+
+const NewHttpResponse& ErrorHandler::response() const
+{
+	return m_response;
+}
+
+ErrorHandler::~ErrorHandler()
+{
+}

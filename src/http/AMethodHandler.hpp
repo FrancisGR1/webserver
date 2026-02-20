@@ -2,15 +2,15 @@
 #define AMETHODHANDLER_HPP
 
 #include "config/ConfigTypes.hpp"
-#include "HttpRequestContext.hpp"
-#include "HttpResponse.hpp"
+#include "NewHttpResponse.hpp"
 
 class AMethodHandler
 {
 	public:
 		//type - POST, GET, DELETE
-		virtual ssize_t send(int socket_fd) const = 0;
-		virtual HttpResponse handle(const HttpRequest& request, const HttpRequestContext& ctx) const = 0;
+		virtual void process() = 0;
+		virtual bool done() const = 0;
+		virtual const NewHttpResponse& response() const = 0;
 		virtual ~AMethodHandler() = 0;
 };
 

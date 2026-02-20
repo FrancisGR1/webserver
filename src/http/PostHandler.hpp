@@ -6,15 +6,22 @@
 #include "HttpRequestConfig.hpp"
 #include "HttpResponse.hpp"
 #include "AMethodHandler.hpp"
+#include "CgiHandler.hpp"
 
 class PostHandler : public AMethodHandler 
 {
 	public:
-		PostHandler();
-		ssize_t send(int socket_fd) const;
-		HttpResponse handle(const HttpRequest& request, const HttpRequestContext& ctx) const;
+		PostHandler(const HttpRequest& request, const HttpRequestContext& ctx);
+		void process();
+		bool done() const;
+		const NewHttpResponse& response() const;
 		~PostHandler();
 	private:
+		const HttpRequest& m_request; 
+		const HttpRequestContext& m_ctx;
+		NewHttpResponse m_response;
+		bool m_done;
+		const CgiHandler m_cgi;
 		static unsigned long long m_uploaded_file_index;
 
 		void is_uploadable(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir) const;

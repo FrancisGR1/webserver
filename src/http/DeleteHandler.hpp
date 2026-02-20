@@ -2,16 +2,22 @@
 #define DELETEHANDLER_HPP
 
 #include "config/ConfigTypes.hpp"
-#include "HttpResponse.hpp"
+#include "NewHttpResponse.hpp"
+#include "HttpRequestContext.hpp"
 #include "AMethodHandler.hpp"
 
 class DeleteHandler : public AMethodHandler 
 {
 	public:
-		DeleteHandler();
-		ssize_t send(int socket_fd) const;
-		HttpResponse handle(const HttpRequest& request, const HttpRequestContext& ctx) const;
+		DeleteHandler(const HttpRequest& request, const HttpRequestContext& ctx);
+		void process();
+		bool done() const;
+		const NewHttpResponse& response() const;
+
 		~DeleteHandler();
+
+	private:
+		NewHttpResponse m_response;
 };
 
 #endif // DELETEHANDLER_HPP

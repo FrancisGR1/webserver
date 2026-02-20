@@ -16,18 +16,11 @@ class RequestDispatcher
 {
 	public:
 		RequestDispatcher();
-		HttpResponse dispatch(const HttpRequest& request, const ServiceConfig& service) const;
+		AMethodHandler* dispatch(const HttpRequest& request, const ServiceConfig& service) const;
 
 	private:
-		PostHandler m_post_handler;
-		GetHandler m_get_handler;
-		DeleteHandler m_delete_handler;
-		ErrorHandler m_error_handler;
 
 		// helpers
-		Path request_target_to_server_path(const HttpRequest& request, const ServiceConfig& service);
-		HttpRequestContext make_context(const HttpRequest& request, const ServiceConfig& service);
-		const AMethodHandler& select_handler(const HttpRequest& request) const;
 		std::string resolved_target(const std::string& req_path, const ServiceConfig& service) const;
 };
 

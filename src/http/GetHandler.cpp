@@ -3,17 +3,26 @@
 #include "HttpRequestContext.hpp"
 #include "GetHandler.hpp"
 
-GetHandler::GetHandler() {};
-
-ssize_t GetHandler::send(int socket_fd) const
+GetHandler::GetHandler(const HttpRequest& request, const HttpRequestContext& ctx)
 {
-	(void) socket_fd;
-	return 1;
+	(void) request;
+	(void) ctx;
 }
 
-HttpResponse GetHandler::handle(const HttpRequest& request, const HttpRequestContext& ctx) const
+void GetHandler::process()
 {
-	return HttpResponse(request, ctx.config().service());
 }
 
-GetHandler::~GetHandler() {};
+bool GetHandler::done() const
+{
+	return true;
+}
+
+const NewHttpResponse& GetHandler::response() const
+{
+	return m_response;
+}
+
+GetHandler::~GetHandler()
+{
+}
