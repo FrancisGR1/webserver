@@ -1,29 +1,38 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
+#include "http/HttpRequestParser.hpp"
+#include "http/HttpRequest.hpp"
+#include "http/HttpResponse.hpp"
+#include "http/StatusCode.hpp"
+
 #include <iostream>
 
 class Connection
 {
 	private:
-		int			sock_;
-		std::string	request_;
-		std::string	response_;
+		int					sock_;
+		HttpRequestParser	parser_;
+		std::string			response_;
+		size_t				bytes_sent_;
 
 	public:
+		Connection();
 		Connection(int sock);
 		~Connection();
 
 		/* getters e setters */
-		int			getSock();
-		void		setSock(int sock);
-		std::string	&getRequest();
-		void		setRequest(const std::string &request);
-		std::string	&getResponse();
+		// int			getSock();
+		// void		setSock(int sock);
+		// HttpRequest	&getRequest();
+		// void		setRequest(const std::string &request);
+		// std::string	&getResponse();
 		void		setResponse(const std::string &response);
 
-		void		handle();
-		void		readRequest();
+		bool		readRequest();
+		bool		isReady() const;
+		bool		sendResponse();
+		
 };
 
 #endif /* CONNECTION_HPP */

@@ -11,7 +11,7 @@ void	handle_signal(int sig)
 {
 	(void)sig;
 	Webserver::is_running = false;
-
+	std::cout << std::endl;
 }
 
 int main(int argc, char *argv[])

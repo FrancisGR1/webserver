@@ -344,9 +344,10 @@ void HttpRequestParser::parse()
 					}
 					else
 					{
-						m_state = S::Error;
-						m_status_code = StatusCode::LengthRequired;
-					Logger::error("Http Parser: doesn't contain neither 'Content-Length' or 'Transfer-Encoding' headers");
+						m_state = S::Done; /* MODIFICADO */
+					// 	m_state = S::Error;
+					// 	m_status_code = StatusCode::LengthRequired;
+					// Logger::error("Http Parser: doesn't contain neither 'Content-Length' or 'Transfer-Encoding' headers");
 					}
 					break;
 				}
