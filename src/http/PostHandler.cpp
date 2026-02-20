@@ -4,6 +4,7 @@
 #include "config/ConfigTypes.hpp"
 #include "StatusCode.hpp"
 #include "HttpRequest.hpp"
+#include "HttpResponseException.hpp"
 #include "HttpRequestConfig.hpp"
 #include "HttpRequestContext.hpp"
 #include "PostHandler.hpp"
@@ -23,7 +24,7 @@ void PostHandler::process()
 
 	if (!config.allows_method("POST"))
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::MethodNotAllowed,
 				"POST not allowed"
 				);
@@ -39,6 +40,7 @@ void PostHandler::process()
 	}
 	else if (config.is_cgi())
 	{
+		//@TODO: setup cgi here?
 	}
 	else if (config.allows_upload())
 	{
@@ -55,7 +57,7 @@ void PostHandler::process()
 		file.open(upload.resolved.c_str());
 		if (!file.is_open())
 		{
-			throw HttpResponseException(
+			throw ResponseError(
 					StatusCode::InternalServerError,
 					utils::fmt("Failed when creating uploaded file: '%s'", upload.resolved.c_str())
 					);
@@ -86,7 +88,7 @@ void PostHandler::process()
 	else
 	{
 		//@TODO: que código de erro é aqui?
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::BadRequest,
 				utils::fmt("Can't upload files at location: '%s'", config.path().resolved.c_str()),
 				*config.location()
@@ -108,7 +110,7 @@ const NewHttpResponse& PostHandler::response() const
 void PostHandler::is_uploadable(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir) const
 {
 	if (!config.has_upload_dir())
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::InternalServerError,
 				utils::fmt("Can't upload file: location '%s' is missing upload directory path", config.location()->name.c_str()),
 				*config.location()
@@ -116,24 +118,24 @@ void PostHandler::is_uploadable(const HttpRequest& request, const HttpRequestCon
 				);
 	if (request.body().size() > config.max_body_size())
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::ContentTooLarge,
 				utils::fmt("Request body size is larger than expected"),
 				*config.location()
 				);
 	}
 	if (!upload_dir.exists)
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::InternalServerError,
 				utils::fmt("'%s' doesn't exist", upload_dir.resolved.c_str())
 				);
 	if (!upload_dir.is_directory)
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::InternalServerError,
 				utils::fmt("'%s' is not a directory", upload_dir.resolved.c_str())
 				);
 	if (!upload_dir.can_write || !upload_dir.can_execute)
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::Forbidden,
 				utils::fmt("'%s' upload directory doesn't have write and/or execution permission(s)", upload_dir.resolved.c_str())
 				);

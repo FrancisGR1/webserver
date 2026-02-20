@@ -3,19 +3,20 @@
 
 #include <string>
 
+#include "config/types/LocationConfig.hpp"
 #include "config/ConfigTypes.hpp"
 #include "StatusCode.hpp"
 
-class HttpResponseException : public std::exception
+class ResponseError : public std::exception
 {
 	public:
-		explicit HttpResponseException(StatusCode::Code code, const std::string& msg);
-		explicit HttpResponseException(StatusCode::Code code, const std::string& msg, const LocationConfig& lc);
+		explicit ResponseError(StatusCode::Code code, const std::string& msg);
+		explicit ResponseError(StatusCode::Code code, const std::string& msg, const LocationConfig& lc);
 		StatusCode::Code status() const;
 		const LocationConfig& location() const;
 		const std::string& msg() const;
 
-		virtual ~HttpResponseException() throw();
+		virtual ~ResponseError() throw();
 
 	private:
 		StatusCode::Code m_status;
@@ -23,7 +24,7 @@ class HttpResponseException : public std::exception
 		std::string m_msg;
 
 		// illegal
-		HttpResponseException();
+		ResponseError();
 };
 
 #endif // HTTPRESPONSEEXCEPTION_HPP

@@ -3,8 +3,9 @@
 
 #include "core/Path.hpp"
 #include "config/ConfigTypes.hpp"
+#include "HttpRequest.hpp"
 #include "HttpRequestConfig.hpp"
-#include "HttpResponse.hpp"
+#include "NewHttpResponse.hpp"
 #include "AMethodHandler.hpp"
 #include "CgiHandler.hpp"
 
