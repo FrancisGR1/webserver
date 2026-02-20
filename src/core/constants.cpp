@@ -19,6 +19,8 @@ namespace constants
     // - http response
     const char* server_http_version = "HTTP/1.0";
     const std::string py_ext = "py";
+    // - cgi
+    const size_t cgi_read_chunk_size = 4096;
 
     // - http request
     const size_t max_body_size = 1000000;

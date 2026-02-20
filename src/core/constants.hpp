@@ -20,6 +20,7 @@ namespace constants
 	extern const char* default_conf;
 	extern const char* server_http_version;
 	extern const std::string py_ext;
+	extern const size_t cgi_read_chunk_size;
 
 	// http body
 	extern const size_t max_body_size;
