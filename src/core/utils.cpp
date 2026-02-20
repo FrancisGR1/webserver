@@ -7,10 +7,13 @@
 
 namespace utils
 {
-	std::vector<std::string> str_split(const std::string& str, char delimiter)
+	std::vector<std::string> str_split(const std::string& str, const std::string& delimiter)
 	{
 		std::vector<std::string> split;
 		
+		if (delimiter.empty())
+			return split;
+
 		size_t start = 0;
 		while (true)
 		{
@@ -22,12 +25,12 @@ namespace utils
 			}
 			else if (delimiter_pos == start)
 			{
-				start++;
+				start += delimiter.size();
 			}
 			else
 			{
 				split.push_back(str.substr(start, delimiter_pos - start));
-				start = delimiter_pos + 1;
+				start = delimiter_pos + delimiter.size();
 			}
 		}
 		return split;

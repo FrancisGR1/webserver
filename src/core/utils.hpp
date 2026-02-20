@@ -8,7 +8,7 @@
 
 namespace utils
 {
-	std::vector<std::string> str_split(const std::string& str, char delimiter);
+	std::vector<std::string> str_split(const std::string& str, const std::string& delimiter);
 	void str_trim_sides(std::string& str, const char *pattern);
 	bool str_isdigit(const std::string& str, bool skip_spaces = false);
 	std::string str_tolower(const std::string& str);

@@ -17,9 +17,10 @@ struct Path
 	//resolve(Location)?
 
 	bool exists;
-	std::string mime;
 	bool ends_with_slash;
 
+	// type
+	std::string mime;
 	bool is_directory;
 	bool is_regular_file;
 	bool is_cgi;
@@ -30,18 +31,21 @@ struct Path
 	std::string cgi_path;
 	std::string cgi_info;
 	std::string cgi_name;
+	std::string cgi_extension;
 
+	// permissions
 	bool can_read;
 	bool can_write;
 	bool can_execute;
 
+	// meta-data
 	off_t size;
 	time_t mtime;
 
 	//@QUESTION @TODO: eliminar?
 	int stat_errno;
 
-	//@TODO substituir por str()
+	//@TODO substituir por str() ou raw()
 	std::string resolved;
 
 	//@TODO: funções

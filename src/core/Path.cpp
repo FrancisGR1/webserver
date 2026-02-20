@@ -12,8 +12,8 @@
 // Path
 Path::Path(const std::string& raw_path)
 	: exists(false)
-	, mime(MimeTypes::from_path(raw_path))
 	, ends_with_slash(false)
+	, mime(MimeTypes::from_path(raw_path))
 	, is_directory(false)
 	, is_regular_file(false)
 	, is_cgi(false)
@@ -32,8 +32,8 @@ Path::Path(const std::string& raw_path)
 
 Path::Path(const char* raw_path)
 	: exists(false)
-	, mime(MimeTypes::from_path(raw_path))
 	, ends_with_slash(false)
+	, mime(MimeTypes::from_path(raw_path))
 	, is_directory(false)
 	, is_regular_file(false)
 	, is_cgi(false)
@@ -70,6 +70,7 @@ void Path::init(const std::string& raw_path)
 		std::string extension = cgi_path.substr(dot + 1, cgi_path.size());
 		if (extension == constants::py_ext)
 		{
+			cgi_extension = extension;
 			is_cgi = true;
 			mime = MimeTypes::from_path(cgi_path);
 			// script info
