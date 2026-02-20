@@ -29,7 +29,7 @@ class HttpRequestConfig
 
 		Path upload_dir() const;
 		Path get_error_page(size_t code) const;
-		Path get_cgi_path(const std::string& extension);
+		Path cgi_interpreter() const;
 		//@TODO: get listener (a connection é que tem de dar isto)
 		size_t max_body_size() const;
 

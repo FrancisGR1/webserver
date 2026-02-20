@@ -87,10 +87,13 @@ Path HttpRequestConfig::get_error_page(size_t code) const
 		return Path(NULL); //@TODO construir string?
 }
 
-Path HttpRequestConfig::get_cgi_path(const std::string& extension)
+Path HttpRequestConfig::cgi_interpreter() const
 {
+	const std::string& extension = m_server_path.cgi_extension;
+
 	if (m_location && utils::contains(m_location->cgis, extension))
 		return m_location->cgis.at(extension);
+
 	return Path(NULL);
 }
 
