@@ -1,4 +1,5 @@
 #include <sstream>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
@@ -39,7 +40,8 @@ void NewHttpResponse::set_body(const std::string& str)
 	m_body_str = str;
 }
 
-void NewHttpResponse::set_body(int fd, const std::string prefix = "")
+// prefix is something you might want to send after the headers and before reading the file, for example a read() call that processed the headers and a bit of the body
+void NewHttpResponse::set_body(int fd, const std::string& prefix)
 {
 	m_body_fd = fd;
 	m_body_str = prefix;
@@ -54,7 +56,9 @@ ssize_t NewHttpResponse::send(int fd)
 		case StatusPhase:
 			{
 				ssize_t sent = ::send(fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
-				if (sent + m_offset == m_status_line.size())
+				if (sent < 0)
+					;
+				else if (sent + m_offset == m_status_line.size())
 				{
 					m_send_phase = HeadersPhase;
 					m_offset = 0;
@@ -70,7 +74,9 @@ ssize_t NewHttpResponse::send(int fd)
 		case HeadersPhase:
 			{
 				ssize_t sent = ::send(fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, 0);
-				if (sent + m_offset == m_headers_str.size())
+				if (sent < 0)
+					;
+				else if (sent + m_offset == m_headers_str.size())
 				{
 					m_send_phase = BodyPhase;
 					m_offset = 0;
@@ -84,7 +90,57 @@ ssize_t NewHttpResponse::send(int fd)
 			}
 		case BodyPhase: 
 			{
-				return (m_body ? m_body->send(fd) : 0);
+				ssize_t sent = 0;
+				// either send body from a file or a string
+				if (m_body_fd > -1)
+				{
+					// m_body_str is used as a leftover for the next call
+					if (!m_body_str.empty())
+					{
+						sent = ::send(fd, m_body_str.c_str(), m_body_str.size(), 0);
+						if (sent <= 0)
+							return sent; // nothing to send, or error or EAGAIN, which shouldn't happen (@QUESTION: you sure?)
+
+						m_body_str.erase(0, sent);
+						if (!m_body_str.empty())
+							return sent; // socket is full
+					}
+
+					// read and send to socket
+					char buffer[constants::read_chunk_size];
+					ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
+					if (read_bytes < 0)
+					{
+						return -1;
+					}
+					if (read_bytes == 0)
+					{
+						m_send_phase = Done;
+						return 0;
+					}
+
+					sent = ::send(fd, buffer, read_bytes, 0);
+					if (sent <= 0)
+						return sent;
+					if (sent < read_bytes)
+					{
+						// store leftover for next call
+						m_body_str.assign(buffer + sent, read_bytes - sent);
+					}
+
+				}
+				else
+				{
+					sent = ::send(fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
+					if (sent < 0)
+						return sent;
+
+					m_offset += sent;
+					if (m_offset == m_body_str.size())
+						m_send_phase = Done;
+
+				}
+				return sent;
 			}
 		default:
 			{
@@ -100,7 +156,8 @@ bool NewHttpResponse::done() const
 
 NewHttpResponse::~NewHttpResponse()
 {
-	delete m_body;
+	if (m_body_fd >= 0) 
+		close (m_body_fd);
 }
 
 std::string NewHttpResponse::make_status_line()
@@ -121,3 +178,5 @@ std::string NewHttpResponse::make_status_line()
 
 	return status_line;
 }
+
+

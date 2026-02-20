@@ -105,8 +105,8 @@ void CgiHandler::fork_and_exec()
 
 CgiHandler::State CgiHandler::read_pipe_chunk_headers()
 {
-	char buffer[constants::cgi_read_chunk_size];
-	ssize_t bytes = read(m_fd[0], buffer, constants::cgi_read_chunk_size);
+	char buffer[constants::read_chunk_size];
+	ssize_t bytes = read(m_fd[0], buffer, constants::read_chunk_size);
 	if (bytes > 0)
 	{
 		buffer[bytes] = '\0';

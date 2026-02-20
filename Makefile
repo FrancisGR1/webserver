@@ -34,6 +34,7 @@ SOURCES  = \
 	  src/http/HttpRequestContext.cpp \
 	  src/http/HttpRequestParser.cpp \
 	  src/http/HttpResponse.cpp \
+	  src/http/NewHttpResponse.cpp \
 	  src/http/HttpResponseException.cpp \
 	  src/http/StatusCode.cpp \
 	  src/http/AMethodHandler.cpp \
@@ -41,9 +42,7 @@ SOURCES  = \
 	  src/http/GetHandler.cpp \
 	  src/http/DeleteHandler.cpp \
 	  src/http/ErrorHandler.cpp \
-	  src/http/CgiHandler.cpp \
-	  src/http/IBody.cpp \
-	  src/http/StringBody.cpp
+	  src/http/CgiHandler.cpp
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
 OBJ     += $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter-out src/%.cpp, $(SOURCES)))
