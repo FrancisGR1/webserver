@@ -8,43 +8,51 @@
 #include "config/types/ServiceConfig.hpp"
 #include "http/HttpRequest.hpp"
 #include "config/ConfigTypes.hpp"
+#include "AMethodHandler.hpp"
 #include "CgiHandler.hpp"
+#include "HttpRequestContext.hpp"
+#include "NewHttpResponse.hpp"
 
 // https://datatracker.ietf.org/doc/html/rfc3875
-class CgiHandler
+class CgiHandler : public AMethodHandler
 {
 	public:
-		CgiHandler(const HttpRequest& request, const ServiceConfig& service, const Path& script);
-		const std::string& get() const;
+		CgiHandler(const HttpRequest& request, const HttpRequestContext& ctx);
+		void process();
+		bool done() const;
+		const NewHttpResponse& response() const;
+		~CgiHandler();
 
 	private:
-		const HttpRequest& m_request; 
-		const ServiceConfig& m_service; 
-		const Path& m_script;
-		std::map<std::string, std::string> m_env;
-		std::string m_output;
+		enum State 
+		{
+			Error = -1,
+			ForkExec,
+			ReadHeaders,
+			ReadBody,
+			Done
+		};
 
-		std::map<std::string, std::string> init_env();
-		void exec();
+		const HttpRequest& m_request; 
+		const HttpRequestContext& m_ctx; 
+		const Path& m_script;
+		NewHttpResponse m_response;
+
+		// cgi
+		std::map<std::string, std::string> m_env;
+		int m_fd[2];
+		std::string m_headers;
+		std::string m_body_leftover;
+		State m_state;
 
 		// util
+		std::map<std::string, std::string> init_env();
 		std::string to_uppercase_and_underscore(const std::string& str);
-};
+		void parse_headers();
+		State read_pipe_chunk_headers();
+		void fork_and_exec();
 
-/*
- * Teoria
- * O que é o CGI?
- * Inteface para correr programas. Os programas a ser corridos vão esperar um conjunto de dados pré-definidos
- * O CGI faz com que o script e o servidor partilhem responsabilidades para responder aos pedidos
- * O CGI define as meta-variáveis que descrevem o pedido do cliente de tal modo a funcionar independentemente da plataforma
- *
- * Planeamento da implementação
- * * Verificar se tem permissões de execução (700)
- * * Definir ENV -> converter o pedido num pedido de cgi
- * * * Variáveis vazias = variáveis nulas
- * * * Variáveis são sensíveis a minúsculas/maiúsculas
- * * execução do script
- * * conversão da resposta cgi numa resposta http
- */
+
+};
 
 #endif //CGI_HANDLER_HPP
