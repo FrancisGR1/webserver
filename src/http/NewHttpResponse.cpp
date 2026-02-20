@@ -6,14 +6,27 @@
 #include "core/utils.hpp"
 #include "NewHttpResponse.hpp"
 
-NewHttpResponse::NewHttpResponse(StatusCode::Code status)
-	: m_status(status)
-	, m_status_line(make_status_line())
-	, m_body(NULL) 
+NewHttpResponse::NewHttpResponse()
+	: m_body_fd(-1)
 	, m_send_phase(NewHttpResponse::StatusPhase)
 	, m_offset(0)
 {
 	//@QUESTION can we set default headers?
+}
+
+NewHttpResponse::NewHttpResponse(StatusCode::Code status)
+	: m_status(status)
+	, m_status_line(make_status_line())
+	, m_body_fd(-1)
+	, m_send_phase(NewHttpResponse::StatusPhase)
+	, m_offset(0)
+{
+	//@QUESTION can we set default headers?
+}
+
+void NewHttpResponse::set_status(StatusCode::Code status)
+{
+	m_status = status;
 }
 
 void NewHttpResponse::set_header(const std::string& key, const std::string& value)
@@ -21,10 +34,15 @@ void NewHttpResponse::set_header(const std::string& key, const std::string& valu
 	m_headers[key] = value;
 }
 
-void NewHttpResponse::set_body(IBody* body)
+void NewHttpResponse::set_body(const std::string& str)
 {
-	delete m_body;
-	m_body = body;
+	m_body_str = str;
+}
+
+void NewHttpResponse::set_body(int fd, const std::string prefix = "")
+{
+	m_body_fd = fd;
+	m_body_str = prefix;
 }
 
 StatusCode::Code NewHttpResponse::status() const { return m_status; }

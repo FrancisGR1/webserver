@@ -6,26 +6,29 @@
 #include <sys/types.h>
 
 #include "StatusCode.hpp"
-#include "IBody.hpp"
 
 class NewHttpResponse
 {
 	public:
+		NewHttpResponse();
 		explicit NewHttpResponse(StatusCode::Code status);
 		~NewHttpResponse();
 
+		void set_status(StatusCode::Code status);
 		void set_header(const std::string& key, const std::string& value);
-		void set_body(IBody* body);
+		void set_body(const std::string& str);
+		void set_body(int fd, const std::string& prefix = "");
 		StatusCode::Code status() const;
 		ssize_t send(int fd);
 		bool done() const;
 
 	private:
-		const StatusCode::Code m_status;
-		const std::string m_status_line;
+		StatusCode::Code m_status;
+		std::string m_status_line;
 		std::string m_headers_str;
 		std::map<std::string, std::string> m_headers;
-		IBody* m_body;
+		std::string m_body_str;
+		int m_body_fd;
 
 		// transmission state
 		enum SendPhase
