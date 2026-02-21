@@ -29,14 +29,14 @@ AMethodHandler* RequestDispatcher::dispatch(const HttpRequest& request, const Se
 
 		if (request.bad_request())
 		{
-			throw HttpResponseException(request.status_code(), "Bad request status code");
+			throw ResponseError(request.status_code(), "Bad request status code");
 		}
 
 		// get target path
 		Path path = resolved_target(request.target_path(), service);
 		if (!path.exists)
 		{
-			throw HttpResponseException(StatusCode::NotFound, utils::fmt("'%s' path not found", path.resolved.c_str()));
+			throw ResponseError(StatusCode::NotFound, utils::fmt("'%s' path not found", path.resolved.c_str()));
 		}
 
 		// @ASSUMPTION: if path exists, theres also a LocationConfig
@@ -50,7 +50,7 @@ AMethodHandler* RequestDispatcher::dispatch(const HttpRequest& request, const Se
 		if (request.method() == "DELETE") return new DeleteHandler(request, ctx);
 		return new ErrorHandler(StatusCode::InternalServerError);
 	}
-	catch (const HttpResponseException& e)
+	catch (const ResponseError& e)
 	{
 		//@TODO: return ErrorHandler(e);
 		Logger::error("%s", e.msg().c_str());
@@ -82,7 +82,7 @@ std::string RequestDispatcher::resolved_target(const std::string& req_path, cons
 				legal_segments.pop_back();
 			else // @NOTE: trying to escape root
 			{
-				throw HttpResponseException(
+				throw ResponseError(
 						StatusCode::BadRequest, 
 						"Target path tried to escape root"
 						);

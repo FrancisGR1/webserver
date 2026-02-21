@@ -14,7 +14,7 @@ struct StatusCode
 		// === Informational ===
 
 		// === Successful ===
-		OK        = 200,
+		Ok        = 200,
 		Created   = 201,
 		Accepted  = 202,
 		NoContent = 204,
@@ -51,6 +51,9 @@ struct StatusCode
 
 	static std::string to_string(StatusCode::Code c);
 	static bool is_redirection(size_t code);
+	//@TODO:
+	//is_valid(size_t code)
+	//str()
 };
 
 #endif //STATUSCODE_HPP

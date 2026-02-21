@@ -34,6 +34,6 @@ namespace utils
 		return oss.str();
 	}
 
-} // namespace util
+} // namespace utils
 
 #endif // UTILS_HPP

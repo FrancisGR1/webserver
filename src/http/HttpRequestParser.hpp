@@ -7,6 +7,7 @@
 #include "StatusCode.hpp"
 #include "HttpRequest.hpp"
 
+// @TODO: mudar para outro ficheiro
 struct Parser
 {
 	enum State

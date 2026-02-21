@@ -11,6 +11,7 @@
 - [ ] Mudar LocationConfig e ServiceConfig para classes, incluir exists() em LocationConfig
 - [ ] mudar nomes: listing = autoindex, default_file = index, upload_dir = upload_storage, 
 - [ ] estrutura do diretório - https://wiki.debian.org/Nginx/DirectoryStructure
+- [ ] parser - dividir em Lexer → Parser → AST → Semantic Validator → Config Builder
 
 # HTTP - Receber Pedido
 - [x] Processamento
@@ -31,18 +32,25 @@
 - [x] DELETE
 - [ ] Reimplementar arquitetura - criar classes mais concretas e dividir responsabilidades
 - [ ] Reorganizar ficheiros
-- [ ] Reimplementar body da resposta. Transformar num interface implementado concretamente por?
+- [x] Reimplementar body da resposta de modo a ser assíncrono
+- [ ] Pequenas funções para throw dos códigos mais utilizados nos erros
+- [ ] Os handlers não precisam de lidar diretame com setters da HttpResponse, criar funções da HttpResponse para fazer isso. Por exemplo: response.make_autoindex_response(), response.make_upload_response()
 
 # CGI
-- [ ] lidar com programas infinitos, crashes, aborts, etc. Construir uma sandbox
+- [ ] lidar com programas infinitos/timeouts, crashes, aborts, etc. Construir uma sandbox
+- [ ] fazer class Timer para timeouts
 - [ ] converter raw string em respostas?
 
 # Gestão Eventos
 # Gestão Clientes
 
-# Logger
+# Utils
+## Logger
 - [x] Print básico
 - [ ] O logger deve ser instanciável
+
+## Path
+- [ ] criar classes derivadas: ServerPath e CgiPath; ou então separar informação (struct CgiInfo)
 
 # Compilação
 - [x] Fazer Makefile
