@@ -24,8 +24,6 @@ class PostHandler : public AMethodHandler
 		bool m_done;
 		const CgiHandler m_cgi;
 		static unsigned long long m_uploaded_file_index;
-
-		void is_uploadable(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir) const;
 };
 
 #endif // POSTHANDLER_HPP

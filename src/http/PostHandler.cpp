@@ -4,7 +4,7 @@
 #include "config/ConfigTypes.hpp"
 #include "StatusCode.hpp"
 #include "HttpRequest.hpp"
-#include "HttpResponseException.hpp"
+#include "http_utils.hpp"
 #include "HttpRequestConfig.hpp"
 #include "HttpRequestContext.hpp"
 #include "PostHandler.hpp"
@@ -22,13 +22,7 @@ void PostHandler::process()
 {
 	const HttpRequestConfig& config = m_ctx.config();
 
-	if (!config.allows_method("POST"))
-	{
-		throw ResponseError(
-				StatusCode::MethodNotAllowed,
-				"POST not allowed"
-				);
-	}
+	if (!config.allows_method("POST")) http_utils::throw_method_not_allowed("POST");
 
 	if (config.is_redirected())
 	{
@@ -44,9 +38,11 @@ void PostHandler::process()
 	}
 	else if (config.allows_upload())
 	{
-		// get upload dir path and check if it's uploadable
+		// get upload dir path
 		Path upload_dir = config.upload_dir();
-		is_uploadable(m_request, config, upload_dir);
+
+		// check if it's uploadable
+		is_uploadable_precondition(m_request, config, upload_dir);
 
 		// create a name for the new file to be uploaded
 		std::string file_name = utils::to_string(m_uploaded_file_index++) + ".data";
@@ -54,28 +50,32 @@ void PostHandler::process()
 
 		// open file
 		std::ofstream file;
-		file.open(upload.resolved.c_str());
-		if (!file.is_open())
-		{
-			throw ResponseError(
-					StatusCode::InternalServerError,
-					utils::fmt("Failed when creating uploaded file: '%s'", upload.resolved.c_str())
-					);
-		}
-		
+		file.open(upload.resolved.c_str()) http_utils::throw_internal_server_error_failed_upload(upload);
+
 		// write to file
+		// @TODO: fazer com que seja async compatible
 		file << m_request.body();
 
+
+
+		// --------------------
+		// --------------------
+		// --------------------
 		// make http m_response
+		// --------------------
+		// --------------------
+		// --------------------
 		m_response.set_status(StatusCode::Created);
+
 		// body
 		std::string json = \
 				   "{"
 				   "\"status\": \"success\","
 				   "\"filename\": \"" + upload.resolved + "\","
-				   "\"size\": " + utils::to_string(upload.resolved.size()) +
+				   "\"size\": " + utils::to_string(m_request.body().size()) +
 				   "}";
 		m_response.set_body_as_str(json);
+
 		// headers
 		m_response.set_header("Location", upload.resolved);
 		m_response.set_header("Connection", "close"); // @NOTE: HTTP1.0 closes by default;
@@ -88,10 +88,7 @@ void PostHandler::process()
 	else
 	{
 		//@TODO: que código de erro é aqui?
-		throw ResponseError(
-				StatusCode::BadRequest,
-				utils::fmt("Can't upload files at location: '%s'", config.path().resolved.c_str())
-				);
+		throw_internal_server_error_cant_upload(config.path());
 	}
 }
 
@@ -106,35 +103,18 @@ const NewHttpResponse& PostHandler::response() const
 }
 
 // @TODO isto não pode pertencer a Path? Path file; file.is_uploadable() é mais limpo;
-void PostHandler::is_uploadable(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir) const
+void PostHandler::is_uploadable_precondition(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir) const
 {
 	if (!config.has_upload_dir())
-		throw ResponseError(
-				StatusCode::InternalServerError,
-				utils::fmt("Can't upload file: location '%s' is missing upload directory path", config.location()->name.c_str())
-				);
-	if (request.body().size() > config.max_body_size())
-	{
-		throw ResponseError(
-				StatusCode::ContentTooLarge,
-				utils::fmt("Request body size is larger than expected")
-				);
-	}
-	if (!upload_dir.exists)
-		throw ResponseError(
-				StatusCode::InternalServerError,
-				utils::fmt("'%s' doesn't exist", upload_dir.resolved.c_str())
-				);
-	if (!upload_dir.is_directory)
-		throw ResponseError(
-				StatusCode::InternalServerError,
-				utils::fmt("'%s' is not a directory", upload_dir.resolved.c_str())
-				);
-	if (!upload_dir.can_write || !upload_dir.can_execute)
-		throw ResponseError(
-				StatusCode::Forbidden,
-				utils::fmt("'%s' upload directory doesn't have write and/or execution permission(s)", upload_dir.resolved.c_str())
-				);
+		http_utils::throw_internal_server_error_cant_upload(upload_dir);
+	if (request.body().size() > config.max_body_size()) 
+		http_utils::throw_content_too_large();
+	if (!upload_dir.exists) 
+		http_utils::throw_internal_server_error_doesnt_exist(upload_dir);
+	if (!upload_dir.is_directory) 
+		http_utils::throw_internal_server_error_not_a_directory(upload_dir);
+	if (!upload_dir.can_write || !upload_dir.can_execute) 
+		http_utils::throw_forbidden_cant_upload(upload_dir);
 }
 
 PostHandler::~PostHandler() {};
