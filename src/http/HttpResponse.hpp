@@ -80,7 +80,7 @@ class HttpResponse
 		// utils
 		void write_status_line();
 		void write_status_line(StatusCode::Code code);
-		std::string http_date();
+		//std::string http_date();
 		std::string resolved_target(LocationConfig& lc);
 
 

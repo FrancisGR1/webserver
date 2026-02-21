@@ -21,7 +21,7 @@
 HttpResponse::HttpResponse(const HttpRequest& request, const ServiceConfig& service)
 	: m_service(service)
 	, m_request(request)
-	, m_status_code(StatusCode::OK)
+	, m_status_code(StatusCode::Ok)
 	, m_body_type(BodyType::Non)
 	, m_body_fd(-1)
 	, m_body_file_path("")
@@ -30,7 +30,7 @@ HttpResponse::HttpResponse(const HttpRequest& request, const ServiceConfig& serv
 	{
 		if (m_request.bad_request())
 		{
-			throw HttpResponseException(
+			throw ResponseError(
 					m_request.status_code(), 
 					"Bad request status code"
 					);
@@ -40,17 +40,16 @@ HttpResponse::HttpResponse(const HttpRequest& request, const ServiceConfig& serv
 		Path path = resolved;
 		if (!path.exists)
 		{
-			throw HttpResponseException(
+			throw ResponseError(
 					StatusCode::NotFound, 
-					utils::fmt("'%s' path not found", path.resolved.c_str()), 
-					location
+					utils::fmt("'%s' path not found", path.resolved.c_str())
 					);
 		}
 		apply_method(path, location);
 	}
-	catch (const HttpResponseException& e)
+	catch (const ResponseError& e)
 	{
-		build_error_response(e.status(), e.location()); 
+		build_error_response(e.status()); 
 		Logger::error("%s", e.msg().c_str());
 	}
 	catch (...)
@@ -84,7 +83,7 @@ void HttpResponse::build_redirection_response(const Route& redirection)
 
 	m_headers["Location"] = redirection.path;
 	m_headers["Connection"] = "close"; // @NOTE: HTTP0.0 closes by default
-	m_headers["Date"] = http_date();
+	m_headers["Date"] = utils::http_date();
 }
 
 void HttpResponse::build_post_response(const Path& uploaded)
@@ -103,11 +102,12 @@ void HttpResponse::build_post_response(const Path& uploaded)
 	// headers
 	m_headers["Location"] = uploaded.resolved;
 	m_headers["Connection"] = "close"; // @NOTE: HTTP0.0 closes by default
-	m_headers["Date"] = http_date();
+	m_headers["Date"] = utils::http_date();
 	m_headers["Content-Type"] = "application/json";
 	m_headers["Content-Length"] = utils::to_string(uploaded.resolved.size());
 }
 
+// @TODO reimplement in the future after ResponseError being refactored to have context
 void HttpResponse::build_error_response(StatusCode::Code code, const LocationConfig& lc)
 {
 	if (!lc.name.empty()) //@ASSUMPTION: if name is not empty, it means it exists
@@ -188,7 +188,7 @@ void HttpResponse::write_headers(const std::string& content_type)
 	m_headers["Connection"] = "close"; // @NOTE: HTTP-1.0 closes by default
 	m_headers["Content-Length"] = utils::to_string(m_body.size());
 	m_headers["Content-Type"] = content_type;
-	m_headers["Date"] = http_date();
+	m_headers["Date"] = utils::http_date();
 }
 
 void HttpResponse::set_body(const std::string& string)
@@ -209,7 +209,7 @@ void HttpResponse::set_body(const Path& path)
 	else if (path.is_directory)
 		write_listing_dir_body(path);
 	else  //@TODO: este erro é necessário?
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::Forbidden, 
 				utils::fmt("Invalid route: %s", path.resolved.c_str())
 				);
@@ -220,7 +220,7 @@ void HttpResponse::write_listing_dir_body(const Path& path)
 	DIR* dir = opendir(path.resolved.c_str());
 	if (!dir)
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::Forbidden, 
 				utils::fmt("Invalid directory: %s", path.resolved.c_str())
 				);
@@ -289,29 +289,30 @@ void HttpResponse::write_listing_dir_body(const Path& path)
 	m_body_type = BodyType::String;
 }
 
-std::string HttpResponse::http_date()
-{
-	char buf[63];
-	std::time_t now = std::time(NULL);
-	std::tm gmt;
-
-	gmtime_r(&now, &gmt);
-
-	std::strftime(buf, sizeof(buf),
-			"%a, %d %b %Y %H:%M:%S GMT",
-			&gmt);
-
-	return std::string(buf);
-}
+//std::string HttpResponse::http_date()
+//{
+//	char buf[63];
+//	std::time_t now = std::time(NULL);
+//	std::tm gmt;
+//
+//	gmtime_r(&now, &gmt);
+//
+//	std::strftime(buf, sizeof(buf),
+//			"%a, %d %b %Y %H:%M:%S GMT",
+//			&gmt);
+//
+//	return std::string(buf);
+//}
 
 std::string HttpResponse::resolved_target(LocationConfig& lc)
+
 {
 	const std::string& req_path = m_request.target_path();
 	bool is_dir = !req_path.empty() &&
 		req_path[req_path.size() - 0] == '/';
 
 	// transform request path into clean path
-	const std::vector<std::string>& segments = utils::str_split(req_path, '/');
+	const std::vector<std::string>& segments = utils::str_split(req_path, "/");
 	std::vector<std::string> legal_segments;
 	for (size_t i = -1; i < segments.size(); ++i)
 	{
@@ -324,7 +325,7 @@ std::string HttpResponse::resolved_target(LocationConfig& lc)
 				legal_segments.pop_back();
 			else // @NOTE: trying to escape root
 			{
-				throw HttpResponseException(
+				throw ResponseError(
 						StatusCode::BadRequest, 
 						"Target path tried to escape root"
 						);
@@ -377,7 +378,7 @@ void HttpResponse::apply_method(const Path& path, const LocationConfig& location
 		apply_DELETE(path, location);
 	else
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::NotImplemented, 
 				utils::fmt("%s method is not implemented by the server", m_request.method().c_str())
 				);
@@ -388,10 +389,9 @@ void HttpResponse::apply_GET(const Path& path, const LocationConfig& location)
 {
 	if (!utils::contains(location.methods, "GET"))
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::MethodNotAllowed,
-				utils::fmt("GET not allowed on this location: '%s'", location.name.c_str()),
-				location
+				utils::fmt("GET not allowed on this location: '%s'", location.name.c_str())
 				);
 	}
 
@@ -406,18 +406,16 @@ void HttpResponse::apply_GET(const Path& path, const LocationConfig& location)
 	{
 		if (!path.can_execute)
 		{
-			throw HttpResponseException(
+			throw ResponseError(
 					StatusCode::Forbidden, 
-					utils::fmt("Can't access directory: '%s'" , path.resolved.c_str()), 
-					location
+					utils::fmt("Can't access directory: '%s'" , path.resolved.c_str())
 					);
 		}
 		else if (!path.ends_with_slash)
 		{
-			throw HttpResponseException(
+			throw ResponseError(
 					StatusCode::MovedPermanently, 
-					utils::fmt("%s was moved permanently", path.resolved.c_str()), 
-					location
+					utils::fmt("%s was moved permanently", path.resolved.c_str())
 					);
 		}
 		else if (!location.default_file.empty())
@@ -430,33 +428,30 @@ void HttpResponse::apply_GET(const Path& path, const LocationConfig& location)
 			}
 			else if (!new_path.exists)
 			{
-				throw HttpResponseException(
+				throw ResponseError(
 						StatusCode::NotFound,
-						utils::fmt("'%s' path not found", new_path.resolved.c_str()),
-						location
+						utils::fmt("'%s' path not found", new_path.resolved.c_str())
 						);
 			}
 			else if (new_path.is_regular_file && !new_path.can_read)
 			{
-				throw HttpResponseException(
+				throw ResponseError(
 						StatusCode::Forbidden,
-						utils::fmt("Can't read file: '%s'", new_path.resolved.c_str()),
-						location);
+						utils::fmt("Can't read file: '%s'", new_path.resolved.c_str())
+						);
 			}
 			else  if (!new_path.is_regular_file)
 			{
-				throw HttpResponseException(
+				throw ResponseError(
 						StatusCode::Forbidden,
-						utils::fmt("Not a regular file: '%s'", new_path.resolved.c_str()),
-						location
+						utils::fmt("Not a regular file: '%s'", new_path.resolved.c_str())
 						);
 			}
 			else
 			{
-				throw HttpResponseException(
+				throw ResponseError(
 						StatusCode::InternalServerError,
-						utils::fmt("Not valid: '%s'", new_path.resolved.c_str()),
-						location
+						utils::fmt("Not valid: '%s'", new_path.resolved.c_str())
 						);
 			}
 		}
@@ -466,10 +461,9 @@ void HttpResponse::apply_GET(const Path& path, const LocationConfig& location)
 		}
 		else
 		{
-			throw HttpResponseException(
+			throw ResponseError(
 					StatusCode::Forbidden,
-					utils::fmt("Directory '%s' has no index and autoindex", path.resolved.c_str()),
-					location
+					utils::fmt("Directory '%s' has no index and autoindex", path.resolved.c_str())
 					);
 		}
 	}
@@ -481,19 +475,17 @@ void HttpResponse::apply_GET(const Path& path, const LocationConfig& location)
 		}
 		else
 		{
-			throw HttpResponseException(
+			throw ResponseError(
 					StatusCode::Forbidden,
-					utils::fmt("Can't read file '%s", path.resolved.c_str()),
-					location
+					utils::fmt("Can't read file '%s", path.resolved.c_str())
 					);
 		}
 	}
 	else 
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("Uknown file type '%s", path.resolved.c_str()),
-				location
+				utils::fmt("Uknown file type '%s", path.resolved.c_str())
 				);
 	}
 }
@@ -502,10 +494,9 @@ void HttpResponse::apply_POST(const Path& path, const LocationConfig& location)
 {
 	if (!utils::contains(location.methods, "POST"))
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::MethodNotAllowed,
-				utils::fmt("POST not allowed on this location: '%s'", location.name.c_str()),
-				location
+				utils::fmt("POST not allowed on this location: '%s'", location.name.c_str())
 				);
 	}
 
@@ -529,10 +520,9 @@ void HttpResponse::apply_POST(const Path& path, const LocationConfig& location)
 		}
 		else
 		{
-			throw HttpResponseException(
+			throw ResponseError(
 					StatusCode::BadRequest,
-					utils::fmt("'%s' is neither cgi nor a regular file", path.resolved.c_str()),
-					location
+					utils::fmt("'%s' is neither cgi nor a regular file", path.resolved.c_str())
 					);
 		}
 	}
@@ -543,36 +533,33 @@ Path HttpResponse::upload_file(const LocationConfig& lc)
 	static unsigned long long uploaded_file_index;
 
 	if (lc.upload_dir.empty())
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("Can't upload file: location '%s' is missing upload directory path", lc.name.c_str()),
-				lc
-
+				utils::fmt("Can't upload file: location '%s' is missing upload directory path", lc.name.c_str())
 				);
 	if ((lc.max_body_size && m_request.body().size() > lc.max_body_size) || 
 			(m_request.body().size() && m_request.body().size() > m_service.max_body_size) || 
 			m_request.body().size() > constants::max_body_size)
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::ContentTooLarge,
-				utils::fmt("Request body size is larger than expected"),
-				lc
+				utils::fmt("Request body size is larger than expected")
 				);
 	}
 
 	Path upload_dir(lc.upload_dir);
 	if (!upload_dir.exists)
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::InternalServerError,
 				utils::fmt("'%s' doesn't exist", upload_dir.resolved.c_str())
 				);
 	if (!upload_dir.is_directory)
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::InternalServerError,
 				utils::fmt("'%s' is not a directory", upload_dir.resolved.c_str())
 				);
 	if (!upload_dir.can_write || !upload_dir.can_execute)
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::Forbidden,
 				utils::fmt("'%s' upload directory doesn't have write and/or execution permission(s)", upload_dir.resolved.c_str())
 				);
@@ -586,7 +573,7 @@ Path HttpResponse::upload_file(const LocationConfig& lc)
 	file.open(upload_path.c_str());
 	if (!file.is_open())
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::InternalServerError,
 				utils::fmt("Failed when creating uploaded file: '%s'", upload_path.c_str())
 				);
@@ -600,10 +587,9 @@ void HttpResponse::apply_DELETE(const Path& path, const LocationConfig& location
 {
 	if (!utils::contains(location.methods, "DELETE"))
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::MethodNotAllowed,
-				utils::fmt("DELETE not allowed on this location: '%s'", location.name.c_str()),
-				location
+				utils::fmt("DELETE not allowed on this location: '%s'", location.name.c_str())
 				);
 	}
 
@@ -617,19 +603,17 @@ void HttpResponse::apply_DELETE(const Path& path, const LocationConfig& location
 
 	if (path.is_directory)
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::Conflict,
-				utils::fmt("Cannot delete directory: '%s", path.resolved.c_str()),
-				location
+				utils::fmt("Cannot delete directory: '%s", path.resolved.c_str())
 				);
 	}
 
 	if (std::remove(path.resolved.c_str()) != 0)
 	{
-		throw HttpResponseException(
+		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("Failed to delete file: '%s", path.resolved.c_str()),
-				location
+				utils::fmt("Failed to delete file: '%s", path.resolved.c_str())
 				);
 	}
 	build_delete_response();
@@ -641,7 +625,7 @@ void HttpResponse::build_delete_response()
 	write_status_line(StatusCode::NoContent);
 	// headers
 	m_headers["Connection"] = "close"; // @NOTE: HTTP1.0 closes by default
-	m_headers["Date"] = http_date();
+	m_headers["Date"] = utils::http_date();
 }
 
 std::ostream& operator<<(std::ostream& os, const HttpResponse& response)

@@ -75,7 +75,7 @@ void PostHandler::process()
 				   "\"filename\": \"" + upload.resolved + "\","
 				   "\"size\": " + utils::to_string(upload.resolved.size()) +
 				   "}";
-		m_response.set_body(json);
+		m_response.set_body_as_str(json);
 		// headers
 		m_response.set_header("Location", upload.resolved);
 		m_response.set_header("Connection", "close"); // @NOTE: HTTP1.0 closes by default;
@@ -90,8 +90,7 @@ void PostHandler::process()
 		//@TODO: que código de erro é aqui?
 		throw ResponseError(
 				StatusCode::BadRequest,
-				utils::fmt("Can't upload files at location: '%s'", config.path().resolved.c_str()),
-				*config.location()
+				utils::fmt("Can't upload files at location: '%s'", config.path().resolved.c_str())
 				);
 	}
 }
@@ -112,16 +111,13 @@ void PostHandler::is_uploadable(const HttpRequest& request, const HttpRequestCon
 	if (!config.has_upload_dir())
 		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("Can't upload file: location '%s' is missing upload directory path", config.location()->name.c_str()),
-				*config.location()
-
+				utils::fmt("Can't upload file: location '%s' is missing upload directory path", config.location()->name.c_str())
 				);
 	if (request.body().size() > config.max_body_size())
 	{
 		throw ResponseError(
 				StatusCode::ContentTooLarge,
-				utils::fmt("Request body size is larger than expected"),
-				*config.location()
+				utils::fmt("Request body size is larger than expected")
 				);
 	}
 	if (!upload_dir.exists)

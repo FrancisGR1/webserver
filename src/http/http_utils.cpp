@@ -1,3 +1,4 @@
+#include "core/utils.hpp"
 #include "StatusCode.hpp"
 #include "HttpResponseException.hpp"
 #include "http_utils.hpp"
@@ -25,7 +26,7 @@ namespace http_utils
 	{
 		throw ResponseError(
 				StatusCode::BadRequest,
-				utils::fmt("'%s' is neither cgi nor a regular file", path.resolved.c_str()),
+				utils::fmt("'%s' is neither cgi nor a regular file", path.resolved.c_str())
 				);
 	}
 
@@ -37,11 +38,11 @@ namespace http_utils
 				);
 	}
 
-	void throw_method_not_allowed(const LocationConfig& location, const std::string& method)
+	void throw_method_not_allowed(const std::string& method)
 	{
 		throw ResponseError(
 				StatusCode::MethodNotAllowed,
-				utils::fmt("%s not allowed on this location: '%s'", method.c_str(), location.name.c_str())
+				utils::fmt("%s not allowed", method.c_str())
 				);
 	}
 
@@ -65,7 +66,7 @@ namespace http_utils
 	{
 		throw ResponseError(
 				StatusCode::Forbidden, 
-				utils::fmt("Can't access directory: '%s'" , path.resolved.c_str()), 
+				utils::fmt("Can't access directory: '%s'" , path.resolved.c_str())
 				);
 	}
 
@@ -81,7 +82,7 @@ namespace http_utils
 	{
 		throw ResponseError(
 				StatusCode::Forbidden,
-				utils::fmt("Not a regular file: '%s'", path.resolved.c_str()),
+				utils::fmt("Not a regular file: '%s'", path.resolved.c_str())
 				);
 	}
 
@@ -89,7 +90,7 @@ namespace http_utils
 	{
 		throw ResponseError(
 				StatusCode::Forbidden,
-				utils::fmt("Directory '%s' has no index and autoindex", path.resolved.c_str()),
+				utils::fmt("Directory '%s' has no index and autoindex", path.resolved.c_str())
 				);
 	}
 
@@ -105,7 +106,7 @@ namespace http_utils
 	{
 		throw ResponseError(
 				StatusCode::NotFound,
-				utils::fmt("'%s' path not found", path.resolved.c_str()),
+				utils::fmt("'%s' path not found", path.resolved.c_str())
 				);
 	}
 
@@ -113,15 +114,15 @@ namespace http_utils
 	{
 		throw ResponseError(
 				StatusCode::Conflict,
-				utils::fmt("Cannot delete directory: '%s", path.resolved.c_str()),
+				utils::fmt("Cannot delete directory: '%s", path.resolved.c_str())
 				);
 	}
 
-	void throw_content_too_large(const Path& path)
+	void throw_content_too_large()
 	{
 		throw ResponseError(
 				StatusCode::ContentTooLarge,
-				utils::fmt("Request body size is larger than expected"),
+				utils::fmt("Request body size is larger than expected")
 				);
 	}
 
@@ -141,11 +142,11 @@ namespace http_utils
 				);
 	}
 
-	void throw_internal_server_error_cant_upload(const Path& path)
+	void throw_internal_server_error_cant_upload()
 	{
 		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("Can't upload file: location '%s' is missing upload directory path", lc.name.c_str())
+				utils::fmt("Can't upload file: location is missing upload directory path")
 				);
 	}
 
@@ -153,7 +154,7 @@ namespace http_utils
 	{
 		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("'%s' doesn't exist", upload_dir.resolved.c_str())
+				utils::fmt("'%s' doesn't exist", path.resolved.c_str())
 				);
 	}
 
@@ -161,7 +162,7 @@ namespace http_utils
 	{
 		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("'%s' is not a directory", upload_dir.resolved.c_str())
+				utils::fmt("'%s' is not a directory", path.resolved.c_str())
 				);
 	}
 
@@ -169,15 +170,23 @@ namespace http_utils
 	{
 		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("Failed when creating uploaded file: '%s'", upload_path.c_str())
+				utils::fmt("Failed when creating uploaded file: '%s'", path.resolved.c_str())
 				);
 	}
 
-	void throw_not_implemented(const HttpRequest& request)
+	void throw_internal_server_error_unknown_file_type(const Path& path)
+	{
+		throw ResponseError(
+				StatusCode::InternalServerError,
+				utils::fmt("Uknown file type '%s", path.resolved.c_str())
+				);
+	}
+
+	void throw_not_implemented(const std::string& method)
 	{
 		throw ResponseError(
 				StatusCode::NotImplemented, 
-				utils::fmt("%s method is not implemented by the server", request.method().c_str())
+				utils::fmt("%s method is not implemented by the server", method.c_str())
 				);
 	}
 

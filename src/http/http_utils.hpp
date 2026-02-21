@@ -1,11 +1,15 @@
 #ifndef HTTPUTILS_HPP
 # define HTTPUTILS_HPP
 
+#include <string>
+
 #include "StatusCode.hpp"
-#include "Path.hpp"
+#include "core/Path.hpp"
 
 namespace http_utils
 {
+	//@TODO: give ctx to every one of these
+	//@TODO: also status code doesnt have to be said in function
 	// error throwers
 	// generic
 	void throw_code(StatusCode::Code code);
@@ -15,7 +19,7 @@ namespace http_utils
 	void throw_bad_request_file(const Path& path);
 	void throw_bad_request_escape_root();
 	// MethodNotAllowed 405
-	void throw_method_not_allowed(const LocationConfig& location, const std::string& method);
+	void throw_method_not_allowed(const std::string& method);
 	// Forbidden 403
 	void throw_forbidden_invalid_route(const Path& path);
 	void throw_forbidden_invalid_directory(const Path& path);
@@ -37,8 +41,9 @@ namespace http_utils
 	void throw_internal_server_error_doesnt_exist(const Path& path);
 	void throw_internal_server_error_not_a_directory(const Path& path);
 	void throw_internal_server_error_failed_upload(const Path& path);
+	void throw_internal_server_error_unknown_file_type(const Path& path);
 	// NotImplemented 501
-	void throw_not_implemented(const HttpRequest& request);
+	void throw_not_implemented(const std::string& method);
 } // namespace http_utils
 
 #endif // HTTPUTILS_HPP
