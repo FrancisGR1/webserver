@@ -4,7 +4,6 @@
 #include "core/Path.hpp"
 #include "config/ConfigTypes.hpp"
 #include "HttpRequest.hpp"
-#include "HttpRequestConfig.hpp"
 #include "NewHttpResponse.hpp"
 #include "AMethodHandler.hpp"
 #include "CgiHandler.hpp"
@@ -22,8 +21,16 @@ class PostHandler : public AMethodHandler
 		const HttpRequestContext& m_ctx;
 		NewHttpResponse m_response;
 		bool m_done;
-		const CgiHandler m_cgi;
+		CgiHandler m_cgi;
+
+		// upload
+		Path m_upload;
+		int m_fd;
+		ssize_t m_offset;
 		static unsigned long long m_uploaded_file_index;
+
+		// utils
+		ssize_t handle_upload(const std::string& body, size_t offset, int fd);
 };
 
 #endif // POSTHANDLER_HPP
