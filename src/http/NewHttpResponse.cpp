@@ -103,8 +103,7 @@ ssize_t NewHttpResponse::send(int fd)
 		case BodyPhase: 
 			{
 				ssize_t sent = 0;
-				// either send body from a file or a string
-				if (m_body_fd > -1)
+				if (m_body_fd > -1) // send body from file/pipe
 				{
 					// m_body_str is used as a leftover for the next call
 					if (!m_body_str.empty())
@@ -141,7 +140,7 @@ ssize_t NewHttpResponse::send(int fd)
 					}
 
 				}
-				else
+				else if (!m_body_str.empty()) // send body from string
 				{
 					sent = ::send(fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
 					if (sent < 0)
@@ -150,8 +149,12 @@ ssize_t NewHttpResponse::send(int fd)
 					m_offset += sent;
 					if (m_offset == m_body_str.size())
 						m_send_phase = Done;
-
 				}
+				else // no body
+				{
+					m_send_phase = Done;
+				}
+
 				return sent;
 			}
 		default:
