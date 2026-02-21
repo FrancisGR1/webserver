@@ -42,7 +42,8 @@ SOURCES  = \
 	  src/http/GetHandler.cpp \
 	  src/http/DeleteHandler.cpp \
 	  src/http/ErrorHandler.cpp \
-	  src/http/CgiHandler.cpp
+	  src/http/CgiHandler.cpp \
+	  src/http/http_utils.cpp
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
 OBJ     += $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter-out src/%.cpp, $(SOURCES)))
