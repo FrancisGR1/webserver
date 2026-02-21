@@ -1,5 +1,6 @@
 #include <sstream>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
@@ -35,16 +36,25 @@ void NewHttpResponse::set_header(const std::string& key, const std::string& valu
 	m_headers[key] = value;
 }
 
-void NewHttpResponse::set_body(const std::string& str)
+void NewHttpResponse::set_body_as_str(const std::string& str)
 {
 	m_body_str = str;
 }
 
 // prefix is something you might want to send after the headers and before reading the file, for example a read() call that processed the headers and a bit of the body
-void NewHttpResponse::set_body(int fd, const std::string& prefix)
+void NewHttpResponse::set_body_as_fd(int fd, const std::string& prefix)
 {
 	m_body_fd = fd;
 	m_body_str = prefix;
+}
+
+void NewHttpResponse::set_body_as_path(const Path& path)
+{
+	if (path.exists)
+	{
+		//@QUESTION @TODO add to the event loop?
+		m_body_fd = open(path.resolved.c_str(), O_RDONLY);
+	}
 }
 
 StatusCode::Code NewHttpResponse::status() const { return m_status; }
@@ -55,6 +65,8 @@ ssize_t NewHttpResponse::send(int fd)
 	{
 		case StatusPhase:
 			{
+				if (m_status_line.empty())
+					m_status_line = make_status_line();
 				ssize_t sent = ::send(fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
 				if (sent < 0)
 					;
