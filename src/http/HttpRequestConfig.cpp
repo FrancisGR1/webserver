@@ -56,6 +56,13 @@ bool HttpRequestConfig::allows_autoindex() const
 	return (false);
 }
 
+bool HttpRequestConfig::has_index() const
+{
+	if (m_location) 
+		return !m_location->default_file.empty();
+	return false;
+}
+
 bool HttpRequestConfig::allows_upload() const
 {
 	if (m_location) 
@@ -68,6 +75,13 @@ bool HttpRequestConfig::has_upload_dir() const
 	if (m_location) 
 		return !m_location->upload_dir.empty();
 	return false;
+}
+
+Path HttpRequestConfig::index() const
+{
+	if (m_location)
+		return m_location->default_file;
+	return Path(NULL);
 }
 
 Path HttpRequestConfig::upload_dir() const

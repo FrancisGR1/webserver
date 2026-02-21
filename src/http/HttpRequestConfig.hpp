@@ -24,9 +24,11 @@ class HttpRequestConfig
 		bool is_redirected() const;
 		bool allows_method(const std::string& method) const;
 		bool allows_autoindex() const;
+		bool has_index() const;
 		bool allows_upload() const;
 		bool has_upload_dir() const;
 
+		Path index() const;
 		Path upload_dir() const;
 		Path get_error_page(size_t code) const;
 		Path cgi_interpreter() const;
