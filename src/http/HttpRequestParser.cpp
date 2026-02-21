@@ -10,7 +10,7 @@
 #include "HttpRequestParser.hpp"
 
 HttpRequestParser::HttpRequestParser()
-	: m_status_code(StatusCode::OK)
+	: m_status_code(StatusCode::Ok)
 	, m_state(Parser::StartLineMethod)
 	, m_idx(0)
 	, m_ch('\0')
@@ -60,7 +60,7 @@ void HttpRequestParser::clear()
 	m_protocol_version.clear();
 	m_headers.clear();
 	m_body.clear();
-	m_status_code = StatusCode::OK;
+	m_status_code = StatusCode::Ok;
 
 	m_state = Parser::StartLineMethod;
 	m_idx = 0;

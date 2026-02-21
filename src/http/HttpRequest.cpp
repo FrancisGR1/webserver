@@ -29,7 +29,7 @@ const std::string& HttpRequest::target_query() const { return m_target_query; }
 const std::string& HttpRequest::protocol_version() const { return m_protocol_version; }
 const std::map<std::string, std::string>& HttpRequest::headers() const { return m_headers; }
 const std::string& HttpRequest::body() const { return m_body; }
-bool HttpRequest::bad_request() const { return m_status_code != StatusCode::OK; }
+bool HttpRequest::bad_request() const { return m_status_code != StatusCode::Ok; }
 StatusCode::Code HttpRequest::status_code() const { return m_status_code; }
 
 static void print_field(std::ostream& os, const std::string& title, const std::string& value, int width = 14)

@@ -7,7 +7,7 @@ std::string StatusCode::to_string(StatusCode::Code c)
 	switch (c)
 	{
 		// === Successful ===
-		case SC::OK       : return "OK";
+		case SC::Ok       : return "OK";
 		case SC::Created  : return "Created";
 		case SC::Accepted : return "Accepted";
 		case SC::NoContent: return "No Content";

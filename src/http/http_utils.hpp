@@ -33,11 +33,11 @@ namespace http_utils
 	// Conflict 409
 	void throw_conflict(const Path& path);
 	// ContentTooLarge 413
-	void throw_content_too_large(const Path& path);
+	void throw_content_too_large();
 	// InternalServerError 500
 	void throw_internal_server_error_cant_delete(const Path& path);
 	void throw_internal_server_error_not_valid(const Path& path);
-	void throw_internal_server_error_cant_upload(const Path& path);
+	void throw_internal_server_error_cant_upload();
 	void throw_internal_server_error_doesnt_exist(const Path& path);
 	void throw_internal_server_error_not_a_directory(const Path& path);
 	void throw_internal_server_error_failed_upload(const Path& path);

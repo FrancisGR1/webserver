@@ -18,11 +18,12 @@ class GetHandler : public AMethodHandler
 		~GetHandler();
 
 	private:
+
 		const HttpRequest& m_request; 
 		const HttpRequestContext& m_ctx;
 		NewHttpResponse m_response;
 		bool m_done;
-		const CgiHandler m_cgi;
+		CgiHandler m_cgi;
 
 		// utils
 		void handle_index(NewHttpResponse& response, const Path& path);
