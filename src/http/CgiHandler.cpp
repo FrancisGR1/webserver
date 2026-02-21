@@ -40,7 +40,7 @@ void CgiHandler::process()
 		}
 		case ReadHeaders:
 		{
-			// headers are read from pipe
+			// headers are read from pipe to std::map
 			m_state = read_pipe_chunk_headers();
 			break;
 		}
@@ -48,7 +48,7 @@ void CgiHandler::process()
 		{
 			parse_headers();
 			// body is read directly to socket
-			m_response.set_body(m_fd[0], m_body_leftover);
+			m_response.set_body_as_fd(m_fd[0], m_body_leftover);
 			m_state = Done;
 			break;
 		}
@@ -183,7 +183,7 @@ void CgiHandler::parse_headers()
 	}
 	else
 	{
-		m_response.set_status(StatusCode::OK);
+		m_response.set_status(StatusCode::Ok);
 	}
 }
 
