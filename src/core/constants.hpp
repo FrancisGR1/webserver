@@ -21,6 +21,7 @@ namespace constants
 	extern const char* server_http_version;
 	extern const std::string py_ext;
 	extern const size_t read_chunk_size;
+	extern const size_t write_chunk_size;
 
 	// http body
 	extern const size_t max_body_size;

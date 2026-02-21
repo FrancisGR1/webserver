@@ -2,6 +2,7 @@
 #include <fcntl.h>
 
 #include "core/utils.hpp"
+#include "core/constants.hpp"
 #include "config/ConfigTypes.hpp"
 #include "StatusCode.hpp"
 #include "HttpRequest.hpp"
@@ -18,8 +19,7 @@ PostHandler::PostHandler(const HttpRequest& request, const HttpRequestContext& c
 	, m_done(false)
 	, m_cgi(request, ctx)
 	, m_upload(NULL)
-	, m_fd(-1)
-{}
+	, m_fd(-1) {}
 
 static void is_uploadable_precondition(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir)
 {
@@ -73,10 +73,14 @@ void PostHandler::process()
 
 		if (!m_done)
 		{
-			ssize_t written = write(m_fd, m_upload.resolved.c_str() + m_offset, m_upload.resolved.size() - m_offset);
-			m_offset += written;
-
-			if (m_offset == static_cast<ssize_t>(m_upload.resolved.size()))
+			size_t to_write = (m_request.body().size() - m_offset) > constants::write_chunk_size
+				? constants::write_chunk_size
+				: m_request.body().size() - m_offset;
+			ssize_t written = ::write(m_fd, m_request.body().c_str() + m_offset, to_write);
+			if (written >= 0)
+				m_offset += written;
+			//@TODO apanhar erro em caso de -1
+			if (m_offset == static_cast<ssize_t>(m_request.body().size()))
 				m_done = true;
 		}
 

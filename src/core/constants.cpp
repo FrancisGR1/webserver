@@ -21,6 +21,7 @@ namespace constants
     const std::string py_ext = "py";
     // - cgi
     const size_t read_chunk_size = 4096;
+    const size_t write_chunk_size = 4096;
 
     // - http request
     const size_t max_body_size = 1000000;
