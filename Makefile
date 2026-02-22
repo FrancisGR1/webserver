@@ -37,7 +37,7 @@ SOURCES  = \
 	  src/http/NewHttpResponse.cpp \
 	  src/http/HttpResponseException.cpp \
 	  src/http/StatusCode.cpp \
-	  src/http/AMethodHandler.cpp \
+	  src/http/IRequestHandler.cpp \
 	  src/http/PostHandler.cpp \
 	  src/http/GetHandler.cpp \
 	  src/http/DeleteHandler.cpp \
