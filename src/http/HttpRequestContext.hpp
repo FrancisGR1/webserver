@@ -9,11 +9,15 @@ class HttpRequestContext
 {
 	public: 
 		//@TODO: adicionar ligação, session manager e cookies
-		HttpRequestContext(const HttpRequestConfig& request_config);
+		HttpRequestContext();
+		HttpRequestContext(const ServiceConfig& service);
+
 		const HttpRequestConfig& config() const;
+		HttpRequestConfig& config();
 
 	private:
-		const HttpRequestConfig& m_request_config;
+		HttpRequestConfig* m_request_config;
+		//@TODO adicionar connection
 };
 
 #endif // REQUESTCONTEXT_HPP
