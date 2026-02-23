@@ -1,6 +1,6 @@
 #include "StatusCode.hpp"
 
-std::string StatusCode::to_string(StatusCode::Code c)
+std::string StatusCode::to_reason(StatusCode::Code c)
 {
 	typedef StatusCode SC;
 

@@ -49,7 +49,7 @@ struct StatusCode
 		HttpVersionNotSupported = 505,
 	};
 
-	static std::string to_string(StatusCode::Code c);
+	static std::string to_reason(StatusCode::Code c);
 	static bool is_redirection(size_t code);
 	//@TODO:
 	//is_valid(size_t code)
