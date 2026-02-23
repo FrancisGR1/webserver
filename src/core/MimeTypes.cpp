@@ -57,7 +57,6 @@ std::map<std::string, std::string> MimeTypes::make_mimes()
 	m["pdf"]     = "application/pdf";
 	m["ai"]      = "application/postscript";
 	m["ps"]      = "application/postscript";
-	m["ai"]      = "application/postscript";
 	m["rtf"]     = "application/rtf";
 	m["m3u8"]    = "application/vnd.apple.mpegurl";
 	m["kml"]     = "application/vnd.google-earth.kml+xml";
@@ -141,6 +140,20 @@ std::string MimeTypes::from_path(const std::string& path)
 		return "application/octet-stream";
 
 	std::string ext = utils::str_tolower(path.substr(dot + 1));
+
+	const std::map<std::string, std::string>& m = mimes();
+	std::map<std::string, std::string>::const_iterator it = m.find(ext);
+	if (it != m.end())
+		return it->second;
+
+	//@NOTE: default mime type
+	return "application/octet-stream";
+}
+
+std::string MimeTypes::from_extension(const std::string& ext)
+{
+	if (ext.empty())
+		return "application/octet-stream";
 
 	const std::map<std::string, std::string>& m = mimes();
 	std::map<std::string, std::string>::const_iterator it = m.find(ext);
