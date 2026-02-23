@@ -7,13 +7,13 @@
 //@TODO: tornar class
 struct Path
 {
-	Path(const std::string& resolved_path);
-	Path(const char* resolved_path);
-	void init(const std::string& resolved_path);
+	Path(const std::string& str_path);
+	Path(const char* cstr_path);
+	void init(const std::string& str_path);
 
 	//@TODO:
 	//string raw
-	//string resolved
+	//string str
 	//resolve(Location)?
 
 	bool exists;
@@ -45,8 +45,7 @@ struct Path
 	//@QUESTION @TODO: eliminar?
 	int stat_errno;
 
-	//@TODO substituir por str() ou raw()
-	std::string resolved;
+	std::string raw;
 
 	//@TODO: funções
 	//write
