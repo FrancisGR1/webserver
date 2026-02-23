@@ -5,10 +5,10 @@
 #include "config/ConfigTypes.hpp"
 #include "NewHttpResponse.hpp"
 #include "HttpRequestConfig.hpp"
-#include "AMethodHandler.hpp"
+#include "IRequestHandler.hpp"
 #include "CgiHandler.hpp"
 
-class GetHandler : public AMethodHandler 
+class GetHandler : public IRequestHandler 
 {
 	public:
 		GetHandler(const HttpRequest& request, const HttpRequestContext& ctx);
@@ -28,6 +28,7 @@ class GetHandler : public AMethodHandler
 		// utils
 		void handle_index(NewHttpResponse& response, const Path& path);
 		void handle_autoindex(NewHttpResponse& response, const Path& path);
+		std::string make_autoindex(const Path& path);
 		void handle_file(NewHttpResponse& response, const Path& path);
 };
 

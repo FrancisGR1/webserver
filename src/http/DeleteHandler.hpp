@@ -4,10 +4,10 @@
 #include "config/ConfigTypes.hpp"
 #include "NewHttpResponse.hpp"
 #include "HttpRequestContext.hpp"
-#include "AMethodHandler.hpp"
+#include "IRequestHandler.hpp"
 #include "CgiHandler.hpp"
 
-class DeleteHandler : public AMethodHandler 
+class DeleteHandler : public IRequestHandler 
 {
 	public:
 		DeleteHandler(const HttpRequest& request, const HttpRequestContext& ctx);

@@ -16,16 +16,14 @@ GetHandler::GetHandler(const HttpRequest& request, const HttpRequestContext& ctx
 	: m_request(request)
 	, m_ctx(ctx)
 	, m_done(false)
-	, m_cgi(request, ctx)
-{
-}
+	, m_cgi(request, ctx) {}
 
 //@TODO implementar If-Modified-Since e If-None-Match (ETag), Range requests
 void GetHandler::process()
 {
 	const HttpRequestConfig& config = m_ctx.config();
 
-	if (!config.allows_method("GET")) http_utils::throw_method_not_allowed("GET");
+	if (!config.allows_method("GET")) http_utils::throw_method_not_allowed("GET", m_ctx);
 
 	if (config.is_redirected())
 	{
@@ -48,15 +46,15 @@ void GetHandler::process()
 	if (path.is_directory)
 	{
 
-		if (!path.can_execute) http_utils::throw_forbidden_cant_access_directory(path);
-		if (!path.ends_with_slash) http_utils::throw_moved_permanently(path);
+		if (!path.can_execute) http_utils::throw_forbidden_cant_access_directory(path, m_ctx);
+		if (!path.ends_with_slash) http_utils::throw_moved_permanently(path, m_ctx);
 		if (config.has_index())
 		{
 			// index path
-			const Path index_path = utils::join_paths(path.resolved, config.index().resolved);
-			if (!index_path.exists) http_utils::throw_not_found(index_path);
-			if (!index_path.is_regular_file) http_utils::throw_forbidden_not_regular_file(index_path);
-			if (!index_path.can_read) http_utils::throw_forbidden_cant_read_file(index_path);
+			const Path index_path = utils::join_paths(path.raw, config.index().resolved);
+			if (!index_path.exists) http_utils::throw_not_found(index_path, m_ctx);
+			if (!index_path.is_regular_file) http_utils::throw_forbidden_not_regular_file(index_path, m_ctx);
+			if (!index_path.can_read) http_utils::throw_forbidden_cant_read_file(index_path, m_ctx);
 
 			// index path is valid
 			handle_index(m_response, index_path);
@@ -67,19 +65,19 @@ void GetHandler::process()
 		}
 		else
 		{
-			http_utils::throw_forbidden_cant_do_anything_with_directory(path);
+			http_utils::throw_forbidden_cant_do_anything_with_directory(path, m_ctx);
 		}
 	}
 	else if (path.is_regular_file)
 	{
-		if (!path.exists) http_utils::throw_not_found(path);
-		if (!path.can_read) http_utils::throw_forbidden_cant_read_file(path);
+		if (!path.exists) http_utils::throw_not_found(path, m_ctx);
+		if (!path.can_read) http_utils::throw_forbidden_cant_read_file(path, m_ctx);
 
 		handle_file(m_response, path);
 	}
 	else // only reaches here if it's neither a reg. file or a dir
 	{
-		http_utils::throw_internal_server_error_unknown_file_type(path);
+		http_utils::throw_internal_server_error_unknown_file_type(path, m_ctx);
 	}
 
 	m_done = true;
@@ -96,18 +94,18 @@ void GetHandler::handle_index(NewHttpResponse& response, const Path& path)
 	response.set_body_as_path(path);
 }
 
-static std::string make_autoindex(const Path& path)
+std::string GetHandler::make_autoindex(const Path& path)
 {
-	DIR* dir = opendir(path.resolved.c_str());
+	DIR* dir = opendir(path.raw.c_str());
 	if (!dir)
 	{
-		http_utils::throw_forbidden_invalid_directory(path);
+		http_utils::throw_forbidden_invalid_directory(path, m_ctx);
 	}
 
 	std::string body = "<html>\n"
-		"<head><title>Index of " + path.resolved + "</title></head>\n"
+		"<head><title>Index of " + path.raw + "</title></head>\n"
 		"<body>\n"
-		"<h0>Index of " + path.resolved + "</h1><hr><pre>\n";
+		"<h0>Index of " + path.raw + "</h1><hr><pre>\n";
 
 	struct dirent* entry;
 	while ((entry = readdir(dir)) != NULL)
@@ -118,7 +116,7 @@ static std::string make_autoindex(const Path& path)
 		if (name == "." || name == "..")
 			continue;
 
-		std::string full_path = path.resolved + "/" + name;
+		std::string full_path = path.raw + "/" + name;
 
 		struct stat st;
 		if (stat(full_path.c_str(), &st) == -2)

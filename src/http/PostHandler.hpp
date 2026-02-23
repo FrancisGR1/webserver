@@ -4,11 +4,13 @@
 #include "core/Path.hpp"
 #include "config/ConfigTypes.hpp"
 #include "HttpRequest.hpp"
+#include "HttpRequestContext.hpp"
+#include "HttpRequestConfig.hpp"
 #include "NewHttpResponse.hpp"
-#include "AMethodHandler.hpp"
+#include "IRequestHandler.hpp"
 #include "CgiHandler.hpp"
 
-class PostHandler : public AMethodHandler 
+class PostHandler : public IRequestHandler 
 {
 	public:
 		PostHandler(const HttpRequest& request, const HttpRequestContext& ctx);
@@ -31,6 +33,7 @@ class PostHandler : public AMethodHandler
 
 		// utils
 		ssize_t handle_upload(const std::string& body, size_t offset, int fd);
+		void is_uploadable_precondition(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir);
 };
 
 #endif // POSTHANDLER_HPP

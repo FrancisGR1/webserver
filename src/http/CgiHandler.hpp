@@ -8,13 +8,13 @@
 #include "config/types/ServiceConfig.hpp"
 #include "http/HttpRequest.hpp"
 #include "config/ConfigTypes.hpp"
-#include "AMethodHandler.hpp"
+#include "IRequestHandler.hpp"
 #include "CgiHandler.hpp"
 #include "HttpRequestContext.hpp"
 #include "NewHttpResponse.hpp"
 
 // https://datatracker.ietf.org/doc/html/rfc3875
-class CgiHandler : public AMethodHandler
+class CgiHandler : public IRequestHandler
 {
 	public:
 		CgiHandler(const HttpRequest& request, const HttpRequestContext& ctx);

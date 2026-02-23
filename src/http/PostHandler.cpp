@@ -21,25 +21,25 @@ PostHandler::PostHandler(const HttpRequest& request, const HttpRequestContext& c
 	, m_upload(NULL)
 	, m_fd(-1) {}
 
-static void is_uploadable_precondition(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir)
+void PostHandler::is_uploadable_precondition(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir)
 {
 	if (!config.has_upload_dir())
-		http_utils::throw_internal_server_error_cant_upload();
+		http_utils::throw_internal_server_error_cant_upload(m_ctx);
 	if (request.body().size() > config.max_body_size()) 
-		http_utils::throw_content_too_large();
+		http_utils::throw_content_too_large(m_ctx);
 	if (!upload_dir.exists) 
-		http_utils::throw_internal_server_error_doesnt_exist(upload_dir);
+		http_utils::throw_internal_server_error_doesnt_exist(upload_dir, m_ctx);
 	if (!upload_dir.is_directory) 
-		http_utils::throw_internal_server_error_not_a_directory(upload_dir);
+		http_utils::throw_internal_server_error_not_a_directory(upload_dir, m_ctx);
 	if (!upload_dir.can_write || !upload_dir.can_execute) 
-		http_utils::throw_forbidden_cant_upload(upload_dir);
+		http_utils::throw_forbidden_cant_upload(upload_dir, m_ctx);
 }
 
 void PostHandler::process()
 {
 	const HttpRequestConfig& config = m_ctx.config();
 
-	if (!config.allows_method("POST")) http_utils::throw_method_not_allowed("POST");
+	if (!config.allows_method("POST")) http_utils::throw_method_not_allowed("POST", m_ctx);
 
 	if (config.is_redirected())
 	{
@@ -110,7 +110,7 @@ void PostHandler::process()
 	else
 	{
 		//@TODO: que código de erro é aqui? 404?
-		http_utils::throw_internal_server_error_cant_upload();
+		http_utils::throw_internal_server_error_cant_upload(m_ctx);
 	}
 }
 

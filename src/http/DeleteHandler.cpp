@@ -17,7 +17,7 @@ void DeleteHandler::process()
 {
 	const HttpRequestConfig& config = m_ctx.config();
 
-	if (!config.allows_method("DELETE")) http_utils::throw_method_not_allowed("DELETE");
+	if (!config.allows_method("DELETE")) http_utils::throw_method_not_allowed("DELETE", m_ctx);
 	if (config.is_redirected())
 	{
 		m_response.set_status(StatusCode::MovedPermanently);
@@ -36,12 +36,12 @@ void DeleteHandler::process()
 
 	const Path& path = config.path();
 
-	if (path.is_directory) http_utils::throw_conflict(path);
+	if (path.is_directory) http_utils::throw_conflict(path, m_ctx);
 
 	// delete file
-	if (std::remove(path.resolved.c_str()) != 0)
+	if (std::remove(path.raw.c_str()) != 0)
 	{
-		http_utils::throw_internal_server_error_cant_delete(path);
+		http_utils::throw_internal_server_error_cant_delete(path, m_ctx);
 	}
 
 	// status
