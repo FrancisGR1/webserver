@@ -10,6 +10,7 @@
 class HttpRequest
 {
 	public:
+		//@TODO copy assignment
 		HttpRequest();
 		HttpRequest(const std::string& method,
 				const std::string& target_path,

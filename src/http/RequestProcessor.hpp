@@ -1,6 +1,12 @@
 #ifndef REQUESTPROCESSOR_HPP
 # define REQUESTPROCESSOR_HPP
 
+#include "config/types/ServiceConfig.hpp"
+#include "HttpRequest.hpp"
+#include "HttpRequestContext.hpp"
+#include "IRequestHandler.hpp"
+#include "NewHttpResponse.hpp"
+
 class RequestProcessor : public IRequestHandler
 {
 	public:
@@ -16,14 +22,14 @@ class RequestProcessor : public IRequestHandler
 		{
 			Validating = 0,
 			Resolving,
-			Dispatching
+			Dispatching,
 			Handling,
 			Done
 		};
 
 		const HttpRequest& m_request;
 		State m_state;
-		HttpRequestContext m_context;
+		HttpRequestContext m_ctx;
 		IRequestHandler* m_handler;
 };
 

@@ -4,7 +4,7 @@
 #include "config/ConfigTypes.hpp"
 #include "StatusCode.hpp"
 #include "NewHttpResponse.hpp"
-#include "HttpResponseException.hpp"
+#include "ResponseError.hpp"
 #include "HttpRequestContext.hpp"
 #include "IRequestHandler.hpp"
 

@@ -51,7 +51,7 @@ void GetHandler::process()
 		if (config.has_index())
 		{
 			// index path
-			const Path index_path = utils::join_paths(path.raw, config.index().resolved);
+			const Path index_path = utils::join_paths(path.raw, config.index().raw);
 			if (!index_path.exists) http_utils::throw_not_found(index_path, m_ctx);
 			if (!index_path.is_regular_file) http_utils::throw_forbidden_not_regular_file(index_path, m_ctx);
 			if (!index_path.can_read) http_utils::throw_forbidden_cant_read_file(index_path, m_ctx);

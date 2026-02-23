@@ -8,7 +8,7 @@
 
 HttpRequestConfig::HttpRequestConfig(const ServiceConfig& service)
 	: m_service(service)
-	, m_resolved_path(path)
+	, m_resolved_path(NULL)
 	, m_location(NULL) {}
 
 HttpRequestConfig::HttpRequestConfig(const ServiceConfig& service, const Path& path, const LocationConfig& location)
@@ -21,9 +21,9 @@ void HttpRequestConfig::set(const Path& path)
 	m_resolved_path = path;
 }
 
-void HttpRequestConfig::set(const std::string& resolved_path)
+void HttpRequestConfig::set(const LocationConfig& location)
 {
-	m_location = m_service.locations.at(path.raw);
+	m_location = &location;
 };
 
 const ServiceConfig& HttpRequestConfig::service() const { return  m_service; }

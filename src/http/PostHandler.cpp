@@ -6,10 +6,10 @@
 #include "config/ConfigTypes.hpp"
 #include "StatusCode.hpp"
 #include "HttpRequest.hpp"
-#include "http_utils.hpp"
 #include "HttpRequestConfig.hpp"
 #include "HttpRequestContext.hpp"
 #include "PostHandler.hpp"
+#include "http_utils.hpp"
 
 unsigned long long PostHandler::m_uploaded_file_index;
 
@@ -21,18 +21,18 @@ PostHandler::PostHandler(const HttpRequest& request, const HttpRequestContext& c
 	, m_upload(NULL)
 	, m_fd(-1) {}
 
-void PostHandler::is_uploadable_precondition(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir)
+static void is_uploadable_precondition(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir, const HttpRequestContext& ctx)
 {
 	if (!config.has_upload_dir())
-		http_utils::throw_internal_server_error_cant_upload(m_ctx);
+		http_utils::throw_internal_server_error_cant_upload(ctx);
 	if (request.body().size() > config.max_body_size()) 
-		http_utils::throw_content_too_large(m_ctx);
+		http_utils::throw_content_too_large(ctx);
 	if (!upload_dir.exists) 
-		http_utils::throw_internal_server_error_doesnt_exist(upload_dir, m_ctx);
+		http_utils::throw_internal_server_error_doesnt_exist(upload_dir, ctx);
 	if (!upload_dir.is_directory) 
-		http_utils::throw_internal_server_error_not_a_directory(upload_dir, m_ctx);
+		http_utils::throw_internal_server_error_not_a_directory(upload_dir, ctx);
 	if (!upload_dir.can_write || !upload_dir.can_execute) 
-		http_utils::throw_forbidden_cant_upload(upload_dir, m_ctx);
+		http_utils::throw_forbidden_cant_upload(upload_dir, ctx);
 }
 
 void PostHandler::process()
@@ -62,13 +62,13 @@ void PostHandler::process()
 		{
 			Path upload_dir = config.upload_dir();
 			// check if it's uploadable
-			is_uploadable_precondition(m_request, config, upload_dir);
+			is_uploadable_precondition(m_request, config, upload_dir, m_ctx);
 			// create a name for the new file to be uploaded
 			std::string file_name = utils::to_string(m_uploaded_file_index++) + ".data";
 			// make upload real path
-			m_upload = utils::join_paths(upload_dir.resolved, file_name);
+			m_upload = utils::join_paths(upload_dir.raw, file_name);
 			//@TODO add fd to event pool
-			m_fd = open(m_upload.resolved.c_str(), O_WRONLY | O_APPEND);
+			m_fd = open(m_upload.raw.c_str(), O_WRONLY | O_APPEND);
 		}
 
 		if (!m_done)
@@ -93,13 +93,13 @@ void PostHandler::process()
 			std::string json = \
 					   "{"
 					   "\"status\": \"success\","
-					   "\"filename\": \"" + m_upload.resolved + "\","
+					   "\"filename\": \"" + m_upload.raw + "\","
 					   "\"size\": " + utils::to_string(m_offset) +
 					   "}";
 			m_response.set_body_as_str(json);
 
 			// headers
-			m_response.set_header("Location", m_upload.resolved);
+			m_response.set_header("Location", m_upload.raw);
 			m_response.set_header("Connection", "close"); // @NOTE: HTTP1.0 closes by default;
 			m_response.set_header("Date", utils::http_date());
 			m_response.set_header("Content-Type", "application/json");

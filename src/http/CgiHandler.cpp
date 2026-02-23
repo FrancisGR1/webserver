@@ -66,8 +66,8 @@ void CgiHandler::fork_and_exec()
 		//@TODO @QUESTION o const cast é necessário?
 		// build argv
 		Path interpreter = m_ctx.config().cgi_interpreter();
-		char* interpreter_raw_path = const_cast<char*>(interpreter.resolved.c_str());
-		char* script_raw_path = const_cast<char*>(m_ctx.config().path().resolved.c_str());
+		char* interpreter_raw_path = const_cast<char*>(interpreter.raw.c_str());
+		char* script_raw_path = const_cast<char*>(m_ctx.config().path().raw.c_str());
 		char* argv[] = { interpreter_raw_path, script_raw_path, NULL };
 
 		// build env

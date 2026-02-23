@@ -14,6 +14,7 @@ class HttpRequestContext
 
 		const HttpRequestConfig& config() const;
 		HttpRequestConfig& config();
+		~HttpRequestContext();
 
 	private:
 		HttpRequestConfig* m_request_config;

@@ -1,7 +1,7 @@
 #include "config/ConfigTypes.hpp"
 #include "HttpRequestContext.hpp"
 #include "ErrorHandler.hpp"
-#include "MimeTypes.hpp"
+#include "core/MimeTypes.hpp"
 
 ErrorHandler::ErrorHandler(const ResponseError& error)
 	: m_code(error.status())

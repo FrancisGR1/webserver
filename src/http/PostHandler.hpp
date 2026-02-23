@@ -33,7 +33,6 @@ class PostHandler : public IRequestHandler
 
 		// utils
 		ssize_t handle_upload(const std::string& body, size_t offset, int fd);
-		void is_uploadable_precondition(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir);
 };
 
 #endif // POSTHANDLER_HPP

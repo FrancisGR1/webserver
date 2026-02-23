@@ -12,11 +12,10 @@ class HttpRequestConfig
 {
 	public:
 		HttpRequestConfig(const ServiceConfig& service);
-		//HttpRequestConfig(const ServiceConfig& service, const Path& path);
-		//HttpRequestConfig(const ServiceConfig& service, const LocationConfig& location, const Path& path);
+		HttpRequestConfig(const ServiceConfig& service, const Path& path, const LocationConfig& location);
 
-		void set_path(const Path& path);
-		void set_location(const std::string& resolved_path);
+		void set(const Path& path);
+		void set(const LocationConfig& location);
 
 		const ServiceConfig& service() const;
 		const Path& path() const;
