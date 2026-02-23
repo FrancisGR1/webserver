@@ -81,7 +81,7 @@ void HttpResponse::build_redirection_response(const Route& redirection)
 {
 	write_status_line(StatusCode::MovedPermanently);
 
-	m_headers["Location"] = redirection.path;
+	m_headers["Location"] = redirection.raw_path;
 	m_headers["Connection"] = "close"; // @NOTE: HTTP0.0 closes by default
 	m_headers["Date"] = utils::http_date();
 }

@@ -30,7 +30,7 @@ void ServiceConfig::set(Directive& directive)
 			{
 				size_t code = atoi(directive.args.at(0).c_str());
 				redirection.code = static_cast<StatusCode::Code>(code);
-				redirection.path = directive.args.at(1);
+				redirection.raw_path = directive.args.at(1);
 				break;
 			}
 		case Token::DirectiveMaxBodySize:
@@ -68,7 +68,7 @@ std::ostream& operator<<(std::ostream& os, const ServiceConfig& service)
 	}
 
 	service.redirection.code 
-	? os << "\tRedirection: " << service.redirection.code << ": " << service.redirection.path << "\n"
+	? os << "\tRedirection: " << service.redirection.code << ": " << service.redirection.raw_path << "\n"
 	: os << "\tRedirection:\n";
 
 	os << "Max body size: " << service.max_body_size << "\n";

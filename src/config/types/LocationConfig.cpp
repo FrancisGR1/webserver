@@ -67,7 +67,7 @@ void LocationConfig::set(Directive& directive)
 			{
 				size_t code = atoi(directive.args.at(0).c_str());
 				redirection.code = static_cast<StatusCode::Code>(code);
-				redirection.path = directive.args.at(1);
+				redirection.raw_path = directive.args.at(1);
 				break;
 			}
 		case Token::DirectiveMaxBodySize:
@@ -112,7 +112,7 @@ std::ostream& operator<<(std::ostream& os, const LocationConfig& lc)
 	}
 
 	lc.redirection.code 
-	? os << "\tRedirection: " << lc.redirection.code << ": " << lc.redirection.path << "\n"
+	? os << "\tRedirection: " << lc.redirection.code << ": " << lc.redirection.raw_path << "\n"
 	: os << "\tRedirection:\n";
 	os << "\tMax Body Size: " << lc.max_body_size << "\n";
 
