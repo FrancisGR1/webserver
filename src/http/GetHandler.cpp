@@ -4,6 +4,7 @@
 
 #include "core/utils.hpp"
 #include "core/Path.hpp"
+#include "core/MimeTypes.hpp"
 #include "config/ConfigTypes.hpp"
 #include "StatusCode.hpp"
 #include "HttpRequest.hpp"
@@ -27,10 +28,7 @@ void GetHandler::process()
 
 	if (config.is_redirected())
 	{
-		m_response.set_status(StatusCode::MovedPermanently);
-		m_response.set_header("Location", config.redirection().path);
-		m_response.set_header("Connection", "close");
-		m_response.set_header("Date", utils::http_date());
+		m_response.make_redirection_response(StatusCode::MovedPermanently, config.redirection());
 		m_done = true;
 		return;
 	}
@@ -171,6 +169,7 @@ void GetHandler::handle_autoindex(NewHttpResponse& response, const Path& path)
 	response.set_status(StatusCode::Ok);
 	response.set_header("Connection", "close"); // @NOTE: HTTP-1.0 closes by default
 	response.set_header("Content-Length", utils::to_string(path.size));
+	response.set_header("Content-Type", MimeTypes::from_extension("html"));
 	response.set_header("Date", utils::http_date());
 	// body
 	std::string autoindex = make_autoindex(path);

@@ -20,10 +20,7 @@ void DeleteHandler::process()
 	if (!config.allows_method("DELETE")) http_utils::throw_method_not_allowed("DELETE", m_ctx);
 	if (config.is_redirected())
 	{
-		m_response.set_status(StatusCode::MovedPermanently);
-		m_response.set_header("Location", config.redirection().path);
-		m_response.set_header("Connection", "close");
-		m_response.set_header("Date", utils::http_date());
+		m_response.make_redirection_response(StatusCode::MovedPermanently, config.redirection());
 		m_done = true;
 	}
 	else if (config.is_cgi())
@@ -49,6 +46,8 @@ void DeleteHandler::process()
 	// headers
 	m_response.set_header("Connection", "close"); // @NOTE: HTTP1.0 closes by default
 	m_response.set_header("Date", utils::http_date());
+
+	m_done = true;
 }
 
 bool DeleteHandler::done() const

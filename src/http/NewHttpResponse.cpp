@@ -6,6 +6,7 @@
 
 #include "core/constants.hpp"
 #include "core/utils.hpp"
+#include "config/types/Route.hpp"
 #include "NewHttpResponse.hpp"
 
 NewHttpResponse::NewHttpResponse()
@@ -25,39 +26,6 @@ NewHttpResponse::NewHttpResponse(StatusCode::Code status)
 {
 	//@QUESTION can we set default headers?
 }
-
-void NewHttpResponse::set_status(StatusCode::Code status)
-{
-	m_status = status;
-}
-
-void NewHttpResponse::set_header(const std::string& key, const std::string& value)
-{
-	m_headers[key] = value;
-}
-
-void NewHttpResponse::set_body_as_str(const std::string& str)
-{
-	m_body_str = str;
-}
-
-// prefix is something you might want to send after the headers and before reading the file, for example a read() call that processed the headers and a bit of the body
-void NewHttpResponse::set_body_as_fd(int fd, const std::string& prefix)
-{
-	m_body_fd = fd;
-	m_body_str = prefix;
-}
-
-void NewHttpResponse::set_body_as_path(const Path& path)
-{
-	if (path.exists)
-	{
-		//@QUESTION @TODO add to the event loop?
-		m_body_fd = open(path.raw.c_str(), O_RDONLY);
-	}
-}
-
-StatusCode::Code NewHttpResponse::status() const { return m_status; }
 
 ssize_t NewHttpResponse::send(int fd)
 {
@@ -169,6 +137,48 @@ bool NewHttpResponse::done() const
 	return m_send_phase == Done;
 }
 
+void NewHttpResponse::make_redirection_response(StatusCode::Code status, const Route& redirection)
+{
+	set_status(status);
+	set_header("Location", redirection.raw_path);
+	set_header("Connection", "close");
+	set_header("Date", utils::http_date());
+}
+
+
+void NewHttpResponse::set_status(StatusCode::Code status)
+{
+	m_status = status;
+}
+
+void NewHttpResponse::set_header(const std::string& key, const std::string& value)
+{
+	m_headers[key] = value;
+}
+
+void NewHttpResponse::set_body_as_str(const std::string& str)
+{
+	m_body_str = str;
+}
+
+// prefix is something you might want to send after the headers and before reading the file, for example a read() call that processed the headers and a bit of the body
+void NewHttpResponse::set_body_as_fd(int fd, const std::string& prefix)
+{
+	m_body_fd = fd;
+	m_body_str = prefix;
+}
+
+void NewHttpResponse::set_body_as_path(const Path& path)
+{
+	if (path.exists)
+	{
+		//@QUESTION @TODO add to the event loop?
+		m_body_fd = open(path.raw.c_str(), O_RDONLY);
+	}
+}
+
+StatusCode::Code NewHttpResponse::status() const { return m_status; }
+
 NewHttpResponse::~NewHttpResponse()
 {
 	if (m_body_fd >= 0) 
@@ -193,5 +203,3 @@ std::string NewHttpResponse::make_status_line()
 
 	return status_line;
 }
-
-
