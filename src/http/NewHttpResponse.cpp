@@ -53,7 +53,7 @@ void NewHttpResponse::set_body_as_path(const Path& path)
 	if (path.exists)
 	{
 		//@QUESTION @TODO add to the event loop?
-		m_body_fd = open(path.resolved.c_str(), O_RDONLY);
+		m_body_fd = open(path.raw.c_str(), O_RDONLY);
 	}
 }
 
@@ -189,7 +189,7 @@ std::string NewHttpResponse::make_status_line()
 	status_line += ss.str() + " ";
 
 	// reason
-	status_line += StatusCode::to_string(m_status) + "\r\n";
+	status_line += StatusCode::to_reason(m_status) + "\r\n";
 
 	return status_line;
 }
