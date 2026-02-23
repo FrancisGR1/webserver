@@ -6,19 +6,24 @@
 #include "config/types/LocationConfig.hpp"
 #include "config/ConfigTypes.hpp"
 #include "StatusCode.hpp"
+#include "HttpRequestContext.hpp"
 
 class ResponseError : public std::exception
 {
 	public:
-		explicit ResponseError(StatusCode::Code code, const std::string& msg);
+		ResponseError(StatusCode::Code code, const std::string& msg);
+		ResponseError(StatusCode::Code code, const std::string& msg, const HttpRequestContext& ctx);
 		StatusCode::Code status() const;
 		const std::string& msg() const;
+		bool has_ctx() const;
+		const HttpRequestContext& ctx() const;
 
 		virtual ~ResponseError() throw();
 
 	private:
 		StatusCode::Code m_status;
-		std::string m_msg;
+		const std::string m_msg;
+		HttpRequestContext* m_ctx; // not owned, is nullable
 
 		// illegal
 		ResponseError();
