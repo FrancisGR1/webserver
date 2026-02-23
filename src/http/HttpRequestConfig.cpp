@@ -4,22 +4,31 @@
 #include "config/types/LocationConfig.hpp"
 #include "config/types/ServiceConfig.hpp"
 #include "config/ConfigTypes.hpp"
-#include "StatusCode.hpp"
 #include "HttpRequestConfig.hpp"
 
-HttpRequestConfig::HttpRequestConfig(const ServiceConfig& service, const Path& path)
+HttpRequestConfig::HttpRequestConfig(const ServiceConfig& service)
 	: m_service(service)
-	, m_server_path(path)
+	, m_resolved_path(path)
 	, m_location(NULL) {}
 
-HttpRequestConfig::HttpRequestConfig(const ServiceConfig& service, const LocationConfig& location, const Path& path)
+HttpRequestConfig::HttpRequestConfig(const ServiceConfig& service, const Path& path, const LocationConfig& location)
 	: m_service(service)
-	, m_server_path(path)
+	, m_resolved_path(path)
 	, m_location(&location) {}
+
+void HttpRequestConfig::set(const Path& path)
+{
+	m_resolved_path = path;
+}
+
+void HttpRequestConfig::set(const std::string& resolved_path)
+{
+	m_location = m_service.locations.at(path.raw);
+};
 
 const ServiceConfig& HttpRequestConfig::service() const { return  m_service; }
 
-const Path& HttpRequestConfig::path() const { return  m_server_path; }
+const Path& HttpRequestConfig::path() const { return  m_resolved_path; }
 
 bool HttpRequestConfig::has_location() const { return  m_location != NULL; }
 
@@ -33,7 +42,7 @@ const Route& HttpRequestConfig::redirection() const
 		return m_service.redirection;
 }
 
-bool HttpRequestConfig::is_cgi() const { return m_server_path.is_cgi; }
+bool HttpRequestConfig::is_cgi() const { return m_resolved_path.is_cgi; }
 
 
 bool HttpRequestConfig::is_redirected() const
@@ -91,7 +100,7 @@ Path HttpRequestConfig::upload_dir() const
 	return Path(NULL);
 }
 
-Path HttpRequestConfig::get_error_page(size_t code) const
+Path HttpRequestConfig::get_error_page_or_nonexistent_path(size_t code) const
 {
 	if (m_location && utils::contains(m_location->error_pages, code))
 		return m_location->error_pages.at(code);
@@ -103,7 +112,7 @@ Path HttpRequestConfig::get_error_page(size_t code) const
 
 Path HttpRequestConfig::cgi_interpreter() const
 {
-	const std::string& extension = m_server_path.cgi_extension;
+	const std::string& extension = m_resolved_path.cgi_extension;
 
 	if (m_location && utils::contains(m_location->cgis, extension))
 		return m_location->cgis.at(extension);
