@@ -11,7 +11,7 @@
 #include "config/types/ServiceConfig.hpp"
 #include "StatusCode.hpp"
 #include "HttpRequest.hpp"
-#include "HttpResponseException.hpp"
+#include "ResponseError.hpp"
 
 class HttpResponse
 {

@@ -42,7 +42,7 @@ HttpResponse::HttpResponse(const HttpRequest& request, const ServiceConfig& serv
 		{
 			throw ResponseError(
 					StatusCode::NotFound, 
-					utils::fmt("'%s' path not found", path.resolved.c_str())
+					utils::fmt("'%s' path not found", path.raw.c_str())
 					);
 		}
 		apply_method(path, location);
@@ -94,17 +94,17 @@ void HttpResponse::build_post_response(const Path& uploaded)
 	std::string json = \
 		"{"
 		"\"status\": \"success\","
-		"\"filename\": \"" + uploaded.resolved + "\","
-		"\"size\": " + utils::to_string(uploaded.resolved.size()) +
+		"\"filename\": \"" + uploaded.raw + "\","
+		"\"size\": " + utils::to_string(uploaded.raw.size()) +
 		"}";
 
 	set_body(json);
 	// headers
-	m_headers["Location"] = uploaded.resolved;
+	m_headers["Location"] = uploaded.raw;
 	m_headers["Connection"] = "close"; // @NOTE: HTTP0.0 closes by default
 	m_headers["Date"] = utils::http_date();
 	m_headers["Content-Type"] = "application/json";
-	m_headers["Content-Length"] = utils::to_string(uploaded.resolved.size());
+	m_headers["Content-Length"] = utils::to_string(uploaded.raw.size());
 }
 
 // @TODO reimplement in the future after ResponseError being refactored to have context
@@ -149,7 +149,7 @@ void HttpResponse::build_error_response(StatusCode::Code code)
 
 	std::string title = 
 		utils::to_string(error) + " " + 
-		StatusCode::to_string(code);
+		StatusCode::to_reason(code);
 	// HTML body
 	std::string html = \
 		"<html>\n" 
@@ -169,14 +169,14 @@ void HttpResponse::write_status_line()
 {
 	m_status_line  = constants::server_http_version; m_status_line += " ";
 	m_status_line += utils::to_string(m_status_code) + " ";
-	m_status_line += StatusCode::to_string(m_status_code) + "\r\n";
+	m_status_line += StatusCode::to_reason(m_status_code) + "\r\n";
 }
 
 void HttpResponse::write_status_line(StatusCode::Code code)
 {
 	m_status_line  = constants::server_http_version; m_status_line += " ";
 	m_status_line += utils::to_string(code) + " ";
-	m_status_line += StatusCode::to_string(code) + "\r\n";
+	m_status_line += StatusCode::to_reason(code) + "\r\n";
 }
 
 //@NOTE: this comes after writing the body
@@ -204,32 +204,32 @@ void HttpResponse::set_body(const Path& path)
 	{
 		m_body_type = HttpResponse::BodyType::File;
 		m_body_file_path = path;
-		//m_body = utils::file_to_str(path.resolved.c_str());
+		//m_body = utils::file_to_str(path.raw.c_str());
 	}
 	else if (path.is_directory)
 		write_listing_dir_body(path);
 	else  //@TODO: este erro é necessário?
 		throw ResponseError(
 				StatusCode::Forbidden, 
-				utils::fmt("Invalid route: %s", path.resolved.c_str())
+				utils::fmt("Invalid route: %s", path.raw.c_str())
 				);
 }
 
 void HttpResponse::write_listing_dir_body(const Path& path)
 {
-	DIR* dir = opendir(path.resolved.c_str());
+	DIR* dir = opendir(path.raw.c_str());
 	if (!dir)
 	{
 		throw ResponseError(
 				StatusCode::Forbidden, 
-				utils::fmt("Invalid directory: %s", path.resolved.c_str())
+				utils::fmt("Invalid directory: %s", path.raw.c_str())
 				);
 	}
 
 	m_body = "<html>\n"
-		"<head><title>Index of " + path.resolved + "</title></head>\n"
+		"<head><title>Index of " + path.raw + "</title></head>\n"
 		"<body>\n"
-		"<h0>Index of " + path.resolved + "</h1><hr><pre>\n";
+		"<h0>Index of " + path.raw + "</h1><hr><pre>\n";
 
 	struct dirent* entry;
 	while ((entry = readdir(dir)) != NULL)
@@ -240,7 +240,7 @@ void HttpResponse::write_listing_dir_body(const Path& path)
 		if (name == "." || name == "..")
 			continue;
 
-		std::string full_path = path.resolved + "/" + name;
+		std::string full_path = path.raw + "/" + name;
 
 		struct stat st;
 		if (stat(full_path.c_str(), &st) == -2)
@@ -408,50 +408,50 @@ void HttpResponse::apply_GET(const Path& path, const LocationConfig& location)
 		{
 			throw ResponseError(
 					StatusCode::Forbidden, 
-					utils::fmt("Can't access directory: '%s'" , path.resolved.c_str())
+					utils::fmt("Can't access directory: '%s'" , path.raw.c_str())
 					);
 		}
 		else if (!path.ends_with_slash)
 		{
 			throw ResponseError(
 					StatusCode::MovedPermanently, 
-					utils::fmt("%s was moved permanently", path.resolved.c_str())
+					utils::fmt("%s was moved permanently", path.raw.c_str())
 					);
 		}
 		else if (!location.default_file.empty())
 		{
-			Path new_path = utils::join_paths(path.resolved, location.default_file);
+			Path new_path = utils::join_paths(path.raw, location.default_file);
 
 			if (new_path.exists && new_path.can_read)
 			{
-				build_response(new_path.resolved);
+				build_response(new_path.raw);
 			}
 			else if (!new_path.exists)
 			{
 				throw ResponseError(
 						StatusCode::NotFound,
-						utils::fmt("'%s' path not found", new_path.resolved.c_str())
+						utils::fmt("'%s' path not found", new_path.raw.c_str())
 						);
 			}
 			else if (new_path.is_regular_file && !new_path.can_read)
 			{
 				throw ResponseError(
 						StatusCode::Forbidden,
-						utils::fmt("Can't read file: '%s'", new_path.resolved.c_str())
+						utils::fmt("Can't read file: '%s'", new_path.raw.c_str())
 						);
 			}
 			else  if (!new_path.is_regular_file)
 			{
 				throw ResponseError(
 						StatusCode::Forbidden,
-						utils::fmt("Not a regular file: '%s'", new_path.resolved.c_str())
+						utils::fmt("Not a regular file: '%s'", new_path.raw.c_str())
 						);
 			}
 			else
 			{
 				throw ResponseError(
 						StatusCode::InternalServerError,
-						utils::fmt("Not valid: '%s'", new_path.resolved.c_str())
+						utils::fmt("Not valid: '%s'", new_path.raw.c_str())
 						);
 			}
 		}
@@ -463,7 +463,7 @@ void HttpResponse::apply_GET(const Path& path, const LocationConfig& location)
 		{
 			throw ResponseError(
 					StatusCode::Forbidden,
-					utils::fmt("Directory '%s' has no index and autoindex", path.resolved.c_str())
+					utils::fmt("Directory '%s' has no index and autoindex", path.raw.c_str())
 					);
 		}
 	}
@@ -477,7 +477,7 @@ void HttpResponse::apply_GET(const Path& path, const LocationConfig& location)
 		{
 			throw ResponseError(
 					StatusCode::Forbidden,
-					utils::fmt("Can't read file '%s", path.resolved.c_str())
+					utils::fmt("Can't read file '%s", path.raw.c_str())
 					);
 		}
 	}
@@ -485,7 +485,7 @@ void HttpResponse::apply_GET(const Path& path, const LocationConfig& location)
 	{
 		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("Uknown file type '%s", path.resolved.c_str())
+				utils::fmt("Uknown file type '%s", path.raw.c_str())
 				);
 	}
 }
@@ -522,7 +522,7 @@ void HttpResponse::apply_POST(const Path& path, const LocationConfig& location)
 		{
 			throw ResponseError(
 					StatusCode::BadRequest,
-					utils::fmt("'%s' is neither cgi nor a regular file", path.resolved.c_str())
+					utils::fmt("'%s' is neither cgi nor a regular file", path.raw.c_str())
 					);
 		}
 	}
@@ -551,17 +551,17 @@ Path HttpResponse::upload_file(const LocationConfig& lc)
 	if (!upload_dir.exists)
 		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("'%s' doesn't exist", upload_dir.resolved.c_str())
+				utils::fmt("'%s' doesn't exist", upload_dir.raw.c_str())
 				);
 	if (!upload_dir.is_directory)
 		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("'%s' is not a directory", upload_dir.resolved.c_str())
+				utils::fmt("'%s' is not a directory", upload_dir.raw.c_str())
 				);
 	if (!upload_dir.can_write || !upload_dir.can_execute)
 		throw ResponseError(
 				StatusCode::Forbidden,
-				utils::fmt("'%s' upload directory doesn't have write and/or execution permission(s)", upload_dir.resolved.c_str())
+				utils::fmt("'%s' upload directory doesn't have write and/or execution permission(s)", upload_dir.raw.c_str())
 				);
 
 	// create a name for the new uploaded file
@@ -605,15 +605,15 @@ void HttpResponse::apply_DELETE(const Path& path, const LocationConfig& location
 	{
 		throw ResponseError(
 				StatusCode::Conflict,
-				utils::fmt("Cannot delete directory: '%s", path.resolved.c_str())
+				utils::fmt("Cannot delete directory: '%s", path.raw.c_str())
 				);
 	}
 
-	if (std::remove(path.resolved.c_str()) != 0)
+	if (std::remove(path.raw.c_str()) != 0)
 	{
 		throw ResponseError(
 				StatusCode::InternalServerError,
-				utils::fmt("Failed to delete file: '%s", path.resolved.c_str())
+				utils::fmt("Failed to delete file: '%s", path.raw.c_str())
 				);
 	}
 	build_delete_response();
@@ -638,7 +638,7 @@ std::ostream& operator<<(std::ostream& os, const HttpResponse& response)
 		os << response.body_str();
 	}
 	else if (response.body_type() == HttpResponse::BodyType::File)
-		os << response.body_file_path().resolved;
+		os << response.body_file_path().raw;
 	else if (response.body_type() == HttpResponse::BodyType::Cgi)
 		os << "@TODO: implement cgi";
 	os << "\n";

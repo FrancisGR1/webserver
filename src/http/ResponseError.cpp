@@ -3,17 +3,12 @@
 #include "config/ConfigTypes.hpp"
 #include "config/types/LocationConfig.hpp"
 #include "StatusCode.hpp"
-#include "HttpResponseException.hpp"
+#include "ResponseError.hpp"
 
-ResponseError::ResponseError(StatusCode::Code code, const std::string& msg)
+ResponseError::ResponseError(StatusCode::Code code, const std::string& msg, const HttpRequestContext* ctx)
 	: m_status(code)
 	, m_msg(msg)
-	, m_ctx(NULL) {}
-
-ResponseError::ResponseError(StatusCode::Code code, const std::string& msg, HttpRequestContext& ctx)
-	: m_status(code)
-	, m_msg(msg)
-	, m_ctx(&ctx) {}
+	, m_ctx(ctx) {}
 
 StatusCode::Code ResponseError::status() const        { return m_status; }
 const std::string& ResponseError::msg() const         { return m_msg; }

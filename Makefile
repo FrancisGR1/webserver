@@ -35,7 +35,7 @@ SOURCES  = \
 	  src/http/HttpRequestParser.cpp \
 	  src/http/HttpResponse.cpp \
 	  src/http/NewHttpResponse.cpp \
-	  src/http/HttpResponseException.cpp \
+	  src/http/ResponseError.cpp \
 	  src/http/StatusCode.cpp \
 	  src/http/IRequestHandler.cpp \
 	  src/http/PostHandler.cpp \
