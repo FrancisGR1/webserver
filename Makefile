@@ -29,7 +29,7 @@ SOURCES  = \
 	  src/config/parser/Token.cpp \
 	  \
 	  src/http/HttpRequest.cpp \
-	  src/http/RequestDispatcher.cpp \
+	  src/http/RequestProcessor.cpp \
 	  src/http/HttpRequestConfig.cpp \
 	  src/http/HttpRequestContext.cpp \
 	  src/http/HttpRequestParser.cpp \
