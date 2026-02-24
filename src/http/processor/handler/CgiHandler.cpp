@@ -10,6 +10,7 @@
 #include "core/MimeTypes.hpp"
 #include "core/Path.hpp"
 #include "config/ConfigTypes.hpp"
+#include "http/http_utils.hpp"
 #include "http/request/Request.hpp"
 #include "http/processor/RequestContext.hpp"
 #include "http/StatusCode.hpp"
@@ -21,58 +22,64 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx)
 	, m_ctx(ctx)
 	, m_script(ctx.config().path())
 	, m_env(init_env())
-	, m_state(State::StartTimer)
+	, m_state(StartTimer)
 {
-}
-
-static void expect_has_time_left()
-{
-	if (m_state >= State::ForkExec && m_state <= State::ReadBody)
-	{
-		if (timer.expired())
-		{
-			throw
-		}
-	}
 }
 
 void CgiHandler::process()
 {
 	expect_has_time_left();
+
 	switch (m_state)
 	{
-		case State::StartTimer:
+		case StartTimer:
 		{
-			m_timer.set(constants::cgi_timeout)
+			m_timer.set(constants::cgi_timeout);
 			m_timer.start();
-			m_state = State::ForkExec;
+			m_state = ForkExec;
 		}
 		// fall through
 
-		case State::ForkExec:
+		case ForkExec:
 		{
 			fork_and_exec();
-			m_state = State::ReadHeaders;
+			m_state = ReadHeaders;
 			break;
 		}
-		case State::ReadHeaders:
+		case ReadHeaders:
 		{
 			// headers are read from pipe to std::map
 			m_state = read_pipe_chunk_headers();
 			break;
 		}
-		case State::ReadBody:
+		case ReadBody:
 		{
 			parse_headers();
 			// body is read directly to socket
 			m_response.set_body_as_fd(m_fd[0], m_body_leftover);
-			m_state = State::Done;
+
+			// finish
+			m_timer.stop();
+			m_state = Done;
 			break;
 		}
 		default:
 		;
 	}
 }
+
+bool CgiHandler::done() const
+{
+	return m_state == Done;
+}
+
+const Response& CgiHandler::response() const
+{
+	return m_response;
+}
+
+
+CgiHandler::~CgiHandler() {}
 
 void CgiHandler::fork_and_exec()
 {	
@@ -129,28 +136,18 @@ CgiHandler::State CgiHandler::read_pipe_chunk_headers()
 		buffer[bytes] = '\0';
 		m_headers += buffer;
 		if (m_headers.find("\r\n\r\n") != std::string::npos)
-			return State::ReadBody;
+			return ReadBody;
 	}
 	else if (bytes == 0)
 	{
-		return State::ReadBody;
+		return ReadBody;
 	}
 	else
 	{
 		//@TODO error throw
-		return State::Error;
+		return Error;
 	}
-	return State::ReadHeaders;
-}
-
-bool CgiHandler::done() const
-{
-	return m_state == State::Done;
-}
-
-const Response& CgiHandler::response() const
-{
-	return m_response;
+	return ReadHeaders;
 }
 
 void CgiHandler::parse_headers()
@@ -254,4 +251,8 @@ std::string CgiHandler::to_uppercase_and_underscore(const std::string& str)
 	return result;
 }
 
-CgiHandler::~CgiHandler() {}
+void CgiHandler::expect_has_time_left() const
+{
+	if (m_timer.expired())
+		http_utils::throw_gateway_timeout(m_script.raw, m_ctx);
+}

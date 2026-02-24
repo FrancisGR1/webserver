@@ -21,7 +21,7 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
 	, m_upload(NULL)
 	, m_fd(-1) {}
 
-static void is_uploadable_precondition(const Request& request, const RequestConfig& config, const Path& upload_dir, const RequestContext& ctx)
+static void expect_uploadable(const Request& request, const RequestConfig& config, const Path& upload_dir, const RequestContext& ctx)
 {
 	if (!config.has_upload_dir())
 		http_utils::throw_internal_server_error_cant_upload(ctx);
@@ -61,8 +61,8 @@ void PostHandler::process()
 		if (m_fd == -1) // set upload dir
 		{
 			Path upload_dir = config.upload_dir();
-			// check if it's uploadable
-			is_uploadable_precondition(m_request, config, upload_dir, m_ctx);
+			expect_uploadable(m_request, config, upload_dir, m_ctx);
+
 			// create a name for the new file to be uploaded
 			std::string file_name = utils::to_string(m_uploaded_file_index++) + ".data";
 			// make upload real path

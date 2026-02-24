@@ -46,13 +46,12 @@ class CgiHandler : public IRequestHandler
 		State m_state;
 
 		// util
+		void fork_and_exec();
+		State read_pipe_chunk_headers();
+		void parse_headers();
 		std::map<std::string, std::string> init_env();
 		std::string to_uppercase_and_underscore(const std::string& str);
-		void parse_headers();
-		State read_pipe_chunk_headers();
-		void fork_and_exec();
-
-
+		void expect_has_time_left() const;
 };
 
 #endif //CGI_HANDLER_HPP
