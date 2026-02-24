@@ -16,6 +16,7 @@ SOURCES  = \
 	  src/core/Logger.cpp \
 	  src/core/MimeTypes.cpp \
 	  src/core/Path.cpp \
+	  src/core/Timer.cpp \
 	  src/core/constants.cpp \
 	  src/core/utils.cpp \
 	  \
