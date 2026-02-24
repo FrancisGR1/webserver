@@ -1,4 +1,7 @@
 #include "constants.hpp"
+#include "Timer.hpp"
+
+#include <string>
 
 namespace constants
 {
@@ -13,15 +16,21 @@ namespace constants
 
     // server
     const char* server_name = "webserv/1.0";
+    // - cgi
+    const size_t read_chunk_size = 4096;
+    const size_t write_chunk_size = 4096;
+    // - timeouts
+    // -- connection
+    const Seconds idle_connection_timeout = 30;
+    // -- cgi
+    const Seconds cgi_timeout = 60;
+    //@TODO: adicionar timeouts para request headers,body, response headers,body?
     //
     // - configuration
     const char* default_conf = "config/default.conf";
     // - http response
     const char* server_http_version = "HTTP/1.0";
     const std::string py_ext = "py";
-    // - cgi
-    const size_t read_chunk_size = 4096;
-    const size_t write_chunk_size = 4096;
 
     // - http request
     const size_t max_body_size = 1000000;
