@@ -1,5 +1,6 @@
 #include "Webserver.hpp"
 #include "Connection.hpp"
+#include "EventManager.hpp"
 #include <sstream>
 
 bool	Webserver::is_running = true;
@@ -13,40 +14,12 @@ void	Webserver::log(const std::string &message)
 	std::cout << message << std::endl;
 }
 
-void	Webserver::addEpoll(const int socket, uint32_t events)
-{
-	epoll_event event = {};
-	event.events = events;
-	event.data.fd = socket;
-	if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, socket, &event) == -1)
-		log("Error: epoll_ctl ADD failed!");
-}
-
-void	Webserver::modifyEpoll(int socket, uint32_t events)
-{
-	epoll_event event = {};
-	event.events = events;
-	event.data.fd = socket;
-	if (epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, socket, &event) == -1)
-		log("Error: epoll_ctl MOD failed!");
-}
-
-void	Webserver::removeEpoll(int socket)
-{
-	if (epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, socket, NULL) == -1)
-		log("Error: epoll_ctl DEL failed!");
-}
-/*	- Criar o epoll
-	- Criar todos os sockets de servidor (listen)
+/*	- Criar todos os sockets de servidor (listen)
 	- Configurar eles corretamente
 	- Registrar eles no epoll 
 */
 int	Webserver::setupSocket()
 {
-	/* cria epoll */
-	epoll_fd_ = epoll_create(1);
-	if (epoll_fd_ == -1)
-		return (log("Error: Failed to create epoll fd!"), 1);
 	/* percorrer todos os services */
 	for(size_t i = 0; i < config_.services.size(); i++)
 	{
@@ -85,7 +58,7 @@ int	Webserver::setupSocket()
 				return (freeaddrinfo(result), log("Error: listen failed!"), 1);
 			/* adicionar o sock na lista e liberar o result */
 			server_sockets.push_back(sock);
-			addEpoll(sock, EPOLLIN);
+			events_manager_.add(sock, EPOLLIN);
 			freeaddrinfo(result);
 			std::cout << "Lisntening on " << listener.host << ":" << listener.port << "\n";
 		}
@@ -122,11 +95,11 @@ void	Webserver::acceptConnection(const int sock)
 	
 	connections[client_sock] = Connection(client_sock);
 	if (client_sock != -1)
-		addEpoll(client_sock, EPOLLIN);
+		events_manager_.add(client_sock, EPOLLIN);
 	std::cout << "Cliente adicionado!\n";
 }
 
-void	Webserver::handleConnection(const int sock, epoll_event event)
+void	Webserver::handleConnection(const int sock, epoll_event& event)
 {
 	/* client - leitura */
 	if (event.events & EPOLLIN)
@@ -134,7 +107,7 @@ void	Webserver::handleConnection(const int sock, epoll_event event)
 		Connection& conn = connections[sock];
 		if (!conn.readRequest())
 		{
-			removeEpoll(sock);
+			events_manager_.remove(sock);
 			close(sock);
 			connections.erase(sock);
 			return ;
@@ -150,7 +123,7 @@ void	Webserver::handleConnection(const int sock, epoll_event event)
 				"Hello World!\n"
 			);
 			/* mudar para POLLOUT */
-			modifyEpoll(sock, EPOLLOUT);
+			events_manager_.modify(sock, EPOLLOUT);
 		}
 	}
 	/* client - escrita */
@@ -159,7 +132,7 @@ void	Webserver::handleConnection(const int sock, epoll_event event)
 		Connection& conn = connections[sock];
 		if (conn.sendResponse())
 		{
-			removeEpoll(sock);
+			events_manager_.remove(sock);
 			close(sock);
 			connections.erase(sock);
 		}
@@ -176,29 +149,28 @@ void	Webserver::startServer()
 	while (is_running)
 	{
 		/* quando algum evento mudar o epoll_wait retorna */
-		int num_events = epoll_wait(epoll_fd_, events_, 1024, -1);
+		int num_events = events_manager_.wait();
 		if (num_events == -1)
-		{
-			log("Erro: Failed to wait on epoll!");
 			continue ;
-		}
+
 		/* percorrer apenas os eventos que mudaram */
 		for (int i = 0; i < num_events; i++)
 		{
-			int sock = events_[i].data.fd;
+			epoll_event& event = events_manager_.getEvent(i);
+			int sock = event.data.fd;
 			/* erro */
-			if (events_[i].events & (EPOLLERR | EPOLLHUP))
+			if (event.events & (EPOLLERR | EPOLLHUP))
 			{
-				removeEpoll(sock);
+				events_manager_.remove(sock);
 				close(sock);
 				connections.erase(sock);
 				continue ;
 			}
 			/* socket do servidor + EPOLLIN = cliente querendo conexao */
-			if (isServerSocket(sock) && (events_[i].events & EPOLLIN))
+			if (isServerSocket(sock) && (event.events & EPOLLIN))
 				acceptConnection(sock);
 			else /* dados de um cliente para ler */
-				handleConnection(sock, events_[i]);
+				handleConnection(sock, event);
 		}
 	}
 }

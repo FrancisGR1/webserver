@@ -16,6 +16,7 @@
 #include "http/HttpResponse.hpp"
 #include "http/StatusCode.hpp"
 #include "Connection.hpp"
+#include "EventManager.hpp"
 
 class Connection;
 
@@ -26,8 +27,7 @@ class Webserver
 		std::vector<int>			server_sockets;
 		std::map<int, Connection>	connections;
 		const Config				&config_;
-		int							epoll_fd_;
-		epoll_event					events_[1024];
+		EventManager				events_manager_;
 
 	public:
 		Webserver(const Config &config_);
@@ -37,11 +37,8 @@ class Webserver
 		void	startServer();
 		int		setupSocket();
 		bool	isServerSocket(int fd);
-		void	addEpoll(const int socket, uint32_t events);
-		void	modifyEpoll(int socket, uint32_t events);
-		void	removeEpoll(int socket);
 		void	acceptConnection(const int sock);
-		void	handleConnection(const int sock, epoll_event event);
+		void	handleConnection(const int sock, epoll_event& event);
 
 		void	log(const std::string &message);
 };

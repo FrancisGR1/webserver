@@ -51,6 +51,7 @@ bool	Connection::readRequest()
 	if (bytes <= 0)
 		return (false);
 
+	// parser_.feed(buffer);
 	for (ssize_t i = 0; i < bytes; i++)
 		parser_.feed(buffer[i]);
 
