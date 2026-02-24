@@ -1,5 +1,5 @@
-#ifndef NEWHTTPRESPONSE_HPP
-# define NEWHTTPRESPONSE_HPP
+#ifndef RESPONSE_HPP
+# define RESPONSE_HPP
 
 #include <map>
 #include <string>
@@ -67,4 +67,4 @@ class Response
 };
 
 
-# endif // NEWHTTPRESPONSE_HPP
+# endif // RESPONSE_HPP

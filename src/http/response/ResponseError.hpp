@@ -1,5 +1,5 @@
-#ifndef HTTPRESPONSEEXCEPTION_HPP
-#define HTTPRESPONSEEXCEPTION_HPP
+#ifndef RESPONSEERROR_HPP
+#define RESPONSEERROR_HPP
 
 #include <string>
 
@@ -28,4 +28,4 @@ class ResponseError : public std::exception
 		ResponseError();
 };
 
-#endif // HTTPRESPONSEEXCEPTION_HPP
+#endif // RESPONSEERROR_HPP

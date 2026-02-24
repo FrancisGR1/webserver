@@ -1,5 +1,5 @@
-#ifndef HTTPREQUESTPARSER_HPP
-# define HTTPREQUESTPARSER_HPP
+#ifndef REQUESTPARSER_HPP
+# define REQUESTPARSER_HPP
 
 #include <string>
 #include <map>
@@ -94,4 +94,4 @@ class RequestParser
 		bool is_ows(char c);
 };
 
-#endif // HTTPREQUESTPARSER_HPP
+#endif // REQUESTPARSER_HPP
