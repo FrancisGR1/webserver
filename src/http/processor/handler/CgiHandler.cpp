@@ -1,6 +1,3 @@
-#include <map>
-#include <vector>
-#include <string>
 #include <cstdlib>
 #include <cstdio>
 #include <unistd.h>
@@ -24,32 +21,52 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx)
 	, m_ctx(ctx)
 	, m_script(ctx.config().path())
 	, m_env(init_env())
-	, m_state(ForkExec)
+	, m_state(State::StartTimer)
 {
+}
+
+static void expect_has_time_left()
+{
+	if (m_state >= State::ForkExec && m_state <= State::ReadBody)
+	{
+		if (timer.expired())
+		{
+			throw
+		}
+	}
 }
 
 void CgiHandler::process()
 {
+	expect_has_time_left();
 	switch (m_state)
 	{
-		case ForkExec:
+		case State::StartTimer:
+		{
+			m_timer.set(constants::cgi_timeout)
+			m_timer.start();
+			m_state = State::ForkExec;
+		}
+		// fall through
+
+		case State::ForkExec:
 		{
 			fork_and_exec();
-			m_state = ReadHeaders;
+			m_state = State::ReadHeaders;
 			break;
 		}
-		case ReadHeaders:
+		case State::ReadHeaders:
 		{
 			// headers are read from pipe to std::map
 			m_state = read_pipe_chunk_headers();
 			break;
 		}
-		case ReadBody:
+		case State::ReadBody:
 		{
 			parse_headers();
 			// body is read directly to socket
 			m_response.set_body_as_fd(m_fd[0], m_body_leftover);
-			m_state = Done;
+			m_state = State::Done;
 			break;
 		}
 		default:
@@ -112,23 +129,23 @@ CgiHandler::State CgiHandler::read_pipe_chunk_headers()
 		buffer[bytes] = '\0';
 		m_headers += buffer;
 		if (m_headers.find("\r\n\r\n") != std::string::npos)
-			return ReadBody;
+			return State::ReadBody;
 	}
 	else if (bytes == 0)
 	{
-		return ReadBody;
+		return State::ReadBody;
 	}
 	else
 	{
 		//@TODO error throw
-		return Error;
+		return State::Error;
 	}
-	return ReadHeaders;
+	return State::ReadHeaders;
 }
 
 bool CgiHandler::done() const
 {
-	return m_state == Done;
+	return m_state == State::Done;
 }
 
 const Response& CgiHandler::response() const
@@ -218,7 +235,6 @@ std::map<std::string, std::string> CgiHandler::init_env()
 		std::string key = to_uppercase_and_underscore(it->first);
 		env[key] = it->second;
 	}
-
 	return env;
 }
 

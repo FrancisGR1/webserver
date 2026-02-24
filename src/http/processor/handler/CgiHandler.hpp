@@ -27,6 +27,7 @@ class CgiHandler : public IRequestHandler
 		enum State 
 		{
 			Error = -1,
+			StartTimer,
 			ForkExec,
 			ReadHeaders,
 			ReadBody,
@@ -37,8 +38,7 @@ class CgiHandler : public IRequestHandler
 		const RequestContext& m_ctx; 
 		const Path& m_script;
 		Response m_response;
-
-		// cgi
+		Timer m_timer;
 		std::map<std::string, std::string> m_env;
 		int m_fd[2];
 		std::string m_headers;
