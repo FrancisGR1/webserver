@@ -3,25 +3,25 @@
 
 #include "core/Path.hpp"
 #include "config/ConfigTypes.hpp"
-#include "HttpRequest.hpp"
-#include "HttpRequestContext.hpp"
-#include "HttpRequestConfig.hpp"
-#include "NewHttpResponse.hpp"
-#include "IRequestHandler.hpp"
-#include "CgiHandler.hpp"
+#include "http/request/Request.hpp"
+#include "http/processor/RequestContext.hpp"
+#include "http/processor/RequestConfig.hpp"
+#include "http/response/Response.hpp"
+#include "http/processor/handler/IRequestHandler.hpp"
+#include "http/processor/handler/CgiHandler.hpp"
 
 class PostHandler : public IRequestHandler 
 {
 	public:
-		PostHandler(const HttpRequest& request, const HttpRequestContext& ctx);
+		PostHandler(const Request& request, const RequestContext& ctx);
 		void process();
 		bool done() const;
-		const NewHttpResponse& response() const;
+		const Response& response() const;
 		~PostHandler();
 	private:
-		const HttpRequest& m_request; 
-		const HttpRequestContext& m_ctx;
-		NewHttpResponse m_response;
+		const Request& m_request; 
+		const RequestContext& m_ctx;
+		Response m_response;
 		bool m_done;
 		CgiHandler m_cgi;
 

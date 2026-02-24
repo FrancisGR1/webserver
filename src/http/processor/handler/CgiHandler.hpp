@@ -6,21 +6,21 @@
 
 #include "core/Path.hpp"
 #include "config/types/ServiceConfig.hpp"
-#include "http/HttpRequest.hpp"
+#include "http/request/Request.hpp"
 #include "config/ConfigTypes.hpp"
-#include "IRequestHandler.hpp"
-#include "CgiHandler.hpp"
-#include "HttpRequestContext.hpp"
-#include "NewHttpResponse.hpp"
+#include "http/processor/handler/IRequestHandler.hpp"
+#include "http/processor/handler/CgiHandler.hpp"
+#include "http/processor/RequestContext.hpp"
+#include "http/response/Response.hpp"
 
 // https://datatracker.ietf.org/doc/html/rfc3875
 class CgiHandler : public IRequestHandler
 {
 	public:
-		CgiHandler(const HttpRequest& request, const HttpRequestContext& ctx);
+		CgiHandler(const Request& request, const RequestContext& ctx);
 		void process();
 		bool done() const;
-		const NewHttpResponse& response() const;
+		const Response& response() const;
 		~CgiHandler();
 
 	private:
@@ -33,10 +33,10 @@ class CgiHandler : public IRequestHandler
 			Done
 		};
 
-		const HttpRequest& m_request; 
-		const HttpRequestContext& m_ctx; 
+		const Request& m_request; 
+		const RequestContext& m_ctx; 
 		const Path& m_script;
-		NewHttpResponse m_response;
+		Response m_response;
 
 		// cgi
 		std::map<std::string, std::string> m_env;

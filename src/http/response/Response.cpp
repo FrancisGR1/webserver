@@ -7,27 +7,27 @@
 #include "core/constants.hpp"
 #include "core/utils.hpp"
 #include "config/types/Route.hpp"
-#include "NewHttpResponse.hpp"
+#include "http/response/Response.hpp"
 
-NewHttpResponse::NewHttpResponse()
+Response::Response()
 	: m_body_fd(-1)
-	, m_send_phase(NewHttpResponse::StatusPhase)
+	, m_send_phase(Response::StatusPhase)
 	, m_offset(0)
 {
 	//@QUESTION can we set default headers?
 }
 
-NewHttpResponse::NewHttpResponse(StatusCode::Code status)
+Response::Response(StatusCode::Code status)
 	: m_status(status)
 	, m_status_line(make_status_line())
 	, m_body_fd(-1)
-	, m_send_phase(NewHttpResponse::StatusPhase)
+	, m_send_phase(Response::StatusPhase)
 	, m_offset(0)
 {
 	//@QUESTION can we set default headers?
 }
 
-ssize_t NewHttpResponse::send(int fd)
+ssize_t Response::send(int fd)
 {
 	switch (m_send_phase)
 	{
@@ -132,12 +132,12 @@ ssize_t NewHttpResponse::send(int fd)
 	}
 }
 
-bool NewHttpResponse::done() const
+bool Response::done() const
 {
 	return m_send_phase == Done;
 }
 
-void NewHttpResponse::make_redirection_response(StatusCode::Code status, const Route& redirection)
+void Response::make_redirection_response(StatusCode::Code status, const Route& redirection)
 {
 	set_status(status);
 	set_header("Location", redirection.raw_path);
@@ -146,29 +146,29 @@ void NewHttpResponse::make_redirection_response(StatusCode::Code status, const R
 }
 
 
-void NewHttpResponse::set_status(StatusCode::Code status)
+void Response::set_status(StatusCode::Code status)
 {
 	m_status = status;
 }
 
-void NewHttpResponse::set_header(const std::string& key, const std::string& value)
+void Response::set_header(const std::string& key, const std::string& value)
 {
 	m_headers[key] = value;
 }
 
-void NewHttpResponse::set_body_as_str(const std::string& str)
+void Response::set_body_as_str(const std::string& str)
 {
 	m_body_str = str;
 }
 
 // prefix is something you might want to send after the headers and before reading the file, for example a read() call that processed the headers and a bit of the body
-void NewHttpResponse::set_body_as_fd(int fd, const std::string& prefix)
+void Response::set_body_as_fd(int fd, const std::string& prefix)
 {
 	m_body_fd = fd;
 	m_body_str = prefix;
 }
 
-void NewHttpResponse::set_body_as_path(const Path& path)
+void Response::set_body_as_path(const Path& path)
 {
 	if (path.exists)
 	{
@@ -177,15 +177,15 @@ void NewHttpResponse::set_body_as_path(const Path& path)
 	}
 }
 
-StatusCode::Code NewHttpResponse::status() const { return m_status; }
+StatusCode::Code Response::status() const { return m_status; }
 
-NewHttpResponse::~NewHttpResponse()
+Response::~Response()
 {
 	if (m_body_fd >= 0) 
 		close (m_body_fd);
 }
 
-std::string NewHttpResponse::make_status_line()
+std::string Response::make_status_line()
 {
 	std::string status_line;
 

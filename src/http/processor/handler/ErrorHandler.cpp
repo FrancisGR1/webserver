@@ -1,7 +1,7 @@
-#include "config/ConfigTypes.hpp"
-#include "HttpRequestContext.hpp"
-#include "ErrorHandler.hpp"
 #include "core/MimeTypes.hpp"
+#include "config/ConfigTypes.hpp"
+#include "http/processor/RequestContext.hpp"
+#include "ErrorHandler.hpp"
 
 ErrorHandler::ErrorHandler(const ResponseError& error)
 	: m_code(error.status())
@@ -13,7 +13,7 @@ ErrorHandler::ErrorHandler(StatusCode::Code code)
 	, m_ctx(NULL)
 	, m_done(false) {}
 
-ErrorHandler::ErrorHandler(StatusCode::Code code, const HttpRequestContext& ctx)
+ErrorHandler::ErrorHandler(StatusCode::Code code, const RequestContext& ctx)
 	: m_code(code)
 	, m_ctx(&ctx)
 	, m_done(false) {}
@@ -33,7 +33,7 @@ void ErrorHandler::process()
 
 	if (m_ctx != NULL)
 	{
-		const HttpRequestConfig& config = m_ctx->config();
+		const RequestConfig& config = m_ctx->config();
 		const Path& error_page = config.get_error_page_or_nonexistent_path(error);
 		if (error_page.exists)
 		{
@@ -78,7 +78,7 @@ bool ErrorHandler::done() const
 	return m_done;
 }
 
-const NewHttpResponse& ErrorHandler::response() const
+const Response& ErrorHandler::response() const
 {
 	return m_response;
 }

@@ -5,4 +5,4 @@
 
 Route::Route(StatusCode::Code code, std::string path)
 	: code(code)
-	, path(path) {}
+	, raw_path(path) {}

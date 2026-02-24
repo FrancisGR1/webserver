@@ -7,14 +7,14 @@
 
 #include "core/Path.hpp"
 #include "config/types/Route.hpp"
-#include "StatusCode.hpp"
+#include "http/StatusCode.hpp"
 
-class NewHttpResponse
+class Response
 {
 	public:
-		NewHttpResponse();
-		explicit NewHttpResponse(StatusCode::Code status);
-		~NewHttpResponse();
+		Response();
+		explicit Response(StatusCode::Code status);
+		~Response();
 
 		// api
 		ssize_t send(int fd);
@@ -57,12 +57,12 @@ class NewHttpResponse
 
 		// utils
 		std::string make_status_line();
-		void handle_file(NewHttpResponse& response, const Path& path);
+		void handle_file(Response& response, const Path& path);
 
 
 		// no copy semantics, because no clone()
-		NewHttpResponse(const NewHttpResponse& other);
-		NewHttpResponse& operator=(const NewHttpResponse& other);
+		Response(const Response& other);
+		Response& operator=(const Response& other);
 
 };
 

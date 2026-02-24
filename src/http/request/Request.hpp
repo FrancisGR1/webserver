@@ -5,14 +5,14 @@
 #include <ostream>
 #include <map>
 
-#include "StatusCode.hpp"
+#include "http/StatusCode.hpp"
 
-class HttpRequest
+class Request
 {
 	public:
 		//@TODO copy assignment
-		HttpRequest();
-		HttpRequest(const std::string& method,
+		Request();
+		Request(const std::string& method,
 				const std::string& target_path,
 				const std::string& target_query,
 				const std::string& protocol_version,
@@ -40,6 +40,6 @@ class HttpRequest
 		StatusCode::Code m_status_code;
 };
 
-std::ostream& operator<<(std::ostream& os, const HttpRequest& request);
+std::ostream& operator<<(std::ostream& os, const Request& request);
 
 #endif // HTTPREQUEST_HPP

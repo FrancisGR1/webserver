@@ -4,8 +4,8 @@
 #include <string>
 #include <map>
 
-#include "StatusCode.hpp"
-#include "HttpRequest.hpp"
+#include "http/StatusCode.hpp"
+#include "http/request/Request.hpp"
 
 // @TODO: mudar para outro ficheiro
 struct Parser
@@ -47,15 +47,15 @@ struct Parser
 };
 
 
-class HttpRequestParser
+class RequestParser
 {
 	public:
-		HttpRequestParser();
+		RequestParser();
 
 		void feed(const char* raw);
 		void feed(char c);
 		bool done() const;
-		HttpRequest get() const;
+		Request get() const;
 		bool error() const;
 		void clear();
 

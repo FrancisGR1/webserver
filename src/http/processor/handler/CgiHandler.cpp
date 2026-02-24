@@ -12,14 +12,14 @@
 #include "core/utils.hpp"
 #include "core/MimeTypes.hpp"
 #include "core/Path.hpp"
-#include "http/HttpRequest.hpp"
-#include "http/HttpRequestContext.hpp"
-#include "http/StatusCode.hpp"
 #include "config/ConfigTypes.hpp"
-#include "CgiHandler.hpp"
-#include "NewHttpResponse.hpp"
+#include "http/request/Request.hpp"
+#include "http/processor/RequestContext.hpp"
+#include "http/StatusCode.hpp"
+#include "http/processor/handler/CgiHandler.hpp"
+#include "http/response/Response.hpp"
 
-CgiHandler::CgiHandler(const HttpRequest& request, const HttpRequestContext& ctx)
+CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx)
 	: m_request(request)
 	, m_ctx(ctx)
 	, m_script(ctx.config().path())
@@ -131,7 +131,7 @@ bool CgiHandler::done() const
 	return m_state == Done;
 }
 
-const NewHttpResponse& CgiHandler::response() const
+const Response& CgiHandler::response() const
 {
 	return m_response;
 }

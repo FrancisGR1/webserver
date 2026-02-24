@@ -8,11 +8,11 @@
 #include "config/types/ServiceConfig.hpp"
 #include "config/ConfigTypes.hpp"
 
-class HttpRequestConfig
+class RequestConfig
 {
 	public:
-		HttpRequestConfig(const ServiceConfig& service);
-		HttpRequestConfig(const ServiceConfig& service, const Path& path, const LocationConfig& location);
+		RequestConfig(const ServiceConfig& service);
+		RequestConfig(const ServiceConfig& service, const Path& path, const LocationConfig& location);
 
 		void set(const Path& path);
 		void set(const LocationConfig& location);

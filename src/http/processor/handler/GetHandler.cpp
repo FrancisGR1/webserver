@@ -6,14 +6,14 @@
 #include "core/Path.hpp"
 #include "core/MimeTypes.hpp"
 #include "config/ConfigTypes.hpp"
-#include "StatusCode.hpp"
-#include "HttpRequest.hpp"
-#include "HttpRequestConfig.hpp"
-#include "HttpRequestContext.hpp"
+#include "http/http_utils.hpp"
+#include "http/StatusCode.hpp"
+#include "http/request/Request.hpp"
+#include "http/processor/RequestConfig.hpp"
+#include "http/processor/RequestContext.hpp"
 #include "GetHandler.hpp"
-#include "http_utils.hpp"
 
-GetHandler::GetHandler(const HttpRequest& request, const HttpRequestContext& ctx)
+GetHandler::GetHandler(const Request& request, const RequestContext& ctx)
 	: m_request(request)
 	, m_ctx(ctx)
 	, m_done(false)
@@ -22,7 +22,7 @@ GetHandler::GetHandler(const HttpRequest& request, const HttpRequestContext& ctx
 //@TODO implementar If-Modified-Since e If-None-Match (ETag), Range requests
 void GetHandler::process()
 {
-	const HttpRequestConfig& config = m_ctx.config();
+	const RequestConfig& config = m_ctx.config();
 
 	if (!config.allows_method("GET")) http_utils::throw_method_not_allowed("GET", m_ctx);
 
@@ -81,7 +81,7 @@ void GetHandler::process()
 	m_done = true;
 }
 
-void GetHandler::handle_index(NewHttpResponse& response, const Path& path)
+void GetHandler::handle_index(Response& response, const Path& path)
 {
 	response.set_status(StatusCode::Ok);
 	response.set_header("Connection", "close"); // @NOTE: HTTP-1.0 closes by default
@@ -164,7 +164,7 @@ std::string GetHandler::make_autoindex(const Path& path)
 	return body;
 }
 
-void GetHandler::handle_autoindex(NewHttpResponse& response, const Path& path)
+void GetHandler::handle_autoindex(Response& response, const Path& path)
 {
 	response.set_status(StatusCode::Ok);
 	response.set_header("Connection", "close"); // @NOTE: HTTP-1.0 closes by default
@@ -176,7 +176,7 @@ void GetHandler::handle_autoindex(NewHttpResponse& response, const Path& path)
 	response.set_body_as_str(autoindex);
 }
 
-void GetHandler::handle_file(NewHttpResponse& response, const Path& path)
+void GetHandler::handle_file(Response& response, const Path& path)
 {
 	response.set_status(StatusCode::Ok);
 	response.set_header("Connection", "close"); // @NOTE: HTTP-1.0 closes by default
@@ -193,7 +193,7 @@ bool GetHandler::done() const
 	return true;
 }
 
-const NewHttpResponse& GetHandler::response() const
+const Response& GetHandler::response() const
 {
 	return m_response;
 }

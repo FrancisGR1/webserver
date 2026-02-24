@@ -28,22 +28,27 @@ SOURCES  = \
 	  src/config/parser/ConfigParser.cpp \
 	  src/config/parser/Token.cpp \
 	  \
-	  src/http/HttpRequest.cpp \
-	  src/http/RequestProcessor.cpp \
-	  src/http/HttpRequestConfig.cpp \
-	  src/http/HttpRequestContext.cpp \
-	  src/http/HttpRequestParser.cpp \
-	  src/http/HttpResponse.cpp \
-	  src/http/NewHttpResponse.cpp \
-	  src/http/ResponseError.cpp \
 	  src/http/StatusCode.cpp \
-	  src/http/IRequestHandler.cpp \
-	  src/http/PostHandler.cpp \
-	  src/http/GetHandler.cpp \
-	  src/http/DeleteHandler.cpp \
-	  src/http/ErrorHandler.cpp \
-	  src/http/CgiHandler.cpp \
-	  src/http/http_utils.cpp
+	  src/http/http_utils.cpp \
+	  \
+	  src/http/request/Request.cpp \
+	  src/http/request/RequestParser.cpp \
+	  \
+	  src/http/processor/RequestConfig.cpp \
+	  src/http/processor/RequestContext.cpp \
+	  src/http/processor/RequestProcessor.cpp \
+	  \
+	  src/http/processor/handler/CgiHandler.cpp \
+	  src/http/processor/handler/DeleteHandler.cpp \
+	  src/http/processor/handler/ErrorHandler.cpp \
+	  src/http/processor/handler/GetHandler.cpp \
+	  src/http/processor/handler/IRequestHandler.cpp \
+	  src/http/processor/handler/PostHandler.cpp \
+	  \
+	  src/http/response/Response.cpp \
+	  src/http/response/ResponseError.cpp
+
+
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
 OBJ     += $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter-out src/%.cpp, $(SOURCES)))
@@ -71,11 +76,7 @@ fclean: clean
 
 re: fclean all
 
-#watch:
-#implementar: https://stackoverflow.com/questions/7539563/is-there-a-smarter-alternative-to-watch-make
-
 TESTS_DIR = tests/
 .PHONY: tests
 tests:
-	cd $(TESTS_DIR)
-	./run_tests #TODO: mudar para um makefile próprio
+	cd $(TESTS_DIR) && $(MAKE)

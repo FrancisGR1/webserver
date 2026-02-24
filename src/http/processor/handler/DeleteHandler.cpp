@@ -2,12 +2,12 @@
 
 #include "config/ConfigTypes.hpp"
 #include "core/utils.hpp"
-#include "http_utils.hpp"
-#include "HttpRequest.hpp"
-#include "HttpRequestContext.hpp"
+#include "http/http_utils.hpp"
+#include "http/request/Request.hpp"
+#include "http/processor/RequestContext.hpp"
 #include "DeleteHandler.hpp"
 
-DeleteHandler::DeleteHandler(const HttpRequest& request, const HttpRequestContext& ctx)
+DeleteHandler::DeleteHandler(const Request& request, const RequestContext& ctx)
 	: m_request(request)
 	, m_ctx(ctx)
 	, m_done(false)
@@ -15,7 +15,7 @@ DeleteHandler::DeleteHandler(const HttpRequest& request, const HttpRequestContex
 
 void DeleteHandler::process()
 {
-	const HttpRequestConfig& config = m_ctx.config();
+	const RequestConfig& config = m_ctx.config();
 
 	if (!config.allows_method("DELETE")) http_utils::throw_method_not_allowed("DELETE", m_ctx);
 	if (config.is_redirected())
@@ -55,7 +55,7 @@ bool DeleteHandler::done() const
 	return true;
 }
 
-const NewHttpResponse& DeleteHandler::response() const
+const Response& DeleteHandler::response() const
 {
 	return m_response;
 }

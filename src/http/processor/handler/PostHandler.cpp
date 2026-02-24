@@ -4,16 +4,16 @@
 #include "core/utils.hpp"
 #include "core/constants.hpp"
 #include "config/ConfigTypes.hpp"
-#include "StatusCode.hpp"
-#include "HttpRequest.hpp"
-#include "HttpRequestConfig.hpp"
-#include "HttpRequestContext.hpp"
+#include "http/http_utils.hpp"
+#include "http/StatusCode.hpp"
+#include "http/request/Request.hpp"
+#include "http/processor/RequestConfig.hpp"
+#include "http/processor/RequestContext.hpp"
 #include "PostHandler.hpp"
-#include "http_utils.hpp"
 
 unsigned long long PostHandler::m_uploaded_file_index;
 
-PostHandler::PostHandler(const HttpRequest& request, const HttpRequestContext& ctx) 
+PostHandler::PostHandler(const Request& request, const RequestContext& ctx) 
 	: m_request(request)
 	, m_ctx(ctx)
 	, m_done(false)
@@ -21,7 +21,7 @@ PostHandler::PostHandler(const HttpRequest& request, const HttpRequestContext& c
 	, m_upload(NULL)
 	, m_fd(-1) {}
 
-static void is_uploadable_precondition(const HttpRequest& request, const HttpRequestConfig& config, const Path& upload_dir, const HttpRequestContext& ctx)
+static void is_uploadable_precondition(const Request& request, const RequestConfig& config, const Path& upload_dir, const RequestContext& ctx)
 {
 	if (!config.has_upload_dir())
 		http_utils::throw_internal_server_error_cant_upload(ctx);
@@ -37,14 +37,14 @@ static void is_uploadable_precondition(const HttpRequest& request, const HttpReq
 
 void PostHandler::process()
 {
-	const HttpRequestConfig& config = m_ctx.config();
+	const RequestConfig& config = m_ctx.config();
 
 	if (!config.allows_method("POST")) http_utils::throw_method_not_allowed("POST", m_ctx);
 
 	if (config.is_redirected())
 	{
 		m_response.set_status(StatusCode::MovedPermanently);
-		m_response.set_header("Location", config.redirection().path);
+		m_response.set_header("Location", config.redirection().raw_path);
 		m_response.set_header("Connection", "close");
 		m_response.set_header("Date", utils::http_date());
 		m_done = true;
@@ -119,7 +119,7 @@ bool PostHandler::done() const
 	return m_done;
 }
 
-const NewHttpResponse& PostHandler::response() const
+const Response& PostHandler::response() const
 {
 	return m_response;
 }

@@ -5,11 +5,11 @@
 #include "core/utils.hpp"
 #include "core/constants.hpp"
 #include "core/Logger.hpp"
-#include "StatusCode.hpp"
-#include "HttpRequest.hpp"
-#include "HttpRequestParser.hpp"
+#include "http/StatusCode.hpp"
+#include "http/request/Request.hpp"
+#include "http/request/RequestParser.hpp"
 
-HttpRequestParser::HttpRequestParser()
+RequestParser::RequestParser()
 	: m_status_code(StatusCode::Ok)
 	, m_state(Parser::StartLineMethod)
 	, m_idx(0)
@@ -19,26 +19,26 @@ HttpRequestParser::HttpRequestParser()
 	, m_done(false)
 {}
 
-void HttpRequestParser::feed(const char* raw)
+void RequestParser::feed(const char* raw)
 {
 	m_buffer += raw;
 	parse();
 }
 
-void HttpRequestParser::feed(char c)
+void RequestParser::feed(char c)
 {
 	m_buffer += c;
 	parse();
 }
 
-bool HttpRequestParser::done() const
+bool RequestParser::done() const
 {
 	return m_state == Parser::Done;
 }
 
-HttpRequest HttpRequestParser::get() const
+Request RequestParser::get() const
 {
-	return HttpRequest(m_method,
+	return Request(m_method,
 			m_target_path,
 			m_target_query,
 			m_protocol_version,
@@ -47,12 +47,12 @@ HttpRequest HttpRequestParser::get() const
 			m_status_code);
 }
 
-bool HttpRequestParser::error() const
+bool RequestParser::error() const
 {
 	return (m_state == Parser::Error);
 }
 
-void HttpRequestParser::clear()
+void RequestParser::clear()
 {
 	m_method.clear();
 	m_target_path.clear();
@@ -78,7 +78,7 @@ void HttpRequestParser::clear()
 }
 
 // private 
-void HttpRequestParser::parse()
+void RequestParser::parse()
 {
 	typedef Parser S; // S = state
 	for (; m_state != S::Error && m_state != S::Done && m_idx < m_buffer.size(); m_idx++)
@@ -569,7 +569,7 @@ void HttpRequestParser::parse()
 
 //https://www.rfc-editor.org/rfc/rfc9110.html#name-field-names 
 //see 5.6.2
-bool HttpRequestParser::is_tchar(char c)
+bool RequestParser::is_tchar(char c)
 {
 	return (std::isalnum(static_cast<unsigned char>(c)) ||
 			c == '!' || c == '#' || c == '$' ||
@@ -579,13 +579,13 @@ bool HttpRequestParser::is_tchar(char c)
 			c == '`' || c == '|' || c == '~');
 }
 
-bool HttpRequestParser::is_vchar(char c)
+bool RequestParser::is_vchar(char c)
 {
 	unsigned char uc = static_cast<unsigned char>(c);
 	return (uc >= '!' && uc <= '~');
 }
 
-bool HttpRequestParser::is_ows(char c)
+bool RequestParser::is_ows(char c)
 {
 	return c == ' ' || c == '\t';
 }

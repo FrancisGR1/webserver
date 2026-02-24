@@ -2,19 +2,19 @@
 # define REQUESTPROCESSOR_HPP
 
 #include "config/types/ServiceConfig.hpp"
-#include "HttpRequest.hpp"
-#include "HttpRequestContext.hpp"
-#include "IRequestHandler.hpp"
-#include "NewHttpResponse.hpp"
+#include "http/request/Request.hpp"
+#include "http/processor/RequestContext.hpp"
+#include "http/processor/handler/IRequestHandler.hpp"
+#include "http/response/Response.hpp"
 
 class RequestProcessor : public IRequestHandler
 {
 	public:
 		//@TODO adicionar informação da ligação
-		RequestProcessor(const HttpRequest& request, const ServiceConfig& service);
+		RequestProcessor(const Request& request, const ServiceConfig& service);
 		void process();
 		bool done() const;
-		const NewHttpResponse& response() const;
+		const Response& response() const;
 		~RequestProcessor();
 
 	private:
@@ -27,9 +27,9 @@ class RequestProcessor : public IRequestHandler
 			Done
 		};
 
-		const HttpRequest& m_request;
+		const Request& m_request;
 		State m_state;
-		HttpRequestContext m_ctx;
+		RequestContext m_ctx;
 		IRequestHandler* m_handler;
 };
 

@@ -1,12 +1,12 @@
-#include "StatusCode.hpp"
-#include "ResponseError.hpp"
-#include "RequestProcessor.hpp"
-#include "GetHandler.hpp"
-#include "PostHandler.hpp"
-#include "DeleteHandler.hpp"
-#include "ErrorHandler.hpp"
+#include "http/StatusCode.hpp"
+#include "http/response/ResponseError.hpp"
+#include "http/processor/RequestProcessor.hpp"
+#include "http/processor/handler/GetHandler.hpp"
+#include "http/processor/handler/PostHandler.hpp"
+#include "http/processor/handler/DeleteHandler.hpp"
+#include "http/processor/handler/ErrorHandler.hpp"
 
-RequestProcessor::RequestProcessor(const HttpRequest& request, const ServiceConfig& service)
+RequestProcessor::RequestProcessor(const Request& request, const ServiceConfig& service)
 	: m_request(request)
 	, m_state(RequestProcessor::Validating)
 	, m_ctx(service)
@@ -156,7 +156,7 @@ bool RequestProcessor::done() const
 	return m_state == Done;
 }
 
-const NewHttpResponse& RequestProcessor::response() const
+const Response& RequestProcessor::response() const
 {
 	if (m_handler == NULL)
 	{
