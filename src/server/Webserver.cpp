@@ -175,13 +175,14 @@ void	Webserver::startServer()
 	/* etapa 2 - loop server */
 	while (is_running)
 	{
-		int num_events = epoll_wait(epoll_fd_, events_, 10, -1);
+		/* quando algum evento mudar o epoll_wait retorna */
+		int num_events = epoll_wait(epoll_fd_, events_, 1024, -1);
 		if (num_events == -1)
 		{
 			log("Erro: Failed to wait on epoll!");
 			continue ;
 		}
-
+		/* percorrer apenas os eventos que mudaram */
 		for (int i = 0; i < num_events; i++)
 		{
 			int sock = events_[i].data.fd;
@@ -193,10 +194,10 @@ void	Webserver::startServer()
 				connections.erase(sock);
 				continue ;
 			}
-			/* servidor */
+			/* socket do servidor + EPOLLIN = cliente querendo conexao */
 			if (isServerSocket(sock) && (events_[i].events & EPOLLIN))
 				acceptConnection(sock);
-			else
+			else /* dados de um cliente para ler */
 				handleConnection(sock, events_[i]);
 		}
 	}
