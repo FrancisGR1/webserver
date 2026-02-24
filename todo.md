@@ -30,16 +30,14 @@
 - [x] GET    
 - [x] POST
 - [x] DELETE
-- [ ] Reimplementar arquitetura - criar classes mais concretas e dividir responsabilidades
-- [ ] Reorganizar ficheiros
+- [x] Reimplementar arquitetura - criar classes mais concretas e dividir responsabilidades
+- [x] Reorganizar ficheiros
 - [x] Reimplementar body da resposta de modo a ser assíncrono
-- [ ] Pequenas funções para throw dos códigos mais utilizados nos erros
-- [ ] Os handlers não precisam de lidar diretame com setters da HttpResponse, criar funções da HttpResponse para fazer isso. Por exemplo: response.make_autoindex_response(), response.make_upload_response()
+- [x] Pequenas funções para throw dos códigos mais utilizados nos erros
 
 # CGI
 - [ ] lidar com programas infinitos/timeouts, crashes, aborts, etc. Construir uma sandbox
-- [ ] fazer class Timer para timeouts
-- [ ] converter raw string em respostas?
+- [x] converter raw string em respostas
 
 # Gestão Eventos
 # Gestão Clientes
@@ -56,4 +54,6 @@
 - [x] Fazer Makefile
 
 # Outros
-- [ ] Melhor diagrama
+- [ ] Melhor diagrama geral
+- [ ] Inicializar todos os objetos: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es20-always-initialize-an-object
+
