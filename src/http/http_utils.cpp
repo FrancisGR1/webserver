@@ -1,4 +1,5 @@
 #include "core/utils.hpp"
+#include "core/constants.hpp"
 #include "response/ResponseError.hpp"
 #include "http/StatusCode.hpp"
 #include "http/http_utils.hpp"
@@ -209,6 +210,15 @@ namespace http_utils
 		throw ResponseError(
 				StatusCode::NotImplemented, 
 				utils::fmt("%s method is not implemented by the server", method.c_str()),
+				&ctx
+				);
+	}
+
+	void throw_gateway_timeout(const std::string& cgi_raw_path, const RequestContext& ctx)
+	{
+		throw ResponseError(
+				StatusCode::GatewayTimeout, 
+				utils::fmt("Timeout: CGI script '%s' took more than %lld seconds", cgi_raw_path.c_str(), constants::cgi_timeout),
 				&ctx
 				);
 	}

@@ -45,6 +45,8 @@ namespace http_utils
 	void throw_internal_server_error_unknown_file_type(const Path& path, const RequestContext& ctx);
 	// NotImplemented 501
 	void throw_not_implemented(const std::string& method, const RequestContext& ctx);
+	// GatewayTimeout 504
+	void throw_gateway_timeout(const std::string& cgi_raw_path, const RequestContext& ctx);
 } // namespace http_utils
 
 #endif // HTTPUTILS_HPP
