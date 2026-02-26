@@ -29,9 +29,9 @@
 
 # CGI
 # Servidor
-- Pesquisar como colocar um ip no bind ao inves de INADDR_ANY 
-- caso um service tenha um IP e outro service tenha o mesmo IP, o que fazer?
-- RESQUEST 
+- [x] Pesquisar como colocar um ip no bind ao inves de INADDR_ANY 
+- [ ] caso um service tenha um IP e outro service tenha o mesmo IP, o que fazer?
+- [x] RESQUEST 
 # Gestão Eventos
 # Gestão Clientes
 

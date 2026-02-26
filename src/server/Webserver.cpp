@@ -47,8 +47,7 @@ int	Webserver::setupSocket()
 			if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 				return (freeaddrinfo(result), log("Error: socket configuration!"), 1);
 			
-			int flags = fcntl(sock, F_GETFL, 0);
-			if (flags == -1 || fcntl(sock, F_SETFL, flags | O_NONBLOCK) == -1)
+			if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
 				return (freeaddrinfo(result), log("Error: Failed to set client socket to non-blocking mode!"), 1);
 			
 			if (bind(sock, result->ai_addr, result->ai_addrlen) < 0)
@@ -65,6 +64,13 @@ int	Webserver::setupSocket()
 	}
 	return (0);
 }
+/*	caso alguma coisa de um socket falhar, tenho essas opcoes:
+		- liberar esse socket e seguir para o proximo
+		- liberar tudo e fechar o servidor
+	caso um service tenha um IP+Port e outro service tenha o mesmo IP+Port, tenho essas opcoes:
+		- detectar erro no arquivo de configuracao
+		- tratar o erro quando o bind falhar
+*/
 
 bool	Webserver::isServerSocket(int fd)
 {
@@ -89,8 +95,7 @@ void	Webserver::acceptConnection(const int sock)
 	if (setsockopt(client_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		log("Error: Socket configuration!");
 	
-	int flags = fcntl(client_sock, F_GETFL, 0);
-	if (flags == -1 || fcntl(client_sock, F_SETFL, flags | O_NONBLOCK) == -1)
+	if (fcntl(client_sock, F_SETFL, O_NONBLOCK) == -1)
 		log("Error: Failed to set client socket to non-blocking mode!");
 	
 	connections[client_sock] = Connection(client_sock);
