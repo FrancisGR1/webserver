@@ -20,6 +20,7 @@
     - [x] overload do feed() com chars
     - [x] clear()
     - [ ] "/" path dever ser ilegal
+    - [ ] processa GET simples? (sem Transfer-Encoding e Content-Length)
 - [ ] Implementar testes em tabela
 
 # HTTP - Resposta
@@ -32,6 +33,7 @@
 - [x] Pesquisar como colocar um ip no bind ao inves de INADDR_ANY 
 - [ ] caso um service tenha um IP e outro service tenha o mesmo IP, o que fazer?
 - [x] RESQUEST 
+- [ ] CTRL+C e destrutores ??
 # Gestão Eventos
 # Gestão Clientes
 

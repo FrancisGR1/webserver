@@ -66,9 +66,9 @@ int	Webserver::setupSocket()
 }
 /*	caso alguma coisa de um socket falhar, tenho essas opcoes:
 		- liberar esse socket e seguir para o proximo
-		- liberar tudo e fechar o servidor
+		- [x] liberar tudo e fechar o servidor
 	caso um service tenha um IP+Port e outro service tenha o mesmo IP+Port, tenho essas opcoes:
-		- detectar erro no arquivo de configuracao
+		- [x] detectar erro no arquivo de configuracao
 		- tratar o erro quando o bind falhar
 */
 
