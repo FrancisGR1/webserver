@@ -26,7 +26,10 @@ SOURCES  = \
 	  src/core/MimeTypes.cpp \
 	  src/core/Path.cpp \
 	  src/core/constants.cpp \
-	  src/core/utils.cpp
+	  src/core/utils.cpp \
+	  src/server/Webserver.cpp \
+	  src/server/Connection.cpp \
+	  src/server/EventManager.cpp
 
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
