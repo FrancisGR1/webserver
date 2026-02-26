@@ -215,6 +215,7 @@ std::map<std::string, std::string> CgiHandler::init_env()
 	env["PATH_TRANSLATED"] = "";
 	env["QUERY_STRING"] = m_request.target_query();
 	//@TODO: o construtor tem de receber a informação da ligação para fazer isto
+	//@QUESTIO: podemos receber esta informacao ou nao? de onde vem?
 	env["REMOTE_ADDR"] = "";
 	env["REMOTE_HOST"] = "";
 	env["REMOTE_IDENT"] = "";
@@ -222,7 +223,7 @@ std::map<std::string, std::string> CgiHandler::init_env()
 	env["REQUEST_METHOD"] = m_request.method();
 	env["SCRIPT_NAME"] = m_script.cgi_name;
 	env["SERVER_NAME"] = m_ctx.config().service().server_name;
-	env["SERVER_PORT"] = "";
+	env["SERVER_PORT"] = ""; //@TODO: porta do cliente
 	env["SERVER_PROTOCOL"] = constants::server_http_version;
 	env["SERVER_SOFTWARE"] = constants::server_name;
 

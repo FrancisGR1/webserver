@@ -11,10 +11,12 @@ class RequestProcessor : public IRequestHandler
 {
 	public:
 		//@TODO adicionar informação da ligação
-		RequestProcessor(const Request& request, const ServiceConfig& service);
+		RequestProcessor(const ServiceConfig& service, const );
+
 		void process();
 		bool done() const;
 		const Response& response() const;
+		void set(const Request& request);
 		~RequestProcessor();
 
 	private:

@@ -11,9 +11,9 @@
 #include <string>
 #include <fcntl.h>
 #include "config/Config.hpp"
-#include "http/HttpRequest.hpp"
-#include "http/HttpRequestParser.hpp"
-#include "http/HttpResponse.hpp"
+#include "http/request/Request.hpp"
+#include "http/request/RequestParser.hpp"
+#include "http/response/Response.hpp"
 #include "http/StatusCode.hpp"
 #include "Connection.hpp"
 #include "EventManager.hpp"

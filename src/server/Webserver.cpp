@@ -18,6 +18,8 @@ void	Webserver::log(const std::string &message)
 	- Configurar eles corretamente
 	- Registrar eles no epoll 
 */
+/* 	criar uma classe para salvar o int do socket e o servico
+	o cliente precisa saber qual servico esta conectado */
 int	Webserver::setupSocket()
 {
 	/* percorrer todos os services */
@@ -61,6 +63,7 @@ int	Webserver::setupSocket()
 			freeaddrinfo(result);
 			std::cout << "Lisntening on " << listener.host << ":" << listener.port << "\n";
 		}
+
 	}
 	return (0);
 }
@@ -84,7 +87,7 @@ bool	Webserver::isServerSocket(int fd)
 
 void	Webserver::acceptConnection(const int sock)
 {
-	int client_sock = accept(sock, NULL, NULL);
+	int client_sock = accept(sock.fd, NULL, NULL);
 	if (client_sock < 0)
 	{
 		log("Erro: Failed to accept the client connection!");
@@ -98,7 +101,7 @@ void	Webserver::acceptConnection(const int sock)
 	if (fcntl(client_sock, F_SETFL, O_NONBLOCK) == -1)
 		log("Error: Failed to set client socket to non-blocking mode!");
 	
-	connections[client_sock] = Connection(client_sock);
+	connections[client_sock] = Connection(client_sock, events_);
 	if (client_sock != -1)
 		events_manager_.add(client_sock, EPOLLIN);
 	std::cout << "Cliente adicionado!\n";

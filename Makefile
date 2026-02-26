@@ -22,7 +22,7 @@ SOURCES  = \
 	  \
 	  src/server/Webserver.cpp \
 	  src/server/Connection.cpp \
-	  src/server/EventManager.cpp
+	  src/server/EventManager.cpp \
 	  \
 	  src/config/Config.cpp \
 	  src/config/ConfigTypes.cpp \

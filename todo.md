@@ -45,8 +45,16 @@
 - [ ] caso um service tenha um IP e outro service tenha o mesmo IP, o que fazer?
 - [x] RESQUEST 
 - [ ] CTRL+C e destrutores ??
+- [ ] caso o client fique suspenso ou nao envie todo o request
+
 # Gestão Eventos
+- [ ] passar EventManager para a ligacao -> contexto do processador
+
 # Gestão Clientes
+- [ ] class Socket que guarde o contexto do servico do socket em si (fd)
+
+# Ligacao
+- [ ] implementar maquina de estados - receber - processar - enviar
 
 # Utils
 ## Logger

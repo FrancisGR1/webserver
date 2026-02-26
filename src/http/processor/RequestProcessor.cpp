@@ -6,10 +6,9 @@
 #include "http/processor/handler/DeleteHandler.hpp"
 #include "http/processor/handler/ErrorHandler.hpp"
 
-RequestProcessor::RequestProcessor(const Request& request, const ServiceConfig& service)
-	: m_request(request)
-	, m_state(RequestProcessor::Validating)
-	, m_ctx(service)
+RequestProcessor::RequestProcessor(const ServiceConfig& service, const EventManager& events)
+	: m_state(RequestProcessor::Validating)
+	, m_ctx(service, events)
 	, m_handler(NULL) {}
 
 static std::string resolve_target(const std::string& req_path, const ServiceConfig& service)

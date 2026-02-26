@@ -21,7 +21,7 @@ namespace constants
     const size_t write_chunk_size = 4096;
     // - timeouts
     // -- connection
-    const Seconds idle_connection_timeout = 30;
+    // const Seconds idle_connection_timeout = 30; @TODO: implementar Timer na ligacao
     // -- cgi
     const Seconds cgi_timeout = 60;
     //@TODO: adicionar timeouts para request headers,body, response headers,body?

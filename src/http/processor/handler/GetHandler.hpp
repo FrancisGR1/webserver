@@ -18,8 +18,6 @@ class GetHandler : public IRequestHandler
 		~GetHandler();
 
 	private:
-
-		const Request& m_request; 
 		const RequestContext& m_ctx;
 		Response m_response;
 		bool m_done;

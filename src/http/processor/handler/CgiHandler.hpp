@@ -5,6 +5,7 @@
 #include <string>
 
 #include "core/Path.hpp"
+#include "core/Timer.hpp"
 #include "config/types/ServiceConfig.hpp"
 #include "http/request/Request.hpp"
 #include "config/ConfigTypes.hpp"

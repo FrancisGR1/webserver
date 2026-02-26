@@ -14,8 +14,7 @@
 #include "GetHandler.hpp"
 
 GetHandler::GetHandler(const Request& request, const RequestContext& ctx)
-	: m_request(request)
-	, m_ctx(ctx)
+	: m_ctx(ctx)
 	, m_done(false)
 	, m_cgi(request, ctx) {}
 

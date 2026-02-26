@@ -2,9 +2,14 @@
 #include "Webserver.hpp"
 #include <cstdlib>
 
-Connection::Connection() : bytes_sent_(0) {}
+Connection::Connection() : bytes_sent_(0), state_(Receiving) {}
 
-Connection::Connection(int sock) : sock_(sock), bytes_sent_(0) {}
+Connection::Connection(int sock, const ServiceConfig& service, const EventManager& events) 
+: sock_(sock)
+, bytes_sent_(0)
+, state_(Receiving)
+, processor_(sock.service, events)
+, events_(events)  {}
 
 Connection::~Connection() {}
 
@@ -41,6 +46,53 @@ void	Connection::setResponse(const std::string &response)
 }
 
 /* member fuctions */
+
+// quando chama process():
+//
+void Connection::process()
+{
+	switch(state_)
+	{
+		case Receiving:
+		{
+			// @TODO: feed buffer
+			if (parser_.done())
+			{
+				request_ = parser.get();
+				processor.set(request_);
+				state_ = Processing;		
+			}
+			break;
+		}
+		case Processing:
+		{
+			processor_.process();
+			if (processor_.done())
+			{
+				response_ = processor.get();
+				state_ = Sending;		
+			}
+			break;
+		}
+		case Sending:
+		{
+			// @QUESTION: apanhar n bytes do send()? 
+			response_.send(socket.fd);
+			if (response_.done())
+			{
+				state_ = Done;		
+			}
+			break;
+		}
+		default: 
+			break;
+	}
+}
+
+bool Connection::done() const
+{
+	return state_ == Done;
+}
 
 bool	Connection::readRequest()
 {

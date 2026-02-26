@@ -17,8 +17,9 @@ class RequestContext
 		~RequestContext();
 
 	private:
+			//@TODO adicionar connection
+		EventManager m_events;
 		RequestConfig* m_request_config;
-		//@TODO adicionar connection
 };
 
 #endif // REQUESTCONTEXT_HPP
