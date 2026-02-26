@@ -13,23 +13,46 @@ FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG)
 SOURCES  = \
 	   src/main.cpp \
 	  \
-	  src/config/Config.cpp \
-	  src/config/ConfigLexer.cpp \
-	  src/config/ConfigParser.cpp \
-	  src/config/ConfigTypes.cpp \
-	  src/http/HttpRequest.cpp \
-	  src/http/HttpRequestParser.cpp \
-	  src/http/HttpResponse.cpp \
-	  src/http/StatusCode.cpp \
-	  src/http/CgiHandler.cpp \
 	  src/core/Logger.cpp \
 	  src/core/MimeTypes.cpp \
 	  src/core/Path.cpp \
+	  src/core/Timer.cpp \
 	  src/core/constants.cpp \
 	  src/core/utils.cpp \
+	  \
 	  src/server/Webserver.cpp \
 	  src/server/Connection.cpp \
 	  src/server/EventManager.cpp
+	  \
+	  src/config/Config.cpp \
+	  src/config/ConfigTypes.cpp \
+	  src/config/types/ServiceConfig.cpp \
+	  src/config/types/LocationConfig.cpp \
+	  src/config/types/Route.cpp \
+	  src/config/parser/ConfigLexer.cpp \
+	  src/config/parser/ConfigParser.cpp \
+	  src/config/parser/Token.cpp \
+	  \
+	  src/http/StatusCode.cpp \
+	  src/http/http_utils.cpp \
+	  \
+	  src/http/request/Request.cpp \
+	  src/http/request/RequestParser.cpp \
+	  \
+	  src/http/processor/RequestConfig.cpp \
+	  src/http/processor/RequestContext.cpp \
+	  src/http/processor/RequestProcessor.cpp \
+	  \
+	  src/http/processor/handler/CgiHandler.cpp \
+	  src/http/processor/handler/DeleteHandler.cpp \
+	  src/http/processor/handler/ErrorHandler.cpp \
+	  src/http/processor/handler/GetHandler.cpp \
+	  src/http/processor/handler/IRequestHandler.cpp \
+	  src/http/processor/handler/PostHandler.cpp \
+	  \
+	  src/http/response/Response.cpp \
+	  src/http/response/ResponseError.cpp
+
 
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
@@ -58,11 +81,7 @@ fclean: clean
 
 re: fclean all
 
-#watch:
-#implementar: https://stackoverflow.com/questions/7539563/is-there-a-smarter-alternative-to-watch-make
-
 TESTS_DIR = tests/
 .PHONY: tests
 tests:
-	cd $(TESTS_DIR)
-	./run_tests #TODO: mudar para um makefile próprio
+	cd $(TESTS_DIR) && $(MAKE)

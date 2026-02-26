@@ -1,13 +1,13 @@
-#include "StatusCode.hpp"
+#include "http/StatusCode.hpp"
 
-std::string StatusCode::to_string(StatusCode::Code c)
+std::string StatusCode::to_reason(StatusCode::Code c)
 {
 	typedef StatusCode SC;
 
 	switch (c)
 	{
 		// === Successful ===
-		case SC::OK       : return "OK";
+		case SC::Ok       : return "OK";
 		case SC::Created  : return "Created";
 		case SC::Accepted : return "Accepted";
 		case SC::NoContent: return "No Content";

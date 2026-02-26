@@ -1,17 +1,18 @@
-#ifndef HTTPREQUEST_HPP
-# define HTTPREQUEST_HPP
+#ifndef REQUEST_HPP
+# define REQUEST_HPP
 
 #include <string>
 #include <ostream>
 #include <map>
 
-#include "StatusCode.hpp"
+#include "http/StatusCode.hpp"
 
-class HttpRequest
+class Request
 {
 	public:
-		HttpRequest();
-		HttpRequest(const std::string& method,
+		//@TODO copy assignment
+		Request();
+		Request(const std::string& method,
 				const std::string& target_path,
 				const std::string& target_query,
 				const std::string& protocol_version,
@@ -39,6 +40,6 @@ class HttpRequest
 		StatusCode::Code m_status_code;
 };
 
-std::ostream& operator<<(std::ostream& os, const HttpRequest& request);
+std::ostream& operator<<(std::ostream& os, const Request& request);
 
-#endif // HTTPREQUEST_HPP
+#endif // REQUEST_HPP

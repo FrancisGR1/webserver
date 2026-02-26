@@ -1,0 +1,27 @@
+#ifndef DELETEHANDLER_HPP
+#define DELETEHANDLER_HPP
+
+#include "config/ConfigTypes.hpp"
+#include "http/response/Response.hpp"
+#include "http/processor/RequestContext.hpp"
+#include "http/processor/handler/IRequestHandler.hpp"
+#include "http/processor/handler/CgiHandler.hpp"
+
+class DeleteHandler : public IRequestHandler 
+{
+	public:
+		DeleteHandler(const Request& request, const RequestContext& ctx);
+		void process();
+		bool done() const;
+		const Response& response() const;
+		~DeleteHandler();
+
+	private:
+		const Request& m_request; 
+		const RequestContext& m_ctx;
+		Response m_response;
+		bool m_done;
+		CgiHandler m_cgi;
+};
+
+#endif // DELETEHANDLER_HPP

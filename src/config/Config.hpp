@@ -3,7 +3,9 @@
 
 #include <string>
 #include <ostream>
-#include "ConfigTypes.hpp"
+
+#include "config/ConfigTypes.hpp"
+#include "config/types/ServiceConfig.hpp"
 
 //https://github.com/h5bp/server-configs-nginx
 

@@ -8,8 +8,10 @@
 - [ ] Múltiplas configurações para testes
 - [ ] Limpar código morto
 - [ ] Separar ConfigType.* em vários ficheiros?
+- [ ] Mudar LocationConfig e ServiceConfig para classes, incluir exists() em LocationConfig
 - [ ] mudar nomes: listing = autoindex, default_file = index, upload_dir = upload_storage, 
 - [ ] estrutura do diretório - https://wiki.debian.org/Nginx/DirectoryStructure
+- [ ] parser - dividir em Lexer → Parser → AST → Semantic Validator → Config Builder
 
 # HTTP - Receber Pedido
 - [x] Processamento
@@ -23,15 +25,20 @@
     - [ ] melhorar log erros
     - [ ] processa GET simples? (sem Transfer-Encoding e Content-Length)
 - [ ] Implementar testes em tabela
+- [ ] Enum de métodos/string correspondente http como StatusCode e Token
 
 # HTTP - Resposta
 - [x] GET    
 - [x] POST
 - [x] DELETE
+- [x] Reimplementar arquitetura - criar classes mais concretas e dividir responsabilidades
+- [x] Reorganizar ficheiros
+- [x] Reimplementar body da resposta de modo a ser assíncrono
+- [x] Pequenas funções para throw dos códigos mais utilizados nos erros
 
 # CGI
-- [ ] lidar com programas infinitos, crashes, aborts, etc. Construir uma sandbox
-- [ ] converter raw string em respostas?
+- [ ] lidar com programas infinitos/timeouts, crashes, aborts, etc. Construir uma sandbox
+- [x] converter raw string em respostas
 
 # Servidor
 - [x] Pesquisar como colocar um ip no bind ao inves de INADDR_ANY 
@@ -41,11 +48,18 @@
 # Gestão Eventos
 # Gestão Clientes
 
-# Logger
+# Utils
+## Logger
 - [x] Print básico
+- [ ] O logger deve ser instanciável
+
+## Path
+- [ ] criar classes derivadas: ServerPath e CgiPath; ou então separar informação (struct CgiInfo)
 
 # Compilação
 - [x] Fazer Makefile
 
 # Outros
-- [ ] Melhor diagrama
+- [ ] Melhor diagrama geral
+- [ ] Inicializar todos os objetos: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es20-always-initialize-an-object
+

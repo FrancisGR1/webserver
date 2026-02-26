@@ -1,6 +1,0 @@
-class RequestDispatcher
-{
-	public:
-	private:
-}
-

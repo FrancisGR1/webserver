@@ -3,11 +3,12 @@
 #include <cstdlib>
 
 #include "core/utils.hpp"
-#include "ConfigTypes.hpp"
-#include "ConfigLexer.hpp"
-#include "ConfigParser.hpp"
-#include "Config.hpp"
 #include "http/StatusCode.hpp"
+#include "config/ConfigTypes.hpp"
+#include "ConfigLexer.hpp"
+#include "config/parser/ConfigParser.hpp"
+#include "config/types/LocationConfig.hpp"
+#include "config/Config.hpp"
 
 ConfigParser::ConfigParser(ConfigLexer& lexer)
 	: m_lexer(lexer)
@@ -164,7 +165,7 @@ void ConfigParser::parse_listener(Token& t, Directive& directive)
 	std::string host = interface_tok.value.substr(0, colon_pos);
 	std::string port_str = interface_tok.value.substr(colon_pos + 1);
 
-	std::vector<std::string> octets = utils::str_split(host, '.');
+	std::vector<std::string> octets = utils::str_split(host, ".");
 	if (octets.size() != 4)
 		throw std::runtime_error("Invalid8\n");
 	for (size_t i = 0; i < octets.size(); i++)

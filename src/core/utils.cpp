@@ -1,14 +1,19 @@
-#include "utils.hpp"
 #include <sstream>
 #include <fstream>
 #include <cstdarg>
+#include <ctime>
+
+#include "utils.hpp"
 
 namespace utils
 {
-	std::vector<std::string> str_split(const std::string& str, char delimiter)
+	std::vector<std::string> str_split(const std::string& str, const std::string& delimiter)
 	{
 		std::vector<std::string> split;
 		
+		if (delimiter.empty())
+			return split;
+
 		size_t start = 0;
 		while (true)
 		{
@@ -20,12 +25,12 @@ namespace utils
 			}
 			else if (delimiter_pos == start)
 			{
-				start++;
+				start += delimiter.size();
 			}
 			else
 			{
 				split.push_back(str.substr(start, delimiter_pos - start));
-				start = delimiter_pos + 1;
+				start = delimiter_pos + delimiter.size();
 			}
 		}
 		return split;
@@ -113,4 +118,32 @@ namespace utils
 		va_end(args);
 		return std::string(buffer);
 	}
+
+	std::string map_to_str(std::map<std::string, std::string>headers)
+	{
+		std::string str;
+
+		for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+		{
+			str += it->first + ": " + it->second + "\r\n";
+		}
+
+		return str;
+	}
+
+	std::string http_date()
+	{
+		char buf[63];
+		std::time_t now = std::time(NULL);
+		std::tm gmt;
+
+		gmtime_r(&now, &gmt);
+
+		std::strftime(buf, sizeof(buf),
+				"%a, %d %b %Y %H:%M:%S GMT",
+				&gmt);
+
+		return std::string(buf);
+	}
+
 } // namespace utils

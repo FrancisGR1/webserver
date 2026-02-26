@@ -1,12 +1,13 @@
-#ifndef HTTPREQUESTPARSER_HPP
-# define HTTPREQUESTPARSER_HPP
+#ifndef REQUESTPARSER_HPP
+# define REQUESTPARSER_HPP
 
 #include <string>
 #include <map>
 
-#include "StatusCode.hpp"
-#include "HttpRequest.hpp"
+#include "http/StatusCode.hpp"
+#include "http/request/Request.hpp"
 
+// @TODO: mudar para outro ficheiro
 struct Parser
 {
 	enum State
@@ -46,15 +47,15 @@ struct Parser
 };
 
 
-class HttpRequestParser
+class RequestParser
 {
 	public:
-		HttpRequestParser();
+		RequestParser();
 
 		void feed(const char* raw);
 		void feed(char c);
 		bool done() const;
-		HttpRequest get() const;
+		Request get() const;
 		bool error() const;
 		void clear();
 
@@ -93,4 +94,4 @@ class HttpRequestParser
 		bool is_ows(char c);
 };
 
-#endif // HTTPREQUESTPARSER_HPP
+#endif // REQUESTPARSER_HPP

@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <string>
 
+#include "Timer.hpp"
+
 namespace constants 
 {
 	// colors
@@ -20,6 +22,13 @@ namespace constants
 	extern const char* default_conf;
 	extern const char* server_http_version;
 	extern const std::string py_ext;
+	extern const size_t read_chunk_size;
+	extern const size_t write_chunk_size;
+	// - timeouts
+	// -- connection
+	extern const Seconds connection_timeout;
+	// -- cgi
+	extern const Seconds cgi_timeout;
 
 	// http body
 	extern const size_t max_body_size;
