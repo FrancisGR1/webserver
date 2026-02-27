@@ -58,7 +58,7 @@ int	Webserver::setupSocket()
 			if (listen(sock, 10) < 0)
 				return (freeaddrinfo(result), log("Error: listen failed!"), 1);
 			/* adicionar o sock na lista e liberar o result */
-			server_sockets.push_back(sock);
+			server_sockets_.insert(std::make_pair(sock, Socket(sock, config_.services[i])));
 			events_manager_.add(sock, EPOLLIN);
 			freeaddrinfo(result);
 			std::cout << "Lisntening on " << listener.host << ":" << listener.port << "\n";
@@ -67,27 +67,18 @@ int	Webserver::setupSocket()
 	}
 	return (0);
 }
-/*	caso alguma coisa de um socket falhar, tenho essas opcoes:
-		- liberar esse socket e seguir para o proximo
-		- [x] liberar tudo e fechar o servidor
-	caso um service tenha um IP+Port e outro service tenha o mesmo IP+Port, tenho essas opcoes:
-		- [x] detectar erro no arquivo de configuracao
-		- tratar o erro quando o bind falhar
+/*	@TODO:	caso alguma coisa de um socket falhar -> liberar tudo e fechar o servidor
+			caso um service tenha um IP+Port e outro service tenha o mesmo IP+Port -> detectar erro no arquivo de configuracao
 */
 
 bool	Webserver::isServerSocket(int fd)
 {
-	for (size_t i = 0; i < server_sockets.size(); i++)
-	{
-		if (server_sockets[i] == fd)
-			return (true);
-	}
-	return (false);
+	return (server_sockets_.find(fd) != server_sockets_.end());
 }
 
 void	Webserver::acceptConnection(const int sock)
 {
-	int client_sock = accept(sock.fd, NULL, NULL);
+	int client_sock = accept(sock, NULL, NULL);
 	if (client_sock < 0)
 	{
 		log("Erro: Failed to accept the client connection!");
@@ -101,7 +92,8 @@ void	Webserver::acceptConnection(const int sock)
 	if (fcntl(client_sock, F_SETFL, O_NONBLOCK) == -1)
 		log("Error: Failed to set client socket to non-blocking mode!");
 	
-	connections[client_sock] = Connection(client_sock, events_);
+	Socket&	serverSock = server_sockets_[sock];
+	connections_.insert(std::make_pair(client_sock, Connection(client_sock, serverSock.getService(), events_manager_)));
 	if (client_sock != -1)
 		events_manager_.add(client_sock, EPOLLIN);
 	std::cout << "Cliente adicionado!\n";
@@ -112,12 +104,12 @@ void	Webserver::handleConnection(const int sock, epoll_event& event)
 	/* client - leitura */
 	if (event.events & EPOLLIN)
 	{
-		Connection& conn = connections[sock];
+		Connection& conn = connections_[sock];
 		if (!conn.readRequest())
 		{
 			events_manager_.remove(sock);
 			close(sock);
-			connections.erase(sock);
+			connections_.erase(sock);
 			return ;
 		}
 		if (conn.isReady())
@@ -137,12 +129,12 @@ void	Webserver::handleConnection(const int sock, epoll_event& event)
 	/* client - escrita */
 	else if (event.events & EPOLLOUT)
 	{
-		Connection& conn = connections[sock];
+		Connection& conn = connections_[sock];
 		if (conn.sendResponse())
 		{
 			events_manager_.remove(sock);
 			close(sock);
-			connections.erase(sock);
+			connections_.erase(sock);
 		}
 	}
 }
@@ -171,7 +163,7 @@ void	Webserver::startServer()
 			{
 				events_manager_.remove(sock);
 				close(sock);
-				connections.erase(sock);
+				connections_.erase(sock);
 				continue ;
 			}
 			/* socket do servidor + EPOLLIN = cliente querendo conexao */

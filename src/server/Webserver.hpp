@@ -17,6 +17,7 @@
 #include "http/StatusCode.hpp"
 #include "Connection.hpp"
 #include "EventManager.hpp"
+#include "Socket.hpp"
 
 class Connection;
 
@@ -24,8 +25,8 @@ class Connection;
 class Webserver
 {
 	private:
-		std::vector<int>			server_sockets;
-		std::map<int, Connection>	connections;
+		std::map<int, Socket>		server_sockets_;
+		std::map<int, Connection>	connections_;
 		const Config				&config_;
 		EventManager				events_manager_;
 

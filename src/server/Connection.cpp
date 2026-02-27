@@ -2,14 +2,14 @@
 #include "Webserver.hpp"
 #include <cstdlib>
 
-Connection::Connection() : bytes_sent_(0), state_(Receiving) {}
+Connection::Connection(int sock, const ServiceConfig& service, EventManager& events) 
+	: sock_(sock)
+	, bytes_sent_(0)
+	, state_(Receiving)
+	, service_(service)
+	, events_(events)
+	, processor_(service, events) {}
 
-Connection::Connection(int sock, const ServiceConfig& service, const EventManager& events) 
-: sock_(sock)
-, bytes_sent_(0)
-, state_(Receiving)
-, processor_(sock.service, events)
-, events_(events)  {}
 
 Connection::~Connection() {}
 
