@@ -6,6 +6,7 @@
 #include "http/processor/RequestContext.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/response/Response.hpp"
+#include "server/EventManager.hpp"
 
 class RequestProcessor : public IRequestHandler
 {

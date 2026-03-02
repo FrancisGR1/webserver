@@ -5,9 +5,19 @@
 
 bool	Webserver::is_running = true;
 
-Webserver::Webserver(const Config &config) : config_(config) {}
+Webserver::Webserver(const Config &config)
+	: config_(config) {}
 
-Webserver::~Webserver() {}
+Webserver::~Webserver()
+{
+	/* fechar sockets dos clientes */
+	for (std::map<int, Connection>::iterator it = connections_.begin(); it != connections_.end(); it++)
+		close(it->first);
+
+	/* fechar sockets do servidor */
+	for (std::map<int, Socket>::iterator it = server_sockets_.begin(); it != server_sockets_.end(); it++)
+		close(it->first);
+}
 
 void	Webserver::log(const std::string &message)
 {
@@ -63,7 +73,6 @@ int	Webserver::setupSocket()
 			freeaddrinfo(result);
 			std::cout << "Lisntening on " << listener.host << ":" << listener.port << "\n";
 		}
-
 	}
 	return (0);
 }
@@ -92,19 +101,21 @@ void	Webserver::acceptConnection(const int sock)
 	if (fcntl(client_sock, F_SETFL, O_NONBLOCK) == -1)
 		log("Error: Failed to set client socket to non-blocking mode!");
 	
-	Socket&	serverSock = server_sockets_[sock];
+	std::map<int, Socket>::iterator it = server_sockets_.find(sock);
+	Socket&	serverSock = it->second;
 	connections_.insert(std::make_pair(client_sock, Connection(client_sock, serverSock.getService(), events_manager_)));
-	if (client_sock != -1)
-		events_manager_.add(client_sock, EPOLLIN);
+	events_manager_.add(client_sock, EPOLLIN);
 	std::cout << "Cliente adicionado!\n";
 }
 
 void	Webserver::handleConnection(const int sock, epoll_event& event)
 {
+	std::map<int, Connection>::iterator it = connections_.find(sock);
+	Connection& conn = it->second;
+
 	/* client - leitura */
 	if (event.events & EPOLLIN)
 	{
-		Connection& conn = connections_[sock];
 		if (!conn.readRequest())
 		{
 			events_manager_.remove(sock);
@@ -129,7 +140,6 @@ void	Webserver::handleConnection(const int sock, epoll_event& event)
 	/* client - escrita */
 	else if (event.events & EPOLLOUT)
 	{
-		Connection& conn = connections_[sock];
 		if (conn.sendResponse())
 		{
 			events_manager_.remove(sock);

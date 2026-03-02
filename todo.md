@@ -44,7 +44,7 @@
 - [x] Pesquisar como colocar um ip no bind ao inves de INADDR_ANY 
 - [x] caso um service tenha um IP e outro service tenha o mesmo IP, o que fazer?
 - [x] RESQUEST 
-- [ ] CTRL+C e destrutores ??
+- [x] CTRL+C e destrutores ??
 - [ ] caso o client fique suspenso ou nao envie todo o request
 
 # Gestão Eventos

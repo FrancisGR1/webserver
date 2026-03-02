@@ -18,7 +18,7 @@ class RequestContext
 
 	private:
 			//@TODO adicionar connection
-		EventManager m_events;
+		// EventManager m_events;
 		RequestConfig* m_request_config;
 };
 

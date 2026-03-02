@@ -28,23 +28,19 @@ class Connection
 		EventManager&			events_;
 		RequestParser			parser_;
 		RequestProcessor		processor_;
-		Response				response_;
+		// Response				response_;
+		std::string				resp_;
 
 	public:
 		Connection(int sock, const ServiceConfig& service, EventManager& events);
 		~Connection();
 		
-		/* getters e setters */
-		// int			getSock();
-		// void		setSock(int sock);
-		// HttpRequest	&getRequest();
-		// void		setRequest(const std::string &request);
-		// std::string	&getResponse();
 		void		process();
 		void		setResponse(const std::string &response);
 		bool		readRequest();
 
 		bool		isReady() const;
+		bool		done() const;
 		bool		sendResponse();
 		
 };
