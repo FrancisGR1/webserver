@@ -22,6 +22,7 @@ SOURCES  = \
 	  \
 	  src/server/Webserver.cpp \
 	  src/server/Connection.cpp \
+	  src/server/ConnectionPool.cpp \
 	  src/server/EventManager.cpp \
 	  src/server/Socket.cpp \
 	  \

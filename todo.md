@@ -49,17 +49,23 @@
 
 # Gestão Eventos
 - [x] passar EventManager para a ligacao -> contexto do processador
+- [x] máquina de estados
+- [ ] implementar o padrão de desenho "Chain of Responsibility"
+---> problema: o EventsManager vai ser passado por referência para uma série de objetos, o que significa que a responsabilidade é partilhada por muitas entidades, logo, confunde a lógica e pode criar bugs difíceis de resolver.
+---> solução: padrão de chain of responsibility: todos os objetos que quiserem tocar nos eventos, têm de devolver uma event action, a ligação faz o resto
 
 # Gestão Clientes
 - [x] class Socket que guarde o contexto do servico do socket em si (fd)
 
 # Ligacao
-- [ ] implementar maquina de estados - receber - processar - enviar
+- [x] implementar maquina de estados - receber - processar - enviar
+- [x] múltiplos fds podem estar associados à mesma ligação - fazer pool de ligações
 
 # Utils
 ## Logger
 - [x] Print básico
 - [ ] O logger deve ser instanciável
+- [ ] Escrever mais logs (úteis) no código
 
 ## Path
 - [ ] criar classes derivadas: ServerPath e CgiPath; ou então separar informação (struct CgiInfo)
@@ -70,4 +76,4 @@
 # Outros
 - [ ] Melhor diagrama geral
 - [ ] Inicializar todos os objetos: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es20-always-initialize-an-object
-
+- [ ] Melhorar mensagens de erro (especificar dados)
