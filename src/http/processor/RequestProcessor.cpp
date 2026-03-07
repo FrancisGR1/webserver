@@ -1,3 +1,4 @@
+#include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/response/ResponseError.hpp"
 #include "http/processor/RequestProcessor.hpp"
@@ -6,9 +7,9 @@
 #include "http/processor/handler/DeleteHandler.hpp"
 #include "http/processor/handler/ErrorHandler.hpp"
 
-RequestProcessor::RequestProcessor(const ServiceConfig& service, const EventManager& events)
+RequestProcessor::RequestProcessor(const Socket& conn_socket, const EventManager& events)
 	: m_state(RequestProcessor::Validating)
-	, m_ctx(service, events)
+	, m_ctx(conn_socket, conn_socket.getService(), events)
 	, m_handler(NULL) {}
 
 static std::string resolve_target(const std::string& req_path, const ServiceConfig& service)
@@ -159,7 +160,7 @@ const Response& RequestProcessor::response() const
 {
 	if (m_handler == NULL)
 	{
-		throw std::runtime_error("RequestProcessor: Tried to access handler Null Pointer!");
+		throw std::logic_error("RequestProcessor: Tried to access handler Null Pointer!");
 	}
 	else
 	{

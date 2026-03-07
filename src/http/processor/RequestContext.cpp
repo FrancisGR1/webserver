@@ -12,14 +12,14 @@ RequestContext::RequestContext(const ServiceConfig& service)
 const RequestConfig& RequestContext::config() const 
 { 
 	if (m_request_config == NULL)
-		throw std::runtime_error("RequestContext: Tried to access request config Null Pointer!");
+		throw std::logic_error("RequestContext: Tried to access request config Null Pointer!");
 	return *m_request_config;
 }
 
 RequestConfig& RequestContext::config()
 { 
 	if (m_request_config == NULL)
-		throw std::runtime_error("RequestContext: Tried to access request config Null Pointer!");
+		throw std::logic_error("RequestContext: Tried to access request config Null Pointer!");
 	return *m_request_config;
 }
 

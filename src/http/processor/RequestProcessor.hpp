@@ -12,7 +12,7 @@ class RequestProcessor : public IRequestHandler
 {
 	public:
 		//@TODO adicionar informação da ligação
-		RequestProcessor(const ServiceConfig& service, const EventManager& events);
+		RequestProcessor(const Socket& conn_socket, const EventManager& events);
 
 		void process();
 		bool done() const;

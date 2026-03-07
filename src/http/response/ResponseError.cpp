@@ -16,7 +16,7 @@ bool ResponseError::has_ctx() const         	      { return m_ctx != NULL; }
 const RequestContext& ResponseError::ctx() const         
 { 
 	if (m_ctx == NULL)
-        	throw std::runtime_error("ResponseError: Tried to access Null Pointer!");
+        	throw std::logic_error("ResponseError: Tried to access Null Pointer!");
 	return *m_ctx; 
 }
 
