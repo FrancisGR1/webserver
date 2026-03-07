@@ -3,3 +3,6 @@ tmp/*
 *.a
 *.pdf
 webserv
+.cache
+.vscode
+compile_commands.json
