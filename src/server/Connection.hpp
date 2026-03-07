@@ -1,17 +1,22 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
+#include "server/EventManager.hpp"
+#include "server/Socket.hpp"
 #include "http/request/RequestParser.hpp"
-#include "http/request/Request.hpp"
-#include "http/response/Response.hpp"
 #include "http/processor/RequestProcessor.hpp"
-#include "http/StatusCode.hpp"
-
-#include <iostream>
 
 class Connection
 {
+	public:
+		Connection(const Socket& conn_socket, EventManager& events);
+		~Connection();
+		
+		void		work();
+		bool		done() const;
+		
 	private:
+
 		enum State
 		{
 			Receiving = 0,
@@ -19,30 +24,21 @@ class Connection
 			Sending,
 			Done
 		};
+		// saves work state
+		State					work_state_;
 
-		int						sock_;
-		size_t					bytes_sent_;
-		State					state_;
-		// http
+		// context
+		const Socket& socket_;
 		const ServiceConfig& 	service_;
+
+		// will add/remove/modify events
 		EventManager&			events_;
+
+		// http
 		RequestParser			parser_;
 		RequestProcessor		processor_;
-		// Response				response_;
-		std::string				resp_;
+		Response			response_;
 
-	public:
-		Connection(int sock, const ServiceConfig& service, EventManager& events);
-		~Connection();
-		
-		void		process();
-		void		setResponse(const std::string &response);
-		bool		readRequest();
-
-		bool		isReady() const;
-		bool		done() const;
-		bool		sendResponse();
-		
 };
 
 #endif /* CONNECTION_HPP */
