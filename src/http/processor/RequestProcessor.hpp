@@ -12,13 +12,13 @@ class RequestProcessor : public IRequestHandler
 {
 	public:
 		//@TODO adicionar informação da ligação
-		RequestProcessor(const Socket& conn_socket, const EventManager& events);
+		RequestProcessor(const Socket& conn_socket, EventManager& events);
+		~RequestProcessor();
 
 		void process();
 		bool done() const;
 		const Response& response() const;
 		void set(const Request& request);
-		~RequestProcessor();
 
 	private:
 		enum State 
@@ -30,7 +30,7 @@ class RequestProcessor : public IRequestHandler
 			Done
 		};
 
-		const Request& m_request;
+		Request m_request;
 		State m_state;
 		RequestContext m_ctx;
 		IRequestHandler* m_handler;
