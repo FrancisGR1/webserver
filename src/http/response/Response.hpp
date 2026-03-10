@@ -14,6 +14,8 @@ class Response
 	public:
 		Response();
 		explicit Response(StatusCode::Code status);
+		Response(const Response& other);
+		Response& operator=(const Response& other);
 		~Response();
 
 		// api
@@ -57,14 +59,9 @@ class Response
 
 		// utils
 		std::string make_status_line();
-		void handle_file(Response& response, const Path& path);
-
-
-		// no copy semantics, because no clone()
-		Response(const Response& other);
-		Response& operator=(const Response& other);
-
+		friend std::ostream& operator<<(std::ostream& os, const Response& response);
 };
 
+std::ostream& operator<<(std::ostream& os, const Response& response);
 
 # endif // RESPONSE_HPP

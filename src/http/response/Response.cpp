@@ -27,6 +27,33 @@ Response::Response(StatusCode::Code status)
 	//@QUESTION can we set default headers?
 }
 
+Response::Response(const Response& other)
+	: m_status(other.m_status)
+	, m_status_line(other.m_status_line)
+	, m_headers_str(other.m_headers_str)
+	, m_headers(other.m_headers)
+	, m_body_str(other.m_body_str)
+	, m_body_fd(other.m_body_fd)
+	, m_send_phase(other.m_send_phase)
+	, m_offset(other.m_offset) {}
+
+Response& Response::operator=(const Response& other)
+{
+	if (this != &other)
+	{
+		m_status = other.m_status;
+		m_status_line = other.m_status_line;
+		m_headers_str = other.m_headers_str;
+		m_headers = other.m_headers;
+		m_body_str = other.m_body_str;
+		m_body_fd = other.m_body_fd;
+		m_send_phase = other.m_send_phase;
+		m_offset = other.m_offset;
+	}
+
+	return *this;
+}
+
 ssize_t Response::send(int fd)
 {
 	switch (m_send_phase)
@@ -34,7 +61,7 @@ ssize_t Response::send(int fd)
 		case StatusPhase:
 			{
 				if (m_status_line.empty())
-					m_status_line = make_status_line();
+m_status_line = make_status_line();
 				ssize_t sent = ::send(fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
 				if (sent < 0)
 					;
@@ -202,4 +229,21 @@ std::string Response::make_status_line()
 	status_line += StatusCode::to_reason(m_status) + "\r\n";
 
 	return status_line;
+}
+
+std::ostream& operator<<(std::ostream& os, const Response& response)
+{
+	os << "Response:\n";
+	os << "Is done: " << std::boolalpha << response.done() << std::endl
+		<< response.m_status_line 
+		<< response.m_headers_str;
+	if (response.m_body_fd >= 0)
+	{
+		os << "Body is fd: " << response.m_body_fd << "\n";
+	}
+	else
+	{
+		os << response.m_body_str;
+	}
+	return os;
 }
