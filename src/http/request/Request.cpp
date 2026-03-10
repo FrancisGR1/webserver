@@ -6,7 +6,9 @@
 #include "http/StatusCode.hpp"
 #include "http/request/Request.hpp"
 
+//@TODO: impl
 Request::Request() {}
+
 Request::Request(const std::string& method,
 			const std::string& target_path,
 			const std::string& target_query,

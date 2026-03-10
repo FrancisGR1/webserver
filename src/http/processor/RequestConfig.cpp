@@ -3,12 +3,11 @@
 #include "core/Path.hpp"
 #include "config/types/LocationConfig.hpp"
 #include "config/types/ServiceConfig.hpp"
-#include "config/ConfigTypes.hpp"
 #include "http/processor/RequestConfig.hpp"
 
 RequestConfig::RequestConfig(const ServiceConfig& service)
 	: m_service(service)
-	, m_resolved_path(NULL)
+	, m_resolved_path("")
 	, m_location(NULL) {}
 
 RequestConfig::RequestConfig(const ServiceConfig& service, const Path& path, const LocationConfig& location)

@@ -60,7 +60,7 @@ class RequestParser
 		void clear();
 
 	private:
-		// Http elements
+		// http elements
 		std::string m_method;
 		std::string m_target_path;
 		std::string m_target_query;
@@ -74,10 +74,12 @@ class RequestParser
 		Parser::State m_state;
 		size_t m_idx;
 		unsigned char m_ch;
+
 		// store temporary values
 		std::string m_buffer;
 		std::string m_header_key;
 		std::string m_header_value;
+
 		// body data
 		long unsigned int m_content_length;
 		std::string m_chunk_size_str;
@@ -86,6 +88,7 @@ class RequestParser
 		// is parsing over?
 		bool m_done;
 
+		// main logic
 		void parse();
 		
 		// header specific char validation

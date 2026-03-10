@@ -5,11 +5,11 @@
 #include "server/Socket.hpp"
 #include "http/processor/RequestConfig.hpp"
 
+// scoped to request processor
 class RequestContext
 {
 	public: 
-		//@TODO: adicionar ligação(?), session manager e cookies
-		RequestContext();
+		//@TODO: adicionar session manager e cookies?
 		RequestContext(const Socket& conn_socket, EventManager& events, const ServiceConfig& service);
 
 		const RequestConfig& config() const;

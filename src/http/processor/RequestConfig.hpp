@@ -6,7 +6,6 @@
 #include "core/Path.hpp"
 #include "config/types/LocationConfig.hpp"
 #include "config/types/ServiceConfig.hpp"
-#include "config/ConfigTypes.hpp"
 
 class RequestConfig
 {
