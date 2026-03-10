@@ -9,11 +9,12 @@
 class Connection
 {
 	public:
-		Connection(const Socket& conn_socket, EventManager& events);
+		Connection(Socket& conn_socket, EventManager& events);
 		~Connection();
 		
-		void		work();
+		void		work(const epoll_event& on_event);
 		bool		done() const;
+		int fd() const;
 		
 	private:
 
@@ -24,11 +25,12 @@ class Connection
 			Sending,
 			Done
 		};
-		// saves work state
+
+		// saves current work state
 		State					work_state_;
 
 		// context
-		const Socket& socket_;
+		Socket& socket_; // owns the socket
 		const ServiceConfig& 	service_;
 
 		// will add/remove/modify events
@@ -39,6 +41,11 @@ class Connection
 		RequestProcessor		processor_;
 		Response			response_;
 
+		// illegal - no copying of connections is allowed
+		// every connection must be a reference/pointer
+		// to a connection from <<<ConnectionPool>>>
+		Connection(const Connection&);
+		Connection& operator=(const Connection&);
 };
 
 #endif /* CONNECTION_HPP */
