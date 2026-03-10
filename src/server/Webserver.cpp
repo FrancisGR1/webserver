@@ -1,187 +1,186 @@
+#include "core/utils.hpp"
+#include "core/Logger.hpp"
+#include "Socket.hpp"
 #include "Webserver.hpp"
 #include "Connection.hpp"
 #include "EventManager.hpp"
-#include <sstream>
+
+#include <iostream>
 
 bool	Webserver::is_running = true;
 
-Webserver::Webserver(const Config &config)
+Webserver::Webserver(const Config& config)
 	: config_(config) {}
 
 Webserver::~Webserver()
 {
-	/* fechar sockets dos clientes */
-	for (std::map<int, Connection>::iterator it = connections_.begin(); it != connections_.end(); it++)
-		close(it->first);
-
 	/* fechar sockets do servidor */
-	for (std::map<int, Socket>::iterator it = server_sockets_.begin(); it != server_sockets_.end(); it++)
-		close(it->first);
+	for (std::map<int, Socket*>::iterator it = server_sockets_.begin(); it != server_sockets_.end(); it++)
+		delete it->second;
 }
 
-void	Webserver::log(const std::string &message)
+// if there's an error in setup(), server won't run
+void Webserver::setup()
 {
-	std::cout << message << std::endl;
-}
-
-/*	- Criar todos os sockets de servidor (listen)
-	- Configurar eles corretamente
-	- Registrar eles no epoll 
-*/
-/* 	criar uma classe para salvar o int do socket e o servico
-	o cliente precisa saber qual servico esta conectado */
-int	Webserver::setupSocket()
-{
-	/* percorrer todos os services */
+	// run all the services and create sockets from listeners
 	for(size_t i = 0; i < config_.services.size(); i++)
 	{
 		const ServiceConfig& service = config_.services[i];
-		/* percorrer todos os listeners desse service */
 		for (size_t j = 0; j < service.listeners.size(); j++)
 		{
+			// make server socket
 			const Listener& listener = service.listeners[j];
-			
-			struct addrinfo hints = {};
-			struct addrinfo* result;
+			Socket* socket = make_server_socket(listener, service);
 
-			hints.ai_family = AF_INET;
-			hints.ai_socktype = SOCK_STREAM;
-			hints.ai_flags = AI_PASSIVE;
+			// store socket
+			server_sockets_.insert(std::pair<int, Socket*>(socket->fd(), socket));
+			if (events_.add(socket->fd(), EPOLLIN) == -1)
+			{
+				throw std::runtime_error("Failed to add socket to events at setup()");
+			}
 
-			if (getaddrinfo(listener.host.c_str(), listener.port.c_str(), &hints, &result) != 0)
-				return (log("Error: getaddrinfo!"), 1);
-			/* criar socket, configurar, bind... */
-			int sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-			if (sock < 0)
-				return (freeaddrinfo(result), log("Error: socket creation!"), 1);
-
-			int opt = 1;
-			if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-				return (freeaddrinfo(result), log("Error: socket configuration!"), 1);
-			
-			if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
-				return (freeaddrinfo(result), log("Error: Failed to set client socket to non-blocking mode!"), 1);
-			
-			if (bind(sock, result->ai_addr, result->ai_addrlen) < 0)
-				return (freeaddrinfo(result), log("Error: bind configuration!"), 1);
-
-			if (listen(sock, 10) < 0)
-				return (freeaddrinfo(result), log("Error: listen failed!"), 1);
-			/* adicionar o sock na lista e liberar o result */
-			server_sockets_.insert(std::make_pair(sock, Socket(sock, config_.services[i])));
-			events_manager_.add(sock, EPOLLIN);
-			freeaddrinfo(result);
-			std::cout << "Lisntening on " << listener.host << ":" << listener.port << "\n";
+			Logger::trace("Listening on %s:%s", listener.host.c_str(), listener.port.c_str());
 		}
 	}
-	return (0);
 }
-/*	@TODO:	caso alguma coisa de um socket falhar -> liberar tudo e fechar o servidor
-			caso um service tenha um IP+Port e outro service tenha o mesmo IP+Port -> detectar erro no arquivo de configuracao
-*/
 
 bool	Webserver::isServerSocket(int fd)
 {
 	return (server_sockets_.find(fd) != server_sockets_.end());
 }
 
-void	Webserver::acceptConnection(const int sock)
+void	Webserver::run()
 {
-	int client_sock = accept(sock, NULL, NULL);
-	if (client_sock < 0)
-	{
-		log("Erro: Failed to accept the client connection!");
-		Webserver::is_running = false;
-		return ;
-	}
-	int opt = 1;
-	if (setsockopt(client_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		log("Error: Socket configuration!");
-	
-	if (fcntl(client_sock, F_SETFL, O_NONBLOCK) == -1)
-		log("Error: Failed to set client socket to non-blocking mode!");
-	
-	std::map<int, Socket>::iterator it = server_sockets_.find(sock);
-	Socket&	serverSock = it->second;
-	connections_.insert(std::make_pair(client_sock, Connection(client_sock, serverSock.getService(), events_manager_)));
-	events_manager_.add(client_sock, EPOLLIN);
-	std::cout << "Cliente adicionado!\n";
-}
+	Logger::trace("Server starts running\n");
 
-void	Webserver::handleConnection(const int sock, epoll_event& event)
-{
-	std::map<int, Connection>::iterator it = connections_.find(sock);
-	Connection& conn = it->second;
-
-	/* client - leitura */
-	if (event.events & EPOLLIN)
-	{
-		if (!conn.readRequest())
-		{
-			events_manager_.remove(sock);
-			close(sock);
-			connections_.erase(sock);
-			return ;
-		}
-		if (conn.isReady())
-		{
-			/* resposta simples */
-			conn.setResponse(
-				"HTTP/1.0 200 OK\r\n"
-				"Content-Length: 13\r\n"
-				"Content-Type: text/plain\r\n"
-				"\r\n"
-				"Hello World!\n"
-			);
-			/* mudar para POLLOUT */
-			events_manager_.modify(sock, EPOLLOUT);
-		}
-	}
-	/* client - escrita */
-	else if (event.events & EPOLLOUT)
-	{
-		if (conn.sendResponse())
-		{
-			events_manager_.remove(sock);
-			close(sock);
-			connections_.erase(sock);
-		}
-	}
-}
-
-void	Webserver::startServer()
-{
-	/* etapa 1 - iniciar e configurar sockets do servidor  */
-	if (setupSocket())
-		return ;
-	
-	/* etapa 2 - loop server */
 	while (is_running)
 	{
-		/* quando algum evento mudar o epoll_wait retorna */
-		int num_events = events_manager_.wait();
-		if (num_events == -1)
+		int n_events = events_.wait();
+
+		//@QUESTION: porquê -2?
+		if (n_events == -2)
 			continue ;
 
-		/* percorrer apenas os eventos que mudaram */
-		for (int i = 0; i < num_events; i++)
+		//@TODO colocar try catch dentro do for loop
+		//@QUESTION: porquê -1?
+		for (int i = 0; i < n_events; ++i)
 		{
-			epoll_event& event = events_manager_.getEvent(i);
-			int sock = event.data.fd;
-			/* erro */
+			epoll_event& event = events_.getEvent(i);
+			int event_fd = event.data.fd;
+
+			Logger::trace("Event fd: %d\n", event_fd);
+			// event error
 			if (event.events & (EPOLLERR | EPOLLHUP))
 			{
-				events_manager_.remove(sock);
-				close(sock);
-				connections_.erase(sock);
-				continue ;
+				Connection& conn = connection_pool_.get(event_fd);
+				events_.remove(event_fd);
+				connection_pool_.remove(conn);
 			}
-			/* socket do servidor + EPOLLIN = cliente querendo conexao */
-			if (isServerSocket(sock) && (event.events & EPOLLIN))
-				acceptConnection(sock);
-			else /* dados de um cliente para ler */
-				handleConnection(sock, event);
+			else if (isServerSocket(event_fd))
+			{
+				std::cout << "this is a server socket\n";
+				//@TODO verificar se é EPOLLIN
+				Socket* client_socket = make_client_socket(event_fd);
+				std::cout << "made client:" << client_socket->fd() << "\n";
+				connection_pool_.make(*client_socket, events_);
+				events_.add(client_socket->fd(), EPOLLIN | EPOLLOUT);
+				std::cout << "made connection:" << client_socket->fd() << "\n";
+			}
+			else // is an existing connection
+			{
+				std::cout << "this is an existing connection\n";
+				Connection& conn = connection_pool_.get(event_fd);
+				conn.work(event);
+				if (conn.done())
+				{
+					connection_pool_.remove(conn);
+				}
+			}
 		}
 	}
 }
- /* fazer parser da request para criar response */
+
+Socket* Webserver::make_server_socket(const Listener& listener, const ServiceConfig& service)
+{
+	struct addrinfo hints = {};
+	struct addrinfo* result;
+
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+
+	if (getaddrinfo(listener.host.c_str(), listener.port.c_str(), &hints, &result) != 0)
+	{
+		throw std::runtime_error(utils::fmt("getaddrinfo() failed for listener %s:%s", 
+					listener.host.c_str(), listener.port.c_str()));
+	}
+	/* criar socket, configurar, bind... */
+	int socket_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+	//@TODO substituir por exception de servidor
+	//@TODO recuperar antigas mensagens de erros
+	if (socket_fd < 0)
+	{
+		throw std::runtime_error(utils::fmt("socket() failed for listener %s:%s", 
+					listener.host.c_str(), listener.port.c_str()));
+	}
+
+	//@QUESTION opt 1?
+	int opt = 1;
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+	{
+		::freeaddrinfo(result);
+		throw std::runtime_error(utils::fmt("setsockopt() failed for listener %s:%s", 
+					listener.host.c_str(), listener.port.c_str()));
+	}
+
+	if (fcntl(socket_fd, F_SETFL, O_NONBLOCK) == -1)
+	{
+		::freeaddrinfo(result);
+		throw std::runtime_error(utils::fmt("fcntl() failed for listener %s:%s", 
+					listener.host.c_str(), listener.port.c_str()));
+	}
+
+	if (bind(socket_fd, result->ai_addr, result->ai_addrlen) < 0)
+	{
+		::freeaddrinfo(result);
+		throw std::runtime_error(utils::fmt("bind() failed for listener %s:%s", 
+					listener.host.c_str(), listener.port.c_str()));
+	}
+	::freeaddrinfo(result);
+
+	//@QUESTION porquê 10 aqui?
+	if (listen(socket_fd, 10) < 0)
+	{
+		throw std::runtime_error(utils::fmt("listen() failed for listener %s:%s", 
+					listener.host.c_str(), listener.port.c_str()));
+	}
+	return new Socket(socket_fd, service);
+}
+
+//@TODO colocar throws aqui
+Socket* Webserver::make_client_socket(int server_socket_fd)
+{
+	int fd = accept(server_socket_fd, NULL, NULL);
+	if (fd < -1)
+	{
+		Logger::error("Failed to accept client connection!");
+	}
+
+	// @QUESTION porquê opt = 0?
+	int opt = 0;
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < -1)
+	{
+		Logger::error("setsockopt() for client failed!");
+	}
+
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -2)
+	{
+		Logger::error("fcntl() failed to set client socket to non-blocking mode!");
+	}
+
+	std::map<int, Socket*>::iterator it = server_sockets_.find(server_socket_fd);
+	if (it == server_sockets_.end())
+		throw std::runtime_error("Server socket not found");
+
+	return new Socket(fd, it->second->service());
+}

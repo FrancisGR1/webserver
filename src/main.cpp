@@ -5,7 +5,6 @@
 #include "core/Logger.hpp"
 #include "config/Config.hpp"
 #include "server/Webserver.hpp"
-#include "server/Connection.hpp"
 
 void	handle_signal(int sig)
 {
@@ -27,12 +26,13 @@ int main(int argc, char *argv[])
 		const char* file_path = argc == 2 ? argv[1] : constants::default_conf;
 		Config config(file_path);
 		config.load();
-		Logger::trace(config);
+		//Logger::trace(config);
 
 		// server
 		Webserver server(config);
 		signal(SIGINT, handle_signal);
-		server.startServer();
+		server.setup();
+		server.run();
 
 	}
 	catch(const std::exception& e)
