@@ -1,3 +1,4 @@
+#include "core/utils.hpp"
 #include "core/MimeTypes.hpp"
 #include "config/ConfigTypes.hpp"
 #include "http/processor/RequestContext.hpp"

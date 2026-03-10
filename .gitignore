@@ -3,5 +3,5 @@ tmp/*
 *.a
 *.pdf
 webserv
-.cach
+.cache
 compile_commands.json
