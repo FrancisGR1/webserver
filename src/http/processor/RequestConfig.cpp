@@ -96,7 +96,7 @@ Path RequestConfig::upload_dir() const
 {
 	if (m_location)
 		return m_location->upload_dir;
-	return Path(NULL);
+	return Path("");
 }
 
 Path RequestConfig::get_error_page_or_nonexistent_path(size_t code) const
@@ -106,7 +106,7 @@ Path RequestConfig::get_error_page_or_nonexistent_path(size_t code) const
 	else if (utils::contains(m_location->error_pages, code))
 		return m_service.error_pages.at(code);
 	else 
-		return Path(NULL); //@TODO construir string?
+		return Path(""); //@TODO construir string?
 }
 
 Path RequestConfig::cgi_interpreter() const
@@ -116,7 +116,7 @@ Path RequestConfig::cgi_interpreter() const
 	if (m_location && utils::contains(m_location->cgis, extension))
 		return m_location->cgis.at(extension);
 
-	return Path(NULL);
+	return Path("");
 }
 
 //@TODO: get listener (a connection é que tem de dar isto)
