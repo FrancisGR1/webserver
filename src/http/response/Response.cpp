@@ -70,6 +70,7 @@ m_status_line = make_status_line();
 					m_send_phase = HeadersPhase;
 					m_offset = 0;
 					m_headers_str = utils::map_to_str(m_headers);
+					m_headers_str += "\n\r";
 				}
 				else
 				{
