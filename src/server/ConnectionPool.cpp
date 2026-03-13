@@ -1,20 +1,18 @@
 #include <iostream>
 
 #include "core/utils.hpp"
+#include "core/Logger.hpp"
 #include "ConnectionPool.hpp"
 
 
 // make connection, store it, return a reference to it
 Connection& ConnectionPool::make(Socket& conn_socket, EventManager& events)
 {
-	std::cout << "make()\n";
 	if (utils::contains(conn_by_fd_, conn_socket.fd()))
 		throw std::logic_error("Connection Pool: already contains this fd!\n");
-	std::cout << "contains() yes: " << conn_socket.fd() << "\n";
 
 	// create and save connection with its socket fd
 	connection_pool_.insert(connection_pool_.end(), new Connection(conn_socket, events));
-	std::cout << "save conn\n";
 	conn_by_fd_[conn_socket.fd()] = connection_pool_.back();
 	return *conn_by_fd_[conn_socket.fd()];
 }
@@ -68,6 +66,8 @@ void ConnectionPool::remove(Connection& conn)
 
 Connection& ConnectionPool::get(int fd)
 {
+	Logger::trace("Connection Pool: Get fd %d", fd);
+
 	if (!utils::contains(conn_by_fd_, fd))
 		throw std::logic_error("Connection Pool: looking up fd that doesn't exist!\n");
 

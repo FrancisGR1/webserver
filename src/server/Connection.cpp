@@ -13,13 +13,13 @@ Connection::Connection(Socket& conn_socket, EventManager& events)
 	, events_(events)
 	, processor_(conn_socket, events) 
 {
-	Logger::trace("Create connection: %d\n", socket_.fd());
+	Logger::trace("Create connection: %d", socket_.fd());
 }
 
 
 Connection::~Connection() 
 {
-	Logger::trace("Destroy connection: %d\n", socket_.fd());
+	Logger::trace("Destroy connection: %d", socket_.fd());
 }
 
 void Connection::work(const epoll_event& on_event)
@@ -27,7 +27,6 @@ void Connection::work(const epoll_event& on_event)
 	//@TODO: check if event matches connection state
 	(void) on_event;
 
-	std::cout << "working!\n";
 	switch(work_state_)
 	{
 		case Receiving:
@@ -47,8 +46,7 @@ void Connection::work(const epoll_event& on_event)
 				// parse
 				parser_.feed(buffer);
 
-				std::cout << "is parser done?: " << std::boolalpha << parser_.done() << "\n";
-				std::cout << "Request: " << parser_.get() << "\n";
+				Logger::debug(parser_.get());
 				if (parser_.done())
 				{
 					const Request& request_ = parser_.get();
@@ -60,7 +58,6 @@ void Connection::work(const epoll_event& on_event)
 			}
 		case Processing:
 			{
-				std::cout << "Processing\n";
 				processor_.process();
 
 				if (processor_.done())
@@ -72,12 +69,11 @@ void Connection::work(const epoll_event& on_event)
 			}
 		case Sending:
 			{
-				std::cout << "SENDING\n";
 				response_.send(socket_.fd());
 
 				if (response_.done())
 				{
-					std::cout << response_ << "\n";
+					Logger::debug(response_);
 					work_state_ = Done;		
 					//@TODO cleanup de quê?
 				}

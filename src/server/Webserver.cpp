@@ -5,8 +5,6 @@
 #include "Connection.hpp"
 #include "EventManager.hpp"
 
-#include <iostream>
-
 bool	Webserver::is_running = true;
 
 Webserver::Webserver(const Config& config)
@@ -51,7 +49,7 @@ bool	Webserver::isServerSocket(int fd)
 
 void	Webserver::run()
 {
-	Logger::trace("Server starts running\n");
+	Logger::trace("Server starts running");
 
 	while (is_running)
 	{
@@ -62,15 +60,13 @@ void	Webserver::run()
 			continue ;
 
 		//@TODO colocar try catch dentro do for loop
-		//@QUESTION: porquê -1?
 		for (int i = 0; i < n_events; ++i)
 		{
 			epoll_event& event = events_.getEvent(i);
 			int event_fd = event.data.fd;
 
-			Logger::trace("Event fd: %d\n", event_fd);
-			// event error
-			if (event.events & (EPOLLERR | EPOLLHUP))
+			Logger::trace("Webserver: Event fd: %d", event_fd);
+			if (event.events & (EPOLLERR | EPOLLHUP)) // event error
 			{
 				Connection& conn = connection_pool_.get(event_fd);
 				events_.remove(event_fd);
@@ -78,17 +74,14 @@ void	Webserver::run()
 			}
 			else if (isServerSocket(event_fd))
 			{
-				std::cout << "this is a server socket\n";
-				//@TODO verificar se é EPOLLIN
+				Logger::trace("Webserver: Fd %d is a server socket", event_fd);
 				Socket* client_socket = make_client_socket(event_fd);
-				std::cout << "made client:" << client_socket->fd() << "\n";
 				connection_pool_.make(*client_socket, events_);
 				events_.add(client_socket->fd(), EPOLLIN | EPOLLOUT);
-				std::cout << "made connection:" << client_socket->fd() << "\n";
 			}
 			else // is an existing connection
 			{
-				std::cout << "this is an existing connection\n";
+				Logger::trace("Webserver: Fd %d is an existing connection", event_fd);
 				Connection& conn = connection_pool_.get(event_fd);
 				conn.work(event);
 				if (conn.done())
