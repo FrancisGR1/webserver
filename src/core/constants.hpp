@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <string>
 
+#include "Logger.hpp"
 #include "Timer.hpp"
 
 namespace constants 
@@ -17,7 +18,11 @@ namespace constants
 	extern const char* bright_red;
 	extern const char* reset;
 
+	// logging
+	extern const Log::Level log_level;
+
 	// server
+	// - config
 	extern const char* server_name;
 	extern const char* default_conf;
 	extern const char* server_http_version;
@@ -30,7 +35,8 @@ namespace constants
 	// -- cgi
 	extern const Seconds cgi_timeout;
 
-	// http body
+	// http
+	// - body
 	extern const size_t max_body_size;
 	extern const size_t max_uri_size;
 	extern const char* body_whitespaces;

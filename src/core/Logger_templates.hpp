@@ -25,6 +25,10 @@ void Logger::debug(const logT& to_log)
 	}
 }
 
+
+// forward declaration
+namespace constants { extern const char* reset; }
+
 template<typename Tlog>
 void Logger::tlog(Log::Level level, const Tlog& to_log)
 {
