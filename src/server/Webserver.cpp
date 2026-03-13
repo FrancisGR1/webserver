@@ -8,7 +8,8 @@
 bool	Webserver::is_running = true;
 
 Webserver::Webserver(const Config& config)
-	: config_(config) {}
+	: config_(config)
+	, connection_pool_(events_) {}
 
 Webserver::~Webserver()
 {
@@ -69,15 +70,13 @@ void	Webserver::run()
 			if (event.events & (EPOLLERR | EPOLLHUP)) // event error
 			{
 				Connection& conn = connection_pool_.get(event_fd);
-				events_.remove(event_fd);
 				connection_pool_.remove(conn);
 			}
 			else if (isServerSocket(event_fd))
 			{
 				Logger::trace("Webserver: Fd %d is a server socket", event_fd);
 				Socket* client_socket = make_client_socket(event_fd);
-				connection_pool_.make(*client_socket, events_);
-				events_.add(client_socket->fd(), EPOLLIN | EPOLLOUT);
+				connection_pool_.make(*client_socket);
 			}
 			else // is an existing connection
 			{
@@ -87,7 +86,6 @@ void	Webserver::run()
 				if (conn.done())
 				{
 					connection_pool_.remove(conn);
-					events_.remove(event_fd);
 				}
 			}
 		}

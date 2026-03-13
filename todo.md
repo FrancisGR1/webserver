@@ -63,6 +63,7 @@
 # Ligacao
 - [x] implementar maquina de estados - receber - processar - enviar
 - [x] múltiplos fds podem estar associados à mesma ligação - fazer pool de ligações
+- [ ] Gestão: Substituir connection pool for event.data.ptr (ptr para ligações em vez de pool de fds)
 
 # Utils
 ## Logger
@@ -81,3 +82,4 @@
 - [ ] Inicializar todos os objetos: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es20-always-initialize-an-object
 - [ ] Melhorar mensagens de erro (especificar dados)
 - [ ] Dividr classe context em diferentes versões de acordo com o escopo: RequestContext, ConnectionContext
+- [ ] Redesenhar melhor EventManager e ConnectionPool de modo a que dependam menos uma da outra (é estranho a connection pool usar o EventManager para gerir eventos, não?)
