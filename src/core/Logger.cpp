@@ -2,6 +2,7 @@
 #include <ostream>
 #include <iostream>
 #include <cstdarg>
+
 #include "Logger.hpp"
 #include "constants.hpp"
 
@@ -9,7 +10,7 @@ std::ostream* Logger::m_log_stream = &std::cout;
 std::ofstream* Logger::m_file_stream;
 std::vector<std::ofstream*> Logger::m_opened_files;
 
-Log::Level Logger::m_global_level = Log::Trace;
+Log::Level Logger::m_global_level = constants::log_level;
 
 void Logger::trace(const char* fmt, ...)
 {	
