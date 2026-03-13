@@ -8,7 +8,8 @@
 class ConnectionPool
 {
 	public:
-		Connection& make(Socket& conn_socket, EventManager& events);
+		ConnectionPool(EventManager& events);
+		Connection& make(Socket& conn_socket);
 		void associate_fd(int fd, Connection& conn);
 
 		//@TODO: ainda não sei a melhor forma de remover?
@@ -18,6 +19,7 @@ class ConnectionPool
 		Connection& get(int fd);
 
 	private:
+		EventManager& events_;
 		// connections can have multiple associated ints
 		std::list<Connection*> connection_pool_; // std::list so connection pointers are stable
 		std::map<int, Connection*>	conn_by_fd_;

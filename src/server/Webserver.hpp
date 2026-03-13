@@ -41,7 +41,6 @@ class Webserver
 
 	private:
 		const Config				&config_;
-
 		std::map<int, Socket*>		server_sockets_;
 		EventManager				events_;
 		ConnectionPool				connection_pool_;
