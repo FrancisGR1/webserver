@@ -87,6 +87,7 @@ void	Webserver::run()
 				if (conn.done())
 				{
 					connection_pool_.remove(conn);
+					events_.remove(event_fd);
 				}
 			}
 		}
