@@ -101,9 +101,10 @@ Path RequestConfig::upload_dir() const
 
 Path RequestConfig::get_error_page_or_nonexistent_path(size_t code) const
 {
+	Logger::trace("Path: Lookup error %zu page", code);
 	if (m_location && utils::contains(m_location->error_pages, code))
 		return m_location->error_pages.at(code);
-	else if (utils::contains(m_location->error_pages, code))
+	else if (utils::contains(m_service.error_pages, code))
 		return m_service.error_pages.at(code);
 	else 
 		return Path(""); //@TODO construir string?
