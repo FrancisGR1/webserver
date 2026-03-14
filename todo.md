@@ -3,7 +3,7 @@
 - [x] Símbolos
 - [x] Processamento
 - [x] Mudar códigos de erro de size_t para StatusCode::Code
-- [ ] "/" path dever ser ilegal
+- [ ] Verificar se configurações satisfazem os novos requerimentos
 - [ ] Melhor log de erros
 - [ ] Múltiplas configurações para testes
 - [ ] Limpar código morto
@@ -22,7 +22,6 @@
     - [x] ignorar trailing headers
     - [x] overload do feed() com chars
     - [x] clear()
-    - [ ] "/" path dever ser ilegal
     - [ ] melhorar log erros
     - [ ] processa GET simples? (sem Transfer-Encoding e Content-Length)
 - [ ] Implementar testes em tabela
@@ -83,3 +82,20 @@
 - [ ] Melhorar mensagens de erro (especificar dados)
 - [ ] Dividr classe context em diferentes versões de acordo com o escopo: RequestContext, ConnectionContext
 - [ ] Redesenhar melhor EventManager e ConnectionPool de modo a que dependam menos uma da outra (é estranho a connection pool usar o EventManager para gerir eventos, não?)
+
+# Testes
+## Valgrind
+O valgrind não está a dar?
+
+## Tester
+Testar:
+- [ ] POST
+- [ ] GET
+- [ ] DELETE
+- [ ] Máximo número de ligações concurrentes
+- [ ] CGI
+    - [ ] aborta
+    - [ ] core dump
+    - [ ] sleep(999)
+    - [ ] deadlock?
+    - [ ] while(true)
