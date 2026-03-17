@@ -3,6 +3,7 @@
 - [x] Símbolos
 - [x] Processamento
 - [x] Mudar códigos de erro de size_t para StatusCode::Code
+- [ ] default file deve poder ser concatenado ao root
 - [ ] Verificar se configurações satisfazem os novos requerimentos
 - [ ] Melhor log de erros
 - [ ] Múltiplas configurações para testes
@@ -89,8 +90,8 @@ O valgrind não está a dar?
 
 ## Tester
 Testar:
-- [ ] POST
 - [ ] GET
+- [ ] POST
 - [ ] DELETE
 - [ ] Máximo número de ligações concurrentes
 - [ ] CGI
@@ -99,3 +100,11 @@ Testar:
     - [ ] sleep(999)
     - [ ] deadlock?
     - [ ] while(true)
+- [ ] fazer isto em formato de table-driven tests
+
+# Mais importante
+- [ ] Tester em go
+- [ ] Stressar cgi
+- [ ] Implementar timeouts de ligacoes
+- [ ] Criar configuracoes para testar
+- [ ] Melhorar configuracao
