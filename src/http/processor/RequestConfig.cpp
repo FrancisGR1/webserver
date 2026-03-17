@@ -89,7 +89,14 @@ Path RequestConfig::index() const
 {
 	if (m_location)
 		return m_location->default_file;
-	return Path(NULL);
+	return Path("");
+}
+
+Path RequestConfig::root() const
+{
+	if (m_location)
+		return m_location->root_dir;
+	return Path("");
 }
 
 Path RequestConfig::upload_dir() const
