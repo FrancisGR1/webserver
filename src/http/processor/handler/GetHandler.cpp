@@ -1,6 +1,7 @@
 #include <dirent.h>   
 #include <ctime>
 #include <sys/stat.h>
+#include <iostream>
 
 #include "core/utils.hpp"
 #include "core/Path.hpp"
@@ -23,6 +24,7 @@ void GetHandler::process()
 {
 	const RequestConfig& config = m_ctx.config();
 
+	std::cout << "Get handler process!\n";
 	if (!config.allows_method("GET")) http_utils::throw_method_not_allowed("GET", m_ctx);
 
 	if (config.is_redirected())
@@ -44,6 +46,7 @@ void GetHandler::process()
 	{
 
 		if (!path.can_execute) http_utils::throw_forbidden_cant_access_directory(path, m_ctx);
+		//@TODO deve redirecionar para o novo url
 		if (!path.ends_with_slash) http_utils::throw_moved_permanently(path, m_ctx);
 		if (config.has_index())
 		{

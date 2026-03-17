@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 		const char* file_path = argc == 2 ? argv[1] : constants::default_conf;
 		Config config(file_path);
 		config.load();
-		//Logger::trace(config);
+		Logger::trace(config);
 
 		// server
 		Webserver server(config);
