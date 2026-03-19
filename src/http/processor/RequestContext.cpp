@@ -6,7 +6,11 @@
 RequestContext::RequestContext(const Socket& conn_socket, EventManager& events, const ServiceConfig& service)
 	: m_socket(conn_socket)
 	, m_events(events)
-	, m_request_config(new RequestConfig(service)) {}
+	, m_request_config(new RequestConfig(service)) 
+	{
+		(void)m_socket;
+		(void)m_events;
+	}
 
 const RequestConfig& RequestContext::config() const 
 { 

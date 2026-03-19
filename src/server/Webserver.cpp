@@ -56,8 +56,6 @@ void	Webserver::run()
 	{
 		int n_events = events_.wait();
 
-		//@QUESTION: porquê -2?
-		/* o certo e -1, wait retorna -1 em caso de erro */
 		if (n_events == -1)
 			continue ;
 
@@ -77,7 +75,7 @@ void	Webserver::run()
 			{
 				Logger::trace("Webserver: Fd %d is a server socket", event_fd);
 				Socket* client_socket = make_client_socket(event_fd);
-				if (client_socket) /* verificar se nao retornou NULL */
+				if (client_socket)
 					connection_pool_.make(*client_socket);
 			}
 			else // is an existing connection
@@ -114,18 +112,17 @@ Socket* Webserver::make_server_socket(const Listener& listener, const ServiceCon
 	//@TODO recuperar antigas mensagens de erros
 	if (socket_fd < 0)
 	{
-		::freeaddrinfo(result); /* liberar result aqui tambem */
+		::freeaddrinfo(result);
 		throw std::runtime_error(utils::fmt("socket() failed for listener %s:%s", 
 					listener.host.c_str(), listener.port.c_str()));
 	}
 
-	//@QUESTION opt 1?
-	/*	setsockopt precisa de um ponteiro para a opcao
-		para que SO_REUSEADDR seja ativado precisa ser 1 */
+	/*	setsockopt precisa de um ponteiro para a opcao e para que SO_REUSEADDR seja ativado precisa ser 1 */
 	int opt = 1;
 	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 	{
 		::freeaddrinfo(result);
+		close(socket_fd);
 		throw std::runtime_error(utils::fmt("setsockopt() failed for listener %s:%s", 
 					listener.host.c_str(), listener.port.c_str()));
 	}
@@ -133,6 +130,7 @@ Socket* Webserver::make_server_socket(const Listener& listener, const ServiceCon
 	if (fcntl(socket_fd, F_SETFL, O_NONBLOCK) == -1)
 	{
 		::freeaddrinfo(result);
+		close(socket_fd);
 		throw std::runtime_error(utils::fmt("fcntl() failed for listener %s:%s", 
 					listener.host.c_str(), listener.port.c_str()));
 	}
@@ -140,23 +138,21 @@ Socket* Webserver::make_server_socket(const Listener& listener, const ServiceCon
 	if (bind(socket_fd, result->ai_addr, result->ai_addrlen) < 0)
 	{
 		::freeaddrinfo(result);
+		close(socket_fd);
 		throw std::runtime_error(utils::fmt("bind() failed for listener %s:%s", 
 					listener.host.c_str(), listener.port.c_str()));
 	}
 	::freeaddrinfo(result);
 
-	//@QUESTION porquê 10 aqui?
-	/* maximo de conexoes aguardando serem aceitas, pode ser SOMAXCONN para ser o maximo do sistema */
 	if (listen(socket_fd, SOMAXCONN) < 0)
 	{
+		close(socket_fd);
 		throw std::runtime_error(utils::fmt("listen() failed for listener %s:%s", 
 					listener.host.c_str(), listener.port.c_str()));
 	}
 	return new Socket(socket_fd, service);
 }
 
-//@TODO colocar throws aqui
-/* acho que somente retonar NULL ja resolve */
 Socket* Webserver::make_client_socket(int server_socket_fd)
 {
 	int fd = accept(server_socket_fd, NULL, NULL);
@@ -165,14 +161,6 @@ Socket* Webserver::make_client_socket(int server_socket_fd)
 		Logger::error("Failed to accept client connection!");
 		return (NULL);
 	}
-
-	// @QUESTION porquê opt = 0?
-	/* na verdade nem precisa disso nos sockets dos clients, podemos remover */
-	// int opt = 1;
-	// if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-	// {
-	// 	Logger::error("setsockopt() for client failed!");
-	// }
 
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
 	{
@@ -183,7 +171,11 @@ Socket* Webserver::make_client_socket(int server_socket_fd)
 
 	std::map<int, Socket*>::iterator it = server_sockets_.find(server_socket_fd);
 	if (it == server_sockets_.end())
-		throw std::runtime_error("Server socket not found");
+	{
+		Logger::error("Server socket not found");
+		close(fd);
+		return (NULL);
+	}
 
 	return new Socket(fd, it->second->service());
 }
