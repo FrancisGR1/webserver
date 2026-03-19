@@ -63,7 +63,6 @@ void Path::init(const std::string& str_path)
 	size_t dot = raw.find_last_of('.');
 	if (dot != std::string::npos)
 	{
-		is_cgi = true;
 		size_t ext_end = dot + 3;
 		// script path
 		cgi_path = raw.substr(0, ext_end);

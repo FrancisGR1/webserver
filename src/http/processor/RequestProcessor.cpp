@@ -62,7 +62,7 @@ std::string RequestProcessor::resolve_path(const std::string& req_path, const Se
 	std::string location_str = cleaned_path;
 	std::string resolved_path = cleaned_path;
 	Logger::trace("RequestProcessor: search '%s'", location_str.c_str());
-	while (!location_str.empty())
+	while (true)
 	{
 		Logger::trace("RequestProcessor: Find: '%s'", location_str.c_str()); 
 		if (utils::contains(service.locations, location_str))
