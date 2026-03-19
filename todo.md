@@ -14,6 +14,7 @@
 - [ ] estrutura do diretório - https://wiki.debian.org/Nginx/DirectoryStructure
 - [ ] parser - dividir em Lexer → Parser → AST → Semantic Validator → Config Builder
 - [ ] mapa de listeners -> serviço seria muito conveniente
+- [ ] deve have sempre um root, quer ao nível de LocationConfig, ServiceConfig ou constant do server
 
 # HTTP - Receber Pedido
 - [x] Processamento

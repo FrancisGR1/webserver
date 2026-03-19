@@ -9,18 +9,6 @@
 
 namespace constants 
 {
-	// colors
-	extern const char* cyan;
-	extern const char* blue;
-	extern const char* green;
-	extern const char* yellow;
-	extern const char* red;
-	extern const char* bright_red;
-	extern const char* reset;
-
-	// logging
-	extern const Log::Level log_level;
-
 	// server
 	// - config
 	extern const char* server_name;
@@ -40,6 +28,19 @@ namespace constants
 	extern const size_t max_body_size;
 	extern const size_t max_uri_size;
 	extern const char* body_whitespaces;
+
+	// colors
+	extern const char* cyan;
+	extern const char* blue;
+	extern const char* green;
+	extern const char* yellow;
+	extern const char* red;
+	extern const char* bright_red;
+	extern const char* reset;
+
+	// logging
+	extern const Log::Level log_level;
+
 
 } // namespace constants
 

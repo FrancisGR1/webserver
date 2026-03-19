@@ -20,6 +20,8 @@ class RequestProcessor : public IRequestHandler
 		const Response& response() const;
 		void set(const Request& request);
 
+		static std::string resolve_path(const std::string& req_path, const ServiceConfig& service, const LocationConfig*& location_ptr);
+
 	private:
 		enum State 
 		{
