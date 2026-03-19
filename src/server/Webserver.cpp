@@ -18,79 +18,11 @@ Webserver::~Webserver()
 		delete it->second;
 }
 
-// if there's an error in setup(), server won't run
-void Webserver::setup()
-{
-	// run all the services and create sockets from listeners
-	for(size_t i = 0; i < config_.services.size(); i++)
-	{
-		const ServiceConfig& service = config_.services[i];
-		for (size_t j = 0; j < service.listeners.size(); j++)
-		{
-			// make server socket
-			const Listener& listener = service.listeners[j];
-			Socket* socket = make_server_socket(listener, service);
-
-			// store socket
-			server_sockets_.insert(std::pair<int, Socket*>(socket->fd(), socket));
-			if (events_.add(socket->fd(), EPOLLIN) == -1)
-			{
-				throw std::runtime_error("Failed to add socket to events at setup()");
-			}
-
-			Logger::trace("Listening on %s:%s", listener.host.c_str(), listener.port.c_str());
-		}
-	}
-}
-
 bool	Webserver::isServerSocket(int fd)
 {
 	return (server_sockets_.find(fd) != server_sockets_.end());
 }
 
-void	Webserver::run()
-{
-	Logger::trace("Server starts running");
-
-	while (is_running)
-	{
-		int n_events = events_.wait();
-
-		if (n_events == -1)
-			continue ;
-
-		//@TODO colocar try catch dentro do for loop
-		for (int i = 0; i < n_events; ++i)
-		{
-			epoll_event& event = events_.getEvent(i);
-			int event_fd = event.data.fd;
-
-			Logger::trace("Webserver: Event fd: %d", event_fd);
-			if (event.events & (EPOLLERR | EPOLLHUP)) // event error
-			{
-				Connection& conn = connection_pool_.get(event_fd);
-				connection_pool_.remove(conn);
-			}
-			else if (isServerSocket(event_fd))
-			{
-				Logger::trace("Webserver: Fd %d is a server socket", event_fd);
-				Socket* client_socket = make_client_socket(event_fd);
-				if (client_socket)
-					connection_pool_.make(*client_socket);
-			}
-			else // is an existing connection
-			{
-				Logger::trace("Webserver: Fd %d is an existing connection", event_fd);
-				Connection& conn = connection_pool_.get(event_fd);
-				conn.work(event);
-				if (conn.done())
-				{
-					connection_pool_.remove(conn);
-				}
-			}
-		}
-	}
-}
 /*@QUESTION: quando algo falha a excecao e lancada e devemos liberar 'socket_fd' ? */
 Socket* Webserver::make_server_socket(const Listener& listener, const ServiceConfig& service)
 {
@@ -179,3 +111,73 @@ Socket* Webserver::make_client_socket(int server_socket_fd)
 
 	return new Socket(fd, it->second->service());
 }
+
+// if there's an error in setup(), server won't run
+void Webserver::setup()
+{
+	// run all the services and create sockets from listeners
+	for(size_t i = 0; i < config_.services.size(); i++)
+	{
+		const ServiceConfig& service = config_.services[i];
+		for (size_t j = 0; j < service.listeners.size(); j++)
+		{
+			// make server socket
+			const Listener& listener = service.listeners[j];
+			Socket* socket = make_server_socket(listener, service);
+
+			// store socket
+			server_sockets_.insert(std::pair<int, Socket*>(socket->fd(), socket));
+			if (events_.add(socket->fd(), EPOLLIN) == -1)
+			{
+				throw std::runtime_error("Failed to add socket to events at setup()");
+			}
+
+			Logger::trace("Listening on %s:%s", listener.host.c_str(), listener.port.c_str());
+		}
+	}
+}
+
+void	Webserver::run()
+{
+	Logger::trace("Server starts running");
+
+	while (is_running)
+	{
+		int n_events = events_.wait();
+
+		if (n_events == -1)
+			continue ;
+
+		//@TODO colocar try catch dentro do for loop
+		for (int i = 0; i < n_events; ++i)
+		{
+			epoll_event& event = events_.getEvent(i);
+			int event_fd = event.data.fd;
+
+			Logger::trace("Webserver: Event fd: %d", event_fd);
+			if (event.events & (EPOLLERR | EPOLLHUP)) // event error
+			{
+				Connection& conn = connection_pool_.get(event_fd);
+				connection_pool_.remove(conn);
+			}
+			else if (isServerSocket(event_fd))
+			{
+				Logger::trace("Webserver: Fd %d is a server socket", event_fd);
+				Socket* client_socket = make_client_socket(event_fd);
+				if (client_socket)
+					connection_pool_.make(*client_socket);
+			}
+			else // is an existing connection
+			{
+				Logger::trace("Webserver: Fd %d is an existing connection", event_fd);
+				Connection& conn = connection_pool_.get(event_fd);
+				conn.work(event);
+				if (conn.done())
+				{
+					connection_pool_.remove(conn);
+				}
+			}
+		}
+	}
+}
+
