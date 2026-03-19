@@ -1,4 +1,5 @@
 #include "constants.hpp"
+#include "Logger.hpp"
 #include "Timer.hpp"
 
 #include <string>
@@ -13,6 +14,9 @@ namespace constants
     const char* red = "\033[31m";
     const char* bright_red = "\033[91m";
     const char* reset = "\033[0m";
+
+    // - logging
+    const Log::Level log_level = Log::Debug;
 
     // server
     const char* server_name = "webserv/1.0";
@@ -32,10 +36,9 @@ namespace constants
     const char* server_http_version = "HTTP/1.0";
     const std::string py_ext = "py";
 
-    // - http request
+    // http
+    // - request
     const size_t max_body_size = 1000000;
     const size_t max_uri_size  = 10000;
     const char* body_whitespaces = " \t\n\f\v";
-
-
 } // namespace constants

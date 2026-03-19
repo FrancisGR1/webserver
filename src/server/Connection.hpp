@@ -1,17 +1,23 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
+#include "server/EventManager.hpp"
+#include "server/Socket.hpp"
 #include "http/request/RequestParser.hpp"
-#include "http/request/Request.hpp"
-#include "http/response/Response.hpp"
 #include "http/processor/RequestProcessor.hpp"
-#include "http/StatusCode.hpp"
-
-#include <iostream>
 
 class Connection
 {
+	public:
+		Connection(Socket& conn_socket, EventManager& events);
+		~Connection();
+		
+		void		work(const epoll_event& on_event);
+		bool		done() const;
+		int fd() const;
+		
 	private:
+
 		enum State
 		{
 			Receiving = 0,
@@ -20,29 +26,26 @@ class Connection
 			Done
 		};
 
-		int						sock_;
-		size_t					bytes_sent_;
-		State					state_;
-		// http
+		// saves current work state
+		State					work_state_;
+
+		// context
+		Socket& socket_; // owns the socket
 		const ServiceConfig& 	service_;
+
+		// will add/remove/modify events
 		EventManager&			events_;
+
+		// http
 		RequestParser			parser_;
 		RequestProcessor		processor_;
-		// Response				response_;
-		std::string				resp_;
+		Response			response_;
 
-	public:
-		Connection(int sock, const ServiceConfig& service, EventManager& events);
-		~Connection();
-		
-		void		process();
-		void		setResponse(const std::string &response);
-		bool		readRequest();
-
-		bool		isReady() const;
-		bool		done() const;
-		bool		sendResponse();
-		
+		// illegal - no copying of connections is allowed
+		// every connection must be a reference/pointer
+		// to a connection from <<<ConnectionPool>>>
+		Connection(const Connection&);
+		Connection& operator=(const Connection&);
 };
 
 #endif /* CONNECTION_HPP */

@@ -12,6 +12,7 @@
 - [ ] mudar nomes: listing = autoindex, default_file = index, upload_dir = upload_storage, 
 - [ ] estrutura do diretório - https://wiki.debian.org/Nginx/DirectoryStructure
 - [ ] parser - dividir em Lexer → Parser → AST → Semantic Validator → Config Builder
+- [ ] mapa de listeners -> serviço seria muito conveniente
 
 # HTTP - Receber Pedido
 - [x] Processamento
@@ -49,17 +50,26 @@
 
 # Gestão Eventos
 - [x] passar EventManager para a ligacao -> contexto do processador
+- [x] máquina de estados
+- [ ] implementar o padrão de desenho "Chain of Responsibility"
+---> problema: o EventsManager vai ser passado por referência para uma série de objetos, o que significa que a responsabilidade é partilhada por muitas entidades, logo, confunde a lógica e pode criar bugs difíceis de resolver.
+---> solução: padrão de chain of responsibility: todos os objetos que quiserem tocar nos eventos, têm de devolver uma event action, a ligação faz o resto
+- [ ] fazer fd manager que adiciona/remove eventos e adiciona/remove ligações -> ResourceRegistry
+- [ ] podemos usar o void *ptr  em epoll_data para guardar o que quer que seja - futuro Refactor tem de ter isto em conta
 
 # Gestão Clientes
 - [x] class Socket que guarde o contexto do servico do socket em si (fd)
 
 # Ligacao
-- [ ] implementar maquina de estados - receber - processar - enviar
+- [x] implementar maquina de estados - receber - processar - enviar
+- [x] múltiplos fds podem estar associados à mesma ligação - fazer pool de ligações
+- [ ] Gestão: Substituir connection pool for event.data.ptr (ptr para ligações em vez de pool de fds)
 
 # Utils
 ## Logger
 - [x] Print básico
 - [ ] O logger deve ser instanciável
+- [ ] Escrever mais logs (úteis) no código
 
 ## Path
 - [ ] criar classes derivadas: ServerPath e CgiPath; ou então separar informação (struct CgiInfo)
@@ -70,4 +80,6 @@
 # Outros
 - [ ] Melhor diagrama geral
 - [ ] Inicializar todos os objetos: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es20-always-initialize-an-object
-
+- [ ] Melhorar mensagens de erro (especificar dados)
+- [ ] Dividr classe context em diferentes versões de acordo com o escopo: RequestContext, ConnectionContext
+- [ ] Redesenhar melhor EventManager e ConnectionPool de modo a que dependam menos uma da outra (é estranho a connection pool usar o EventManager para gerir eventos, não?)

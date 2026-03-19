@@ -1,3 +1,4 @@
+#include "core/utils.hpp"
 #include "core/MimeTypes.hpp"
 #include "config/ConfigTypes.hpp"
 #include "http/processor/RequestContext.hpp"
@@ -59,7 +60,7 @@ void ErrorHandler::process()
 			   "<html>\n" 
 			   "<head><title>" + title + "</title></head>\n" 
 			   "<body>\n" 
-			   "<center><h-1>"  + title + "</h1></center>\n" 
+			   "<center><h1>"  + title + "</h1></center>\n" 
 			   "</body>\n" 
 			   "</html>\n";
 

@@ -1,107 +1,95 @@
+#include "http/request/Request.hpp"
+#include "http/processor/RequestProcessor.hpp"
+#include "core/constants.hpp"
+#include "core/Logger.hpp"
+#include "Socket.hpp"
 #include "Connection.hpp"
 #include "Webserver.hpp"
-#include <cstdlib>
 
-Connection::Connection(int sock, const ServiceConfig& service, EventManager& events) 
-	: sock_(sock)
-	, bytes_sent_(0)
-	, state_(Receiving)
-	, service_(service)
+Connection::Connection(Socket& conn_socket, EventManager& events) 
+	: work_state_(Receiving)
+	, socket_(conn_socket)
+	, service_(conn_socket.service())
 	, events_(events)
-	, processor_(service, events) {}
-
-
-Connection::~Connection() {}
-
-void	Connection::setResponse(const std::string &response)
+	, processor_(conn_socket, events) 
 {
-	resp_ = response;
+	Logger::trace("Create connection: %d", socket_.fd());
 }
 
-/* member fuctions */
 
-// quando chama process():
-//
-// void Connection::process()
-// {
-// 	switch(state_)
-// 	{
-// 		case Receiving:
-// 		{
-// 			// @TODO: feed buffer
-// 			if (parser_.done())
-// 			{
-// 				request_ = parser.get();
-// 				processor.set(request_);
-// 				state_ = Processing;		
-// 			}
-// 			break;
-// 		}
-// 		case Processing:
-// 		{
-// 			processor_.process();
-// 			if (processor_.done())
-// 			{
-// 				response_ = processor.get();
-// 				state_ = Sending;		
-// 			}
-// 			break;
-// 		}
-// 		case Sending:
-// 		{
-// 			// @QUESTION: apanhar n bytes do send()? 
-// 			response_.send(socket.fd);
-// 			if (response_.done())
-// 			{
-// 				state_ = Done;		
-// 			}
-// 			break;
-// 		}
-// 		default: 
-// 			break;
-// 	}
-// }
+Connection::~Connection() 
+{
+	Logger::trace("Destroy connection: %d", socket_.fd());
+}
+
+void Connection::work(const epoll_event& on_event)
+{
+	//@TODO: check if event matches connection state
+	(void) on_event;
+
+	switch(work_state_)
+	{
+		case Receiving:
+			{
+				// read client info to buffer
+				char buffer[constants::read_chunk_size];
+				ssize_t bytes = recv(socket_.fd(), buffer, sizeof(buffer), 0);
+				if (bytes <= 0)
+				{
+					//@TODO
+					break;
+				}
+
+				// parser works on raw strings but just to be safe...
+				buffer[bytes] = '\0';
+
+				// parse
+				parser_.feed(buffer);
+
+				Logger::debug(parser_.get());
+				if (parser_.done())
+				{
+					const Request& request_ = parser_.get();
+					processor_.set(request_);
+					//events_.modify(socket_.fd(), EPOLLOUT);
+					work_state_ = Processing;		
+				}
+				break;
+			}
+		case Processing:
+			{
+				processor_.process();
+
+				if (processor_.done())
+				{
+					response_ = processor_.response();
+					work_state_ = Sending;		
+				}
+				break;
+			}
+		case Sending:
+			{
+				response_.send(socket_.fd());
+
+				if (response_.done())
+				{
+					Logger::debug(response_);
+					work_state_ = Done;		
+					//@TODO cleanup de quê?
+				}
+				break;
+			}
+		default: 
+			break;
+	}
+}
 
 bool Connection::done() const
 {
-	return state_ == Done;
+	return work_state_ == Done;
 }
 
-bool	Connection::readRequest()
+int Connection::fd() const
 {
-	char	buffer[4096];
-
-	ssize_t	bytes = recv(sock_, buffer, sizeof(buffer), 0);
-	/* client fechou ou erro */
-	if (bytes <= 0)
-		return (false);
-
-	//@QUESTION: isto funciona?
-	parser_.feed(buffer);
-	// for (ssize_t i = 0; i < bytes; i++)
-	// 	parser_.feed(buffer[i]);
-
-	return (true);
-}
-
-bool	Connection::isReady() const
-{
-    return (parser_.done());
-}
-
-bool	Connection::sendResponse()
-{
-	if (bytes_sent_ >= resp_.length())
-		return (true);
-	
-	ssize_t sent = send(sock_, resp_.c_str() + bytes_sent_, resp_.length() - bytes_sent_, 0);
-	if (sent <= 0)
-		return (false);
-	
-	bytes_sent_ += sent;
-	/* terminou */
-	if (bytes_sent_ >= resp_.length())
-		return (true);
-	/* ainda falta para enviar */
-	return (false);
+	return socket_.fd();
 }

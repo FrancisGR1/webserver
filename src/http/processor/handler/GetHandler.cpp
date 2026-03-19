@@ -82,7 +82,9 @@ void GetHandler::process()
 
 void GetHandler::handle_index(Response& response, const Path& path)
 {
+	// status
 	response.set_status(StatusCode::Ok);
+	// headers
 	response.set_header("Connection", "close"); // @NOTE: HTTP-1.0 closes by default
 	response.set_header("Content-Length", utils::to_string(path.size));
 	response.set_header("Content-Type", path.mime);

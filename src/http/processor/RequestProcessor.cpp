@@ -1,3 +1,4 @@
+#include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/response/ResponseError.hpp"
 #include "http/processor/RequestProcessor.hpp"
@@ -6,10 +7,15 @@
 #include "http/processor/handler/DeleteHandler.hpp"
 #include "http/processor/handler/ErrorHandler.hpp"
 
-RequestProcessor::RequestProcessor(const ServiceConfig& service, const EventManager& events)
+RequestProcessor::RequestProcessor(const Socket& conn_socket, EventManager& events)
 	: m_state(RequestProcessor::Validating)
-	, m_ctx(service, events)
+	, m_ctx(conn_socket, events, conn_socket.service())
 	, m_handler(NULL) {}
+
+RequestProcessor::~RequestProcessor() 
+{
+	delete m_handler;
+};
 
 static std::string resolve_target(const std::string& req_path, const ServiceConfig& service)
 {
@@ -87,12 +93,14 @@ void RequestProcessor::process()
 								"Bad request status code",
 								&m_ctx
 								);
+
 					m_state = Resolving;
 				}
 			// fall through
 
 			case Resolving:
 				{
+					// resolve
 					const ServiceConfig& service = m_ctx.config().service();
 					Path path = resolve_target(m_request.target_path(), service);
 					if (!path.exists)
@@ -103,13 +111,17 @@ void RequestProcessor::process()
 								&m_ctx
 								);
 					}
+
+					// add to context
 					m_ctx.config().set(path);
 
+					// check if location exists
 					if (utils::contains(service.locations, path.raw))
 					{
 						const LocationConfig& location = service.locations.at(path.raw);
 						m_ctx.config().set(location);
 					}
+
 					m_state = Dispatching;
 				}
 			// fall through
@@ -119,7 +131,8 @@ void RequestProcessor::process()
 					if      (m_request.method() == "GET")	    m_handler = new GetHandler(m_request, m_ctx);
 					else if (m_request.method() == "POST")      m_handler = new PostHandler(m_request, m_ctx);
 					else if (m_request.method() == "DELETE")    m_handler = new DeleteHandler(m_request, m_ctx);
-					else 					    m_handler = new ErrorHandler(StatusCode::InternalServerError, m_ctx);
+					else 					    m_handler = new ErrorHandler(StatusCode::InternalServerError, m_ctx); // should never reach here
+
 					m_state = Handling;
 				}
 			// fall through
@@ -143,9 +156,11 @@ void RequestProcessor::process()
 	{
 		delete m_handler;
 		m_handler = new ErrorHandler(e);
+
 		//Error handler does it in one go
 		//so just process and finish
 		m_handler->process();
+
 		m_state = Done;
 	}
 }
@@ -159,14 +174,15 @@ const Response& RequestProcessor::response() const
 {
 	if (m_handler == NULL)
 	{
-		throw std::runtime_error("RequestProcessor: Tried to access handler Null Pointer!");
+		throw std::logic_error("RequestProcessor: Tried to access handler Null Pointer!");
 	}
 	else
 	{
 		return m_handler->response();
 	}
 }
-RequestProcessor::~RequestProcessor() 
+
+void RequestProcessor::set(const Request& request)
 {
-	delete m_handler;
-};
+	m_request = request;
+}
