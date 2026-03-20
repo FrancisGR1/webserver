@@ -4,6 +4,7 @@
 #include <string>
 
 // @TODO mudar para classe
+// @TODO https://cs.opensource.google/go/go/+/refs/tags/go1.26.1:src/net/http/status.go;l=9
 struct StatusCode
 {
 

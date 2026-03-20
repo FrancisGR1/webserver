@@ -8,7 +8,20 @@
 ServiceConfig::ServiceConfig()
 	: redirection(StatusCode::None, "")
 	, max_body_size(constants::max_body_size)
-{}
+{
+	Logger::trace("ServiceConfig: constructor");
+}
+
+ServiceConfig::ServiceConfig(std::vector<LocationConfig> locations_vec)
+	: redirection(StatusCode::None, "")
+	, max_body_size(constants::max_body_size)
+{
+	Logger::trace("ServiceConfig: constructor with locations' vector");
+	for (size_t i = 0; i < locations_vec.size(); ++i)
+	{
+		locations[locations_vec[i].name] = locations_vec[i];
+	}
+}
 
 void ServiceConfig::set(Directive& directive)
 {

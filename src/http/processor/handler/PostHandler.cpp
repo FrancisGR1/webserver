@@ -3,7 +3,6 @@
 
 #include "core/utils.hpp"
 #include "core/constants.hpp"
-#include "config/ConfigTypes.hpp"
 #include "http/http_utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/request/Request.hpp"
@@ -19,7 +18,10 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
 	, m_done(false)
 	, m_cgi(request, ctx)
 	, m_upload(NULL)
-	, m_fd(-1) {}
+	, m_fd(-1)
+{
+	Logger::trace("PostHandler: Constructor");
+}
 
 static void expect_uploadable(const Request& request, const RequestConfig& config, const Path& upload_dir, const RequestContext& ctx)
 {

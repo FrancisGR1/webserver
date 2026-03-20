@@ -72,7 +72,7 @@ std::ostream& operator<<(std::ostream& os, const ConfigLexer& lexer)
 {
 	for (size_t i = 0; i < lexer.m_tokens.size(); i++)
 	{
-		os << "'" << i << "' " << lexer.m_tokens[i] << std::endl;
+		os << "'" << i << "' " << lexer.m_tokens[i] << "\n";
 	}
 	return os;
 }

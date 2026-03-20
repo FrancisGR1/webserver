@@ -11,6 +11,7 @@ class ServiceConfig
 {
 	public:
 		ServiceConfig();
+		ServiceConfig(std::vector<LocationConfig> locations_vec);
 		//exclusive to service block scope
 		std::string server_name;
 		std::vector<Listener> listeners;

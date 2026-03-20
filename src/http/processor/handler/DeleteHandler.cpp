@@ -1,6 +1,6 @@
 #include <cstdio>
 
-#include "config/ConfigTypes.hpp"
+#include "core/Logger.hpp"
 #include "core/utils.hpp"
 #include "http/http_utils.hpp"
 #include "http/request/Request.hpp"
@@ -10,7 +10,10 @@
 DeleteHandler::DeleteHandler(const Request& request, const RequestContext& ctx)
 	: m_ctx(ctx)
 	, m_done(false)
-	, m_cgi(request, ctx) {}
+	, m_cgi(request, ctx) 
+{
+	Logger::trace("DeleteHandler: Constructor");
+}
 
 void DeleteHandler::process()
 {

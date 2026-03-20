@@ -132,7 +132,7 @@ void Webserver::setup()
 				throw std::runtime_error("Failed to add socket to events at setup()");
 			}
 
-			Logger::trace("Listening on %s:%s", listener.host.c_str(), listener.port.c_str());
+			Logger::info("Listening on %s:%s", listener.host.c_str(), listener.port.c_str());
 		}
 	}
 }

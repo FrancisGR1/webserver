@@ -1,5 +1,4 @@
 #include <cstdlib>
-#include <sstream>
 #include <set>
 #include <string>
 #include <map>
@@ -11,6 +10,15 @@
 
 LocationConfig::LocationConfig()
 	: name("")
+	, enable_dir_listing(false)
+	, enable_upload_files(false)
+	, redirection(StatusCode::None, "")
+	, max_body_size(constants::max_body_size)
+{}
+
+LocationConfig::LocationConfig(const std::string name, const std::string root_dir)
+	: name(name)
+	, root_dir(root_dir)
 	, enable_dir_listing(false)
 	, enable_upload_files(false)
 	, redirection(StatusCode::None, "")

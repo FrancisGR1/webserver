@@ -89,7 +89,14 @@ Path RequestConfig::index() const
 {
 	if (m_location)
 		return m_location->default_file;
-	return Path(NULL);
+	return Path("");
+}
+
+Path RequestConfig::root() const
+{
+	if (m_location)
+		return m_location->root_dir;
+	return Path("");
 }
 
 Path RequestConfig::upload_dir() const
@@ -129,4 +136,17 @@ size_t RequestConfig::max_body_size() const
 		return m_service.max_body_size;
 	else
 		return constants::max_body_size;
+}
+
+std::ostream& operator<<(std::ostream& os, const RequestConfig& config)
+{
+	os << "Request Configuration:\n"
+		<< "\tPath: " << config.path()
+		<< "\tService: " << config.service()
+		<< "\tLocation: ";
+	if (config.has_location())  
+		os << *config.location();
+	else 
+		os << "None";
+	return os;
 }

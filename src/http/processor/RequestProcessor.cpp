@@ -1,4 +1,5 @@
 #include "core/utils.hpp"
+#include "core/Logger.hpp"
 #include "http/StatusCode.hpp"
 #include "http/response/ResponseError.hpp"
 #include "http/processor/RequestProcessor.hpp"
@@ -10,14 +11,18 @@
 RequestProcessor::RequestProcessor(const Socket& conn_socket, EventManager& events)
 	: m_state(RequestProcessor::Validating)
 	, m_ctx(conn_socket, events, conn_socket.service())
-	, m_handler(NULL) {}
+	, m_handler(NULL) 
+{
+	Logger::trace("RequestProcessor: constructor");
+}
 
 RequestProcessor::~RequestProcessor() 
 {
+	Logger::trace("RequestProcessor: destructor");
 	delete m_handler;
 };
 
-static std::string resolve_target(const std::string& req_path, const ServiceConfig& service)
+std::string RequestProcessor::resolve_path(const std::string& req_path, const ServiceConfig& service, const LocationConfig*& location_ptr)
 {
 	bool is_dir = !req_path.empty() &&
 		req_path[req_path.size() - 1] == '/';
@@ -47,6 +52,7 @@ static std::string resolve_target(const std::string& req_path, const ServiceConf
 			legal_segments.push_back(s);
 		}
 	}
+
 	//@ASSUMPTION: target path always starts with '/'
 	std::string cleaned_path = "/";
 	for (size_t i = 0; i < legal_segments.size(); ++i)
@@ -57,23 +63,31 @@ static std::string resolve_target(const std::string& req_path, const ServiceConf
 	}
 
 	// find the best matching location 
-	std::string remainder;
-	std::string location = cleaned_path;
+	std::string location_str = cleaned_path;
 	std::string resolved_path = cleaned_path;
-	while (location != "/" && !location.empty())
+	Logger::trace("RequestProcessor: search '%s'", location_str.c_str());
+	while (true)
 	{
-
-		size_t pos = location.find_last_of("/");
-		location = location.substr(0, pos);
-		remainder = cleaned_path.substr(pos);
-		if (utils::contains(service.locations, location))
+		Logger::trace("RequestProcessor: Find: '%s'", location_str.c_str()); 
+		if (utils::contains(service.locations, location_str))
 		{
-			const std::string& root = service.locations.at(location).root_dir;
-			resolved_path = utils::join_paths(root, remainder);
+			Logger::trace("RequestProcessor: Found: '%s'", location_str.c_str());
+			const std::string& root = service.locations.at(location_str).root_dir;
+			resolved_path = utils::join_paths(root, cleaned_path);
+			location_ptr = &service.locations.at(location_str);
 			break;
 		}
-	}
 
+		// nothing to eat
+		if (location_str == "/")
+			break ;
+
+		// eat location_str
+		size_t pos = location_str.find_last_of("/");
+		location_str = (pos == 0) ? "/" : location_str.substr(0, pos);
+	}
+	Logger::trace("RequestProcessor: Resolved path to: '%s'", resolved_path.c_str());
+	//@TODO: se não tem root da localização, então devemos dar root ou do service ou do webserver
 	return resolved_path;
 }
 
@@ -87,6 +101,7 @@ void RequestProcessor::process()
 			// so validating -> resolving -> dispatching
 			case Validating:
 				{
+					Logger::trace("RequestProcessor: Validating");
 					if (m_request.bad_request())
 						throw ResponseError(
 								m_request.status_code(),
@@ -96,13 +111,17 @@ void RequestProcessor::process()
 
 					m_state = Resolving;
 				}
-			// fall through
+				// fall through
 
 			case Resolving:
 				{
-					// resolve
+					Logger::trace("RequestProcessor: Resolving");
+
 					const ServiceConfig& service = m_ctx.config().service();
-					Path path = resolve_target(m_request.target_path(), service);
+
+					// resolve
+					const LocationConfig* matched_location = NULL;
+					Path path = resolve_path(m_request.target_path(), service, matched_location);
 					if (!path.exists)
 					{
 						throw ResponseError(
@@ -114,31 +133,33 @@ void RequestProcessor::process()
 
 					// add to context
 					m_ctx.config().set(path);
-
-					// check if location exists
-					if (utils::contains(service.locations, path.raw))
+					if (matched_location)
 					{
-						const LocationConfig& location = service.locations.at(path.raw);
-						m_ctx.config().set(location);
+						Logger::trace("RequestProcessor: Found location '%s'", matched_location->name.c_str());
+						m_ctx.config().set(*matched_location);
 					}
-
+					else
+					{
+						Logger::trace("RequestProcessor: Didn't find location '%s'", path.raw.c_str());
+					}
 					m_state = Dispatching;
 				}
-			// fall through
+				// fall through
 
 			case Dispatching:
 				{
-					if      (m_request.method() == "GET")	    m_handler = new GetHandler(m_request, m_ctx);
-					else if (m_request.method() == "POST")      m_handler = new PostHandler(m_request, m_ctx);
-					else if (m_request.method() == "DELETE")    m_handler = new DeleteHandler(m_request, m_ctx);
-					else 					    m_handler = new ErrorHandler(StatusCode::InternalServerError, m_ctx); // should never reach here
-
+					Logger::trace("RequestProcessor: Dispatching");
+					if      (m_request.method() == "GET")	 m_handler = new GetHandler(m_request, m_ctx);
+					else if (m_request.method() == "POST")   m_handler = new PostHandler(m_request, m_ctx);
+					else if (m_request.method() == "DELETE") m_handler = new DeleteHandler(m_request, m_ctx);
+					else 					 throw ResponseError(StatusCode::BadRequest, "Didn't find handler");
 					m_state = Handling;
 				}
-			// fall through
+				// fall through
 
 			case Handling:
 				{
+					Logger::trace("RequestProcessor: Handling");
 					m_handler->process();
 					if (m_handler->done())
 					{
@@ -148,12 +169,14 @@ void RequestProcessor::process()
 				}
 			case Done:
 				{
+					Logger::trace("RequestProcessor: Done");
 					break;
 				}
 		}
 	}
 	catch (const ResponseError& e)
 	{
+		Logger::error("RequestProcessor: %s", e.msg().c_str());
 		delete m_handler;
 		m_handler = new ErrorHandler(e);
 

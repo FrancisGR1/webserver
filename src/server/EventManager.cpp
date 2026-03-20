@@ -7,7 +7,7 @@ EventManager::EventManager()
 {
 	epoll_fd_ = epoll_create(1);
 	if (epoll_fd_ == -1)
-		Logger::error("Event Manager: Failed to create epoll fd!");
+		Logger::error("EventManager: Failed to create epoll fd!");
 }
 
 EventManager::~EventManager()
@@ -18,7 +18,7 @@ EventManager::~EventManager()
 
 epoll_event&	EventManager::getEvent(int index)
 {
-	Logger::trace("Event Manager: Getting event [%d]:%d", index, events_[index].data.fd);
+	Logger::trace("EventManager: Getting event [%d]:%d", index, events_[index].data.fd);
 	return (events_[index]);
 }
 
@@ -57,7 +57,7 @@ int	EventManager::modify(int socket, uint32_t events)
 
 int	EventManager::remove(int socket)
 {
-	Logger::trace("Event Manager: Remove fd %d from events", socket);
+	Logger::trace("EventManager: Remove fd %d from events", socket);
 	int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, socket, NULL);
 	if (ret == -1)
 		Logger::error("epoll_ctl() DEL failed!: tried to delete fd %d", socket);

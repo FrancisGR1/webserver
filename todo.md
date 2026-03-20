@@ -3,7 +3,8 @@
 - [x] Símbolos
 - [x] Processamento
 - [x] Mudar códigos de erro de size_t para StatusCode::Code
-- [ ] "/" path dever ser ilegal
+- [ ] default file deve poder ser concatenado ao root
+- [ ] Verificar se configurações satisfazem os novos requerimentos
 - [ ] Melhor log de erros
 - [ ] Múltiplas configurações para testes
 - [ ] Limpar código morto
@@ -13,6 +14,7 @@
 - [ ] estrutura do diretório - https://wiki.debian.org/Nginx/DirectoryStructure
 - [ ] parser - dividir em Lexer → Parser → AST → Semantic Validator → Config Builder
 - [ ] mapa de listeners -> serviço seria muito conveniente
+- [ ] deve have sempre um root, quer ao nível de LocationConfig, ServiceConfig ou constant do server
 
 # HTTP - Receber Pedido
 - [x] Processamento
@@ -22,7 +24,6 @@
     - [x] ignorar trailing headers
     - [x] overload do feed() com chars
     - [x] clear()
-    - [ ] "/" path dever ser ilegal
     - [ ] melhorar log erros
     - [ ] processa GET simples? (sem Transfer-Encoding e Content-Length)
 - [ ] Implementar testes em tabela
@@ -83,3 +84,28 @@
 - [ ] Melhorar mensagens de erro (especificar dados)
 - [ ] Dividr classe context em diferentes versões de acordo com o escopo: RequestContext, ConnectionContext
 - [ ] Redesenhar melhor EventManager e ConnectionPool de modo a que dependam menos uma da outra (é estranho a connection pool usar o EventManager para gerir eventos, não?)
+
+# Testes
+## Valgrind
+O valgrind não está a dar?
+
+## Tester
+Testar:
+- [ ] GET
+- [ ] POST
+- [ ] DELETE
+- [ ] Máximo número de ligações concurrentes
+- [ ] CGI
+    - [ ] aborta
+    - [ ] core dump
+    - [ ] sleep(999)
+    - [ ] deadlock?
+    - [ ] while(true)
+- [ ] fazer isto em formato de table-driven tests
+
+# Mais importante
+- [ ] Tester em go
+- [ ] Stressar cgi
+- [ ] Implementar timeouts de ligacoes
+- [ ] Criar configuracoes para testar
+- [ ] Melhorar configuracao

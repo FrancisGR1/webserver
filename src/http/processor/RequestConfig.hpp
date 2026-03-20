@@ -32,6 +32,7 @@ class RequestConfig
 		bool has_file_for_error(size_t code) const;
 
 		Path index() const;
+		Path root() const;
 		Path upload_dir() const;
 		Path get_error_page_or_nonexistent_path(size_t code) const;
 		Path cgi_interpreter() const;
@@ -44,5 +45,7 @@ class RequestConfig
 		Path m_resolved_path; // transformed request path
 		const LocationConfig* m_location;
 };
+
+std::ostream& operator<<(std::ostream& os, const RequestConfig& config);
 
 #endif // REQUESTCONFIG_HPP

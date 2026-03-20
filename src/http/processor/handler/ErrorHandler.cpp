@@ -1,23 +1,32 @@
 #include "core/utils.hpp"
+#include "core/Logger.hpp"
 #include "core/MimeTypes.hpp"
-#include "config/ConfigTypes.hpp"
 #include "http/processor/RequestContext.hpp"
 #include "ErrorHandler.hpp"
 
 ErrorHandler::ErrorHandler(const ResponseError& error)
 	: m_code(error.status())
 	, m_ctx(error.has_ctx() ? &error.ctx() : NULL)
-	, m_done(false) {}
+	, m_done(false)
+{
+	Logger::trace("ErrorHandler: Constructor");
+}
 
 ErrorHandler::ErrorHandler(StatusCode::Code code)
 	: m_code(code)
 	, m_ctx(NULL)
-	, m_done(false) {}
+	, m_done(false)
+{
+	Logger::trace("ErrorHandler: Constructor");
+}
 
 ErrorHandler::ErrorHandler(StatusCode::Code code, const RequestContext& ctx)
 	: m_code(code)
 	, m_ctx(&ctx)
-	, m_done(false) {}
+	, m_done(false)
+{
+	Logger::trace("ErrorHandler: Constructor");
+}
 
 // all in one go
 void ErrorHandler::process()

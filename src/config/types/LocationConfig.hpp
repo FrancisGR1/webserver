@@ -14,7 +14,8 @@ class LocationConfig
 {
 	public:
 		LocationConfig();
-		
+		LocationConfig(const std::string name, const std::string root_dir);
+
 		// exclusive to location block scope
 		std::string name;
 		std::set<std::string> methods;

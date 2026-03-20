@@ -16,7 +16,7 @@ namespace constants
     const char* reset = "\033[0m";
 
     // - logging
-    const Log::Level log_level = Log::Debug;
+    const Log::Level log_level = Log::Trace;
 
     // server
     const char* server_name = "webserv/1.0";
