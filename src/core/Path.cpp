@@ -27,6 +27,7 @@ Path::Path(const std::string& str_path)
 	, stat_errno(0)
 	, raw(str_path)
 {
+	Logger::trace("Path: string constructor");
 	init(str_path);
 }
 
@@ -47,11 +48,14 @@ Path::Path(const char* cstr_path)
 	, stat_errno(0)
 	, raw(cstr_path)
 {
+	Logger::trace("Path: const char* constructor");
 	init(cstr_path);
 }
 
 void Path::init(const std::string& str_path)
 {
+	Logger::trace("Path: initialize");
+
 	if (str_path.empty())
 		return;
 
@@ -63,10 +67,11 @@ void Path::init(const std::string& str_path)
 	size_t dot = raw.find_last_of('.');
 	if (dot != std::string::npos)
 	{
-		size_t ext_end = dot + 3;
-		std::string extension = cgi_path.substr(dot + 1, cgi_path.size());
+		size_t ext_end = dot + 3; // @WARN hardcode of .py size
+		std::string extension = raw.substr(dot + 1);
 		if (extension == constants::py_ext)
 		{
+			Logger::trace("Path: has cgi extension");
 			// script path
 			cgi_extension = extension;
 			is_cgi = true;
@@ -76,6 +81,7 @@ void Path::init(const std::string& str_path)
 			// script info
 			if (ext_end < raw.length())
 				cgi_info = raw.substr(ext_end);
+
 			// script name
 			size_t last_slash = cgi_path.rfind('/');
 			if (last_slash != std::string::npos)
@@ -96,7 +102,6 @@ void Path::init(const std::string& str_path)
 	{
 		exists = true;
 	}
-
 
 	//  file type
 	if (S_ISDIR(st.st_mode))

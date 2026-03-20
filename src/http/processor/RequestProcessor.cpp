@@ -11,10 +11,14 @@
 RequestProcessor::RequestProcessor(const Socket& conn_socket, EventManager& events)
 	: m_state(RequestProcessor::Validating)
 	, m_ctx(conn_socket, events, conn_socket.service())
-	, m_handler(NULL) {}
+	, m_handler(NULL) 
+{
+	Logger::trace("RequestProcessor: constructor");
+}
 
 RequestProcessor::~RequestProcessor() 
 {
+	Logger::trace("RequestProcessor: destructor");
 	delete m_handler;
 };
 
@@ -73,6 +77,8 @@ std::string RequestProcessor::resolve_path(const std::string& req_path, const Se
 			location_ptr = &service.locations.at(location_str);
 			break;
 		}
+
+		// nothing to eat
 		if (location_str == "/")
 			break ;
 

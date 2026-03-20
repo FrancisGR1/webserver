@@ -46,4 +46,6 @@ class RequestConfig
 		const LocationConfig* m_location;
 };
 
+std::ostream& operator<<(std::ostream& os, const RequestConfig& config);
+
 #endif // REQUESTCONFIG_HPP

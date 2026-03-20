@@ -11,7 +11,7 @@ ConnectionPool::ConnectionPool(EventManager& events)
 Connection& ConnectionPool::make(Socket& conn_socket)
 {
 	if (utils::contains(conn_by_fd_, conn_socket.fd()))
-		throw std::logic_error("Connection Pool: already contains this fd!\n");
+		throw std::logic_error("ConnectionPool: already contains this fd!\n");
 
 	// create and save connection with its socket fd
 	connection_pool_.insert(connection_pool_.end(), new Connection(conn_socket, events_));
@@ -23,14 +23,14 @@ Connection& ConnectionPool::make(Socket& conn_socket)
 void ConnectionPool::associate_fd(int fd, Connection& conn)
 {
 	if (utils::contains(conn_by_fd_, fd))
-		throw std::logic_error("Connection Pool: already contains this fd!\n");
+		throw std::logic_error("ConnectionPool: already contains this fd!\n");
 
 	for (std::list<Connection*>::iterator it = connection_pool_.begin();
 			it != connection_pool_.end(); ++it)
 	{
 		if (*it == &conn)
 		{
-			throw std::logic_error("Connection Pool: connection not owned by pool!");
+			throw std::logic_error("ConnectionPool: connection not owned by pool!");
 		}
 	}
 	events_.add(fd, EPOLLOUT | EPOLLIN);
@@ -70,10 +70,10 @@ void ConnectionPool::remove(Connection& conn)
 
 Connection& ConnectionPool::get(int fd)
 {
-	Logger::trace("Connection Pool: Get fd %d", fd);
+	Logger::trace("ConnectionPool: Get fd %d", fd);
 
 	if (!utils::contains(conn_by_fd_, fd))
-		throw std::logic_error("Connection Pool: looking up fd that doesn't exist!\n");
+		throw std::logic_error("ConnectionPool: looking up fd that doesn't exist!\n");
 
 	return *conn_by_fd_[fd];
 }

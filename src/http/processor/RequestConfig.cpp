@@ -137,3 +137,16 @@ size_t RequestConfig::max_body_size() const
 	else
 		return constants::max_body_size;
 }
+
+std::ostream& operator<<(std::ostream& os, const RequestConfig& config)
+{
+	os << "Request Configuration:\n"
+		<< "\tPath: " << config.path()
+		<< "\tService: " << config.service()
+		<< "\tLocation: ";
+	if (config.has_location())  
+		os << *config.location();
+	else 
+		os << "None";
+	return os;
+}

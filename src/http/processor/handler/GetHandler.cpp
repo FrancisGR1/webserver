@@ -1,30 +1,32 @@
 #include <dirent.h>   
 #include <ctime>
 #include <sys/stat.h>
-#include <iostream>
 
-#include "core/utils.hpp"
-#include "core/Path.hpp"
+#include "core/Logger.hpp"
 #include "core/MimeTypes.hpp"
-#include "config/ConfigTypes.hpp"
+#include "core/utils.hpp"
 #include "http/http_utils.hpp"
-#include "http/StatusCode.hpp"
 #include "http/request/Request.hpp"
-#include "http/processor/RequestConfig.hpp"
 #include "http/processor/RequestContext.hpp"
 #include "GetHandler.hpp"
 
 GetHandler::GetHandler(const Request& request, const RequestContext& ctx)
 	: m_ctx(ctx)
 	, m_done(false)
-	, m_cgi(request, ctx) {}
+	, m_cgi(request, ctx) 
+{
+	Logger::trace("GetHandler: Constructor");
+}
 
 //@TODO implementar If-Modified-Since e If-None-Match (ETag), Range requests
 void GetHandler::process()
 {
+	Logger::trace("GetHandler: processing...");
+	Logger::debug("GetHandler: config:");
+	Logger::debug(m_ctx.config());
+
 	const RequestConfig& config = m_ctx.config();
 
-	std::cout << "Get handler process!\n";
 	if (!config.allows_method("GET")) http_utils::throw_method_not_allowed("GET", m_ctx);
 
 	if (config.is_redirected())
@@ -47,7 +49,7 @@ void GetHandler::process()
 
 		if (!path.can_execute) http_utils::throw_forbidden_cant_access_directory(path, m_ctx);
 		//@TODO deve redirecionar para o novo url
-		if (!path.ends_with_slash) http_utils::throw_moved_permanently(path, m_ctx);
+
 		if (config.has_index())
 		{
 			// index path
@@ -86,6 +88,7 @@ void GetHandler::process()
 
 void GetHandler::handle_index(Response& response, const Path& path)
 {
+	Logger::trace("GetHandler: make index response");
 	// status
 	response.set_status(StatusCode::Ok);
 	// headers
@@ -171,7 +174,10 @@ std::string GetHandler::make_autoindex(const Path& path)
 
 void GetHandler::handle_autoindex(Response& response, const Path& path)
 {
+	Logger::trace("GetHandler: make autoindex response");
+	// status
 	response.set_status(StatusCode::Ok);
+	// header
 	response.set_header("Connection", "close"); // @NOTE: HTTP-1.0 closes by default
 	response.set_header("Content-Length", utils::to_string(path.size));
 	response.set_header("Content-Type", MimeTypes::from_extension("html"));
@@ -183,7 +189,10 @@ void GetHandler::handle_autoindex(Response& response, const Path& path)
 
 void GetHandler::handle_file(Response& response, const Path& path)
 {
+	Logger::trace("GetHandler: make file based response");
+	// status
 	response.set_status(StatusCode::Ok);
+	// header
 	response.set_header("Connection", "close"); // @NOTE: HTTP-1.0 closes by default
 	response.set_header("Content-Length", utils::to_string(path.size));
 	response.set_header("Content-Type", path.mime);
