@@ -64,14 +64,15 @@ void Path::init(const std::string& str_path)
 	if (dot != std::string::npos)
 	{
 		size_t ext_end = dot + 3;
-		// script path
-		cgi_path = raw.substr(0, ext_end);
 		std::string extension = cgi_path.substr(dot + 1, cgi_path.size());
 		if (extension == constants::py_ext)
 		{
+			// script path
 			cgi_extension = extension;
 			is_cgi = true;
+			cgi_path = raw.substr(0, ext_end);
 			mime = MimeTypes::from_path(cgi_path);
+
 			// script info
 			if (ext_end < raw.length())
 				cgi_info = raw.substr(ext_end);
