@@ -12,7 +12,7 @@ DeleteHandler::DeleteHandler(const Request& request, const RequestContext& ctx)
 	, m_done(false)
 	, m_cgi(request, ctx) 
 {
-	Logger::trace("DeleteHandler: Constructor");
+	Logger::trace("DeleteHandler: constructor");
 }
 
 void DeleteHandler::process()
@@ -54,7 +54,7 @@ void DeleteHandler::process()
 
 bool DeleteHandler::done() const
 {
-	return true;
+	return m_done;
 }
 
 const Response& DeleteHandler::response() const

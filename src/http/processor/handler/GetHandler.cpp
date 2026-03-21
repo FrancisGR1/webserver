@@ -15,7 +15,7 @@ GetHandler::GetHandler(const Request& request, const RequestContext& ctx)
 	, m_done(false)
 	, m_cgi(request, ctx) 
 {
-	Logger::trace("GetHandler: Constructor");
+	Logger::trace("GetHandler: constructor");
 }
 
 //@TODO implementar If-Modified-Since e If-None-Match (ETag), Range requests
@@ -39,7 +39,10 @@ void GetHandler::process()
 	{
 		m_cgi.process();
 		if (m_cgi.done())
+		{
+			Logger::trace("GetHandler: CgiHandler is done!");
 			m_done = true;
+		}
 		return;
 	}
 
@@ -204,7 +207,7 @@ void GetHandler::handle_file(Response& response, const Path& path)
 
 bool GetHandler::done() const
 {
-	return true;
+	return m_done;
 }
 
 const Response& GetHandler::response() const
