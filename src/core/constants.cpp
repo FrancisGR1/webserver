@@ -34,7 +34,7 @@ namespace constants
     const char* default_conf = "config/default.conf";
     // - http response
     const char* server_http_version = "HTTP/1.0";
-    const std::string py_ext = "py";
+    const std::string py_ext = ".py";
 
     // http
     // - request

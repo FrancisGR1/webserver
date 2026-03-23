@@ -3,8 +3,6 @@
 
 #include <string>
 
-#include "config/types/LocationConfig.hpp"
-#include "config/ConfigTypes.hpp"
 #include "http/StatusCode.hpp"
 #include "http/processor/RequestContext.hpp"
 

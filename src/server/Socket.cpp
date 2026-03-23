@@ -7,13 +7,13 @@ Socket::Socket(int fd, const ServiceConfig& service)
 	: fd_(fd)
 	, service_(service) 
 {
-	Logger::trace("Create socket: %d", fd_);
+	Logger::trace("Create socket fd=%d", fd_);
 }
 
 Socket::~Socket() 
 {
 	close();
-	Logger::trace("Close socket: %d", fd_);
+	Logger::trace("Close socket fd=%d", fd_);
 }
 
 int	Socket::fd() const

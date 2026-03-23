@@ -30,8 +30,8 @@ class Logger
 	static void error(const char* fmt, ...); 
 	static void fatal(const char* fmt, ...); 
 
-	template<typename logT> static void trace(const logT& to_log);
-	template<typename logT> static void debug(const logT& to_log);
+	template<typename logT> static void trace(const logT& to_log, const std::string prefix="");
+	template<typename logT> static void debug(const logT& to_log, const std::string prefix="");
 
 	static void set_output(const char* file);
 	static void close_output();
@@ -47,7 +47,7 @@ class Logger
 	static Log::Level m_global_level;
 
 	static void vlog(Log::Level level, const char* fmt, va_list args);
-	template<typename Tlog> static void tlog(Log::Level level, const Tlog& to_log);
+	template<typename Tlog> static void tlog(Log::Level level, const Tlog& to_log, const std::string prefix);
 	static bool should_log(Log::Level level);
 	static std::string log_level_to_string(Log::Level level);
 	static std::string log_level_to_color(Log::Level level);

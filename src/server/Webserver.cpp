@@ -35,7 +35,7 @@ void Webserver::setup()
 			server_sockets_.insert(std::pair<int, Socket*>(socket->fd(), socket));
 			if (events_.add(socket->fd(), EPOLLIN) == -1)
 			{
-				throw std::runtime_error("Failed to add socket to events at setup()");
+				throw std::runtime_error("Failed to add socket to events");
 			}
 
 			Logger::info("Listening on %s:%s", listener.host.c_str(), listener.port.c_str());
@@ -66,9 +66,9 @@ void	Webserver::run()
 			epoll_event& event = events_.getEvent(i);
 			int event_fd = event.data.fd;
 
-			Logger::trace("Webserver: Event fd: %d", event_fd);
 			if (event.events & (EPOLLERR | EPOLLHUP)) // event error
 			{
+				Logger::error("Webserver: Fd %d - something went wrong", event_fd);
 				Connection& conn = connection_pool_.get(event_fd);
 				connection_pool_.remove(conn);
 			}

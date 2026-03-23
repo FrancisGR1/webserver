@@ -101,7 +101,7 @@ void RequestProcessor::process()
 			// so validating -> resolving -> dispatching
 			case Validating:
 				{
-					Logger::trace("RequestProcessor: Validating");
+					Logger::trace("RequestProcessor: state - Validating");
 					if (m_request.bad_request())
 						throw ResponseError(
 								m_request.status_code(),
@@ -115,7 +115,7 @@ void RequestProcessor::process()
 
 			case Resolving:
 				{
-					Logger::trace("RequestProcessor: Resolving");
+					Logger::trace("RequestProcessor: state - Resolving");
 
 					const ServiceConfig& service = m_ctx.config().service();
 
@@ -148,7 +148,7 @@ void RequestProcessor::process()
 
 			case Dispatching:
 				{
-					Logger::trace("RequestProcessor: Dispatching");
+					Logger::trace("RequestProcessor: state - Dispatching");
 					if      (m_request.method() == "GET")	 m_handler = new GetHandler(m_request, m_ctx);
 					else if (m_request.method() == "POST")   m_handler = new PostHandler(m_request, m_ctx);
 					else if (m_request.method() == "DELETE") m_handler = new DeleteHandler(m_request, m_ctx);
@@ -159,7 +159,7 @@ void RequestProcessor::process()
 
 			case Handling:
 				{
-					Logger::trace("RequestProcessor: Handling");
+					Logger::trace("RequestProcessor: state - Handling");
 					m_handler->process();
 					if (m_handler->done())
 					{
@@ -169,7 +169,7 @@ void RequestProcessor::process()
 				}
 			case Done:
 				{
-					Logger::trace("RequestProcessor: Done");
+					Logger::trace("RequestProcessor: state - Done");
 					break;
 				}
 		}

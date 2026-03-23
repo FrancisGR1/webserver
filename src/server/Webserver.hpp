@@ -11,21 +11,18 @@
 #include <fcntl.h>
 
 #include "config/Config.hpp"
-#include "Connection.hpp"
 #include "ConnectionPool.hpp"
 #include "EventManager.hpp"
 #include "Socket.hpp"
 
 class Connection;
 
-/* cria o servidor ja com as config */
 class Webserver
 {
 	public:
 		Webserver(const Config& config);
 		~Webserver();
 
-		//@TODO implement
 		void setup();
 		void run();
 

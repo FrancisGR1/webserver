@@ -9,7 +9,7 @@ ErrorHandler::ErrorHandler(const ResponseError& error)
 	, m_ctx(error.has_ctx() ? &error.ctx() : NULL)
 	, m_done(false)
 {
-	Logger::trace("ErrorHandler: Constructor");
+	Logger::trace("ErrorHandler: constructor");
 }
 
 ErrorHandler::ErrorHandler(StatusCode::Code code)
@@ -17,7 +17,7 @@ ErrorHandler::ErrorHandler(StatusCode::Code code)
 	, m_ctx(NULL)
 	, m_done(false)
 {
-	Logger::trace("ErrorHandler: Constructor");
+	Logger::trace("ErrorHandler: constructor");
 }
 
 ErrorHandler::ErrorHandler(StatusCode::Code code, const RequestContext& ctx)
@@ -25,12 +25,14 @@ ErrorHandler::ErrorHandler(StatusCode::Code code, const RequestContext& ctx)
 	, m_ctx(&ctx)
 	, m_done(false)
 {
-	Logger::trace("ErrorHandler: Constructor");
+	Logger::trace("ErrorHandler: constructor");
 }
 
 // all in one go
 void ErrorHandler::process()
 {
+	Logger::trace("ErrorHandler: processing...");
+
 	size_t error = static_cast<size_t>(m_code);
 
 	// status
@@ -95,5 +97,6 @@ const Response& ErrorHandler::response() const
 
 ErrorHandler::~ErrorHandler()
 {
+	Logger::trace("ErrorHandler: destructor");
 	delete m_ctx;
 }

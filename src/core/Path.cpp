@@ -68,14 +68,15 @@ void Path::init(const std::string& str_path)
 	if (dot != std::string::npos)
 	{
 		size_t ext_end = dot + 3; // @WARN hardcode of .py size
-		std::string extension = raw.substr(dot + 1);
-		if (extension == constants::py_ext)
+		std::string ext = raw.substr(dot);
+		if (ext == constants::py_ext)
 		{
 			Logger::trace("Path: has cgi extension");
+
 			// script path
-			cgi_extension = extension;
-			is_cgi = true;
 			cgi_path = raw.substr(0, ext_end);
+			cgi_extension = ext;
+			is_cgi = true;
 			mime = MimeTypes::from_path(cgi_path);
 
 			// script info
@@ -136,6 +137,7 @@ std::ostream& operator<<(std::ostream& os, const Path& path)
 		<< "\tCgi Path:        " << path.cgi_path << "\n"
 		<< "\tCgi Info:        " << path.cgi_info << "\n"
 		<< "\tCgi Name:        " << path.cgi_name << "\n"
+		<< "\tCgi Ext:         " << path.cgi_extension << "\n"
 		<< "\tCan read:        " << path.can_read << "\n"
 		<< "\tCan write:       " << path.can_write << "\n"
 		<< "\tCan exec:        " << path.can_execute << "\n"

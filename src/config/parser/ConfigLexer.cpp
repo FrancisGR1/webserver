@@ -1,4 +1,3 @@
-#include "config/ConfigTypes.hpp"
 #include "ConfigLexer.hpp"
 #include <cctype>
 

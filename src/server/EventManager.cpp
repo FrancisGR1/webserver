@@ -40,7 +40,7 @@ int	EventManager::add(int socket, uint32_t events)
 	event.data.fd = socket;
 	int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, socket, &event);
 	if (ret == -1)
-		Logger::error("epoll_ctl() ADD failed!: tried to add fd %d", socket);
+		Logger::error("epoll_ctl() ADD failed!: tried to add fd=%d", socket);
 	return ret;
 }
 
@@ -51,7 +51,7 @@ int	EventManager::modify(int socket, uint32_t events)
 	event.data.fd = socket;
 	int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, socket, &event);
 	if (ret == -1)
-		Logger::error("epoll_ctl() MOD failed!: tried to modify fd %d", socket);
+		Logger::error("epoll_ctl() MOD failed!: tried to modify fd=%d", socket);
 	return ret;
 }
 
@@ -60,6 +60,6 @@ int	EventManager::remove(int socket)
 	Logger::trace("EventManager: Remove fd %d from events", socket);
 	int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, socket, NULL);
 	if (ret == -1)
-		Logger::error("epoll_ctl() DEL failed!: tried to delete fd %d", socket);
+		Logger::error("epoll_ctl() DEL failed!: tried to delete fd=%d", socket);
 	return ret;
 }

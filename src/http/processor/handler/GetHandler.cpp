@@ -22,8 +22,6 @@ GetHandler::GetHandler(const Request& request, const RequestContext& ctx)
 void GetHandler::process()
 {
 	Logger::trace("GetHandler: processing...");
-	Logger::debug("GetHandler: config:");
-	Logger::debug(m_ctx.config());
 
 	const RequestConfig& config = m_ctx.config();
 
@@ -212,9 +210,12 @@ bool GetHandler::done() const
 
 const Response& GetHandler::response() const
 {
+	if (m_ctx.config().is_cgi())
+		return m_cgi.response();
 	return m_response;
 }
 
 GetHandler::~GetHandler()
 {
+	Logger::trace("GetHandler: destructor");
 }

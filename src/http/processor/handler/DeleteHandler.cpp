@@ -59,7 +59,10 @@ bool DeleteHandler::done() const
 
 const Response& DeleteHandler::response() const
 {
+	if (m_ctx.config().is_cgi())
+		return m_cgi.response();
 	return m_response;
+
 }
 
 DeleteHandler::~DeleteHandler()

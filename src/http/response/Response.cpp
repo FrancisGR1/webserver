@@ -60,6 +60,11 @@ ssize_t Response::send(int fd)
 	{
 		case StatusPhase:
 			{
+				Logger::trace("Response: send status");
+
+				if (m_status == 0)
+					throw std::logic_error("Response: status wasn't set"); // @ASSUMPTION: status should always be set
+
 				if (m_status_line.empty())
 m_status_line = make_status_line();
 				ssize_t sent = ::send(fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
@@ -81,6 +86,8 @@ m_status_line = make_status_line();
 			}
 		case HeadersPhase:
 			{
+				Logger::trace("Response: send headers");
+
 				ssize_t sent = ::send(fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, 0);
 				if (sent < 0)
 					;
@@ -101,9 +108,12 @@ m_status_line = make_status_line();
 				ssize_t sent = 0;
 				if (m_body_fd > -1) // send body from file/pipe
 				{
+					Logger::trace("Response: send body from fd=%d", m_body_fd);
+
 					// m_body_str is used as a leftover for the next call
 					if (!m_body_str.empty())
 					{
+						Logger::debug("Response: send body (headers leftover): %s", m_body_str.c_str());
 						sent = ::send(fd, m_body_str.c_str(), m_body_str.size(), 0);
 						if (sent <= 0)
 							return sent; // nothing to send, or error or EAGAIN, which shouldn't happen (@QUESTION: you sure?)
@@ -114,7 +124,7 @@ m_status_line = make_status_line();
 					}
 
 					// read and send to socket
-					char buffer[constants::read_chunk_size];
+					char buffer[constants::read_chunk_size + 1];
 					ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
 					if (read_bytes < 0)
 					{
@@ -125,6 +135,7 @@ m_status_line = make_status_line();
 						m_send_phase = Done;
 						return 0;
 					}
+					buffer[read_bytes] = '\0';
 
 					sent = ::send(fd, buffer, read_bytes, 0);
 					if (sent <= 0)
@@ -134,10 +145,10 @@ m_status_line = make_status_line();
 						// store leftover for next call
 						m_body_str.assign(buffer + sent, read_bytes - sent);
 					}
-
 				}
 				else if (!m_body_str.empty()) // send body from string
 				{
+					Logger::debug("Response: send body (string[%zu]): %s", m_body_str.size() - m_offset, (m_body_str.c_str() + m_offset));
 					sent = ::send(fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
 					if (sent < 0)
 						return sent;
@@ -148,6 +159,7 @@ m_status_line = make_status_line();
 				}
 				else // no body
 				{
+					Logger::trace("Response: done!");
 					m_send_phase = Done;
 				}
 
@@ -190,8 +202,9 @@ void Response::set_body_as_str(const std::string& str)
 }
 
 // prefix is something you might want to send after the headers and before reading the file, for example a read() call that processed the headers and a bit of the body
-void Response::set_body_as_fd(int fd, const std::string& prefix)
+void Response::set_body_as_fd_and_prefix(int fd, const std::string& prefix)
 {
+	Logger::trace("Response: set body: '%d' with prefix: '%s'", fd, prefix.c_str());
 	m_body_fd = fd;
 	m_body_str = prefix;
 }
@@ -234,17 +247,10 @@ std::string Response::make_status_line()
 
 std::ostream& operator<<(std::ostream& os, const Response& response)
 {
-	os << "Response:\n";
-	os << "Is done: " << std::boolalpha << response.done() << std::endl
-		<< response.m_status_line 
-		<< response.m_headers_str;
-	if (response.m_body_fd >= 0)
-	{
-		os << "Body is fd: " << response.m_body_fd << "\n";
-	}
-	else
-	{
-		os << response.m_body_str;
-	}
+	os << "Is done: " << std::boolalpha << response.done() << std::endl;
+	os << "Status:  '" << response.m_status_line  << "'\n";
+	os << "Headers:  '" << response.m_headers_str  << "'\n";
+	os << "Body fd:  " << response.m_body_fd << "\n";
+	os << "Body str: '" << response.m_body_str << "'\n";
 	return os;
 }

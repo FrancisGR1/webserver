@@ -566,8 +566,8 @@ void RequestParser::parse()
 	}
 }
 
-//https://www.rfc-editor.org/rfc/rfc9110.html#name-field-names 
-//see 5.6.2
+// https://www.rfc-editor.org/rfc/rfc9110.html#name-field-names 
+// see 5.6.2
 bool RequestParser::is_tchar(char c)
 {
 	return (std::isalnum(static_cast<unsigned char>(c)) ||

@@ -20,7 +20,7 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
 	, m_upload(NULL)
 	, m_fd(-1)
 {
-	Logger::trace("PostHandler: Constructor");
+	Logger::trace("PostHandler: constructor");
 }
 
 static void expect_uploadable(const Request& request, const RequestConfig& config, const Path& upload_dir, const RequestContext& ctx)
@@ -106,7 +106,6 @@ void PostHandler::process()
 			m_response.set_header("Date", utils::http_date());
 			m_response.set_header("Content-Type", "application/json");
 			m_response.set_header("Content-Length", utils::to_string(json.size()));
-
 		}
 	}
 	else
@@ -123,7 +122,13 @@ bool PostHandler::done() const
 
 const Response& PostHandler::response() const
 {
+	if (m_ctx.config().is_cgi())
+		return m_cgi.response();
 	return m_response;
 }
 
-PostHandler::~PostHandler() { if (m_fd > -1) close(m_fd); };
+PostHandler::~PostHandler() 
+{ 
+	Logger::trace("PostHandler: destructor");
+	if (m_fd > -1) close(m_fd); 
+};
