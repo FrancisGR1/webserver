@@ -1,4 +1,5 @@
 #include "core/utils.hpp"
+#include "core/Logger.hpp"
 #include "config/parser/ConfigLexer.hpp"
 #include "config/parser/ConfigParser.hpp"
 #include "config/Config.hpp"
@@ -9,20 +10,22 @@
 
 Config::Config() {}
 
-Config::Config(const char *file_path)
+void Config::load(const char *file_path)
 {
-	//@TODO: criar func em utils: file_to_str
-	m_file_content = utils::file_to_str(file_path);
-}
+	Logger::info("Config: load '%s'", file_path);
 
-//@TODO: colocar isto dentro do construtor?
-void Config::load()
-{
+	// load content into str memory
+	m_file_content = utils::file_to_str(file_path);
+
+	// parse
 	ConfigLexer lexer(m_file_content);
 	ConfigParser parser(lexer);
 
+	// extract
 	const Config& parsed = parser.get();
 	services = parsed.services;
+
+	Logger::debug_obj(*this, "Config: ");
 }
 
 std::ostream& operator<<(std::ostream& os, const Config& cfg)
