@@ -39,6 +39,19 @@ static void print_field(std::ostream& os, const std::string& title, const std::s
     os << std::left << std::setw(width) << (title + ": ") << value << "\n";
 }
 
+bool Request::operator==(const Request& other)
+{
+	return ( 
+			m_method == other.m_method &&
+			m_target_path == other.m_target_path &&
+			m_target_query == other.m_target_query &&
+			m_protocol_version == other.m_protocol_version &&
+			m_headers == other.m_headers &&
+			m_body == other.m_body &&
+			m_status_code == other.m_status_code
+	       );
+}
+
 std::ostream& operator<<(std::ostream& os, const Request& request)
 {
     os << "Request:\n";
