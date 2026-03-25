@@ -8,7 +8,7 @@
 #include "constants.hpp"
 
 template<typename logT>
-void Logger::trace(const logT& to_log, const std::string prefix)
+void Logger::trace_obj(const logT& to_log, const std::string prefix)
 {
 	if (should_log(Log::Trace))
 	{
@@ -17,7 +17,7 @@ void Logger::trace(const logT& to_log, const std::string prefix)
 }
 
 template<typename logT>
-void Logger::debug(const logT& to_log, const std::string prefix)
+void Logger::debug_obj(const logT& to_log, const std::string prefix)
 {
 	if (should_log(Log::Debug))
 	{

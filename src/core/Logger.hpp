@@ -30,8 +30,8 @@ class Logger
 	static void error(const char* fmt, ...); 
 	static void fatal(const char* fmt, ...); 
 
-	template<typename logT> static void trace(const logT& to_log, const std::string prefix="");
-	template<typename logT> static void debug(const logT& to_log, const std::string prefix="");
+	template<typename logT> static void trace_obj(const logT& to_log, const std::string prefix="");
+	template<typename logT> static void debug_obj(const logT& to_log, const std::string prefix="");
 
 	static void set_output(const char* file);
 	static void close_output();
