@@ -17,7 +17,7 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
 	, m_ctx(ctx)
 	, m_done(false)
 	, m_cgi(request, ctx)
-	, m_upload(NULL)
+	, m_upload("")
 	, m_fd(-1)
 {
 	Logger::trace("PostHandler: constructor");
@@ -25,7 +25,7 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
 
 static void expect_uploadable(const Request& request, const RequestConfig& config, const Path& upload_dir, const RequestContext& ctx)
 {
-	if (!config.has_upload_dir())
+	if (!upload_dir.exists)
 		http_utils::throw_internal_server_error_cant_upload(ctx);
 	if (request.body().size() > config.max_body_size()) 
 		http_utils::throw_content_too_large(ctx);
@@ -62,7 +62,7 @@ void PostHandler::process()
 	{
 		if (m_fd == -1) // set upload dir
 		{
-			Path upload_dir = config.upload_dir();
+			Path upload_dir = m_ctx.config().path();
 			expect_uploadable(m_request, config, upload_dir, m_ctx);
 
 			// create a name for the new file to be uploaded
@@ -70,7 +70,13 @@ void PostHandler::process()
 			// make upload real path
 			m_upload = utils::join_paths(upload_dir.raw, file_name);
 			//@TODO add fd to event pool
-			m_fd = open(m_upload.raw.c_str(), O_WRONLY | O_APPEND);
+			m_fd = open(m_upload.raw.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+			if (m_fd <= 2)
+			{
+				http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
+			}
+
+			Logger::debug("PostHandler: write to fd=%d '%s'", m_fd, m_upload.raw.c_str());
 		}
 
 		if (!m_done)
@@ -84,10 +90,14 @@ void PostHandler::process()
 			//@TODO apanhar erro em caso de -1
 			if (m_offset == static_cast<ssize_t>(m_request.body().size()))
 				m_done = true;
+
+			Logger::trace("PostHandler: write %zu(%zu)", written, m_offset);
 		}
 
 		if (m_done)
 		{
+			Logger::trace("PostHandler: finished writing fd=%d", m_fd);
+
 			// status
 			m_response.set_status(StatusCode::Created);
 
