@@ -128,7 +128,6 @@ void CgiHandler::fork_and_exec()
 		// execve variables
 		execve(argv[0], argv, &envp[0]);
 		perror("execve()");
-		std::exit(1);
 	}
 	else
 	{
@@ -149,7 +148,7 @@ CgiHandler::State CgiHandler::read_pipe_chunk_headers()
 		buffer[bytes] = '\0';
 		m_headers += buffer;
 		Logger::trace("CgiHandler: read buffer:'%s'", buffer); 
-		if (m_headers.find("\r\n\r\n") != std::string::npos)
+		if (m_headers.find(constants::crlfcrlf) != std::string::npos)
 			return ReadBody;
 	}
 	else if (bytes == 0)
@@ -177,7 +176,7 @@ void CgiHandler::parse_headers()
 
 	// if the final chunk over reads and consumes body characters
 	// store them as leftovers
-	size_t body_start = m_headers.find("\r\n\r\n");
+	size_t body_start = m_headers.find(constants::crlfcrlf);
 	if (body_start != std::string::npos)
 	{
 		m_body_leftover = m_headers.substr(body_start + 4);
@@ -185,7 +184,7 @@ void CgiHandler::parse_headers()
 	}
 
 	// set headers
-	std::vector<std::string> lines = utils::str_split(m_headers, "\r\n");
+	std::vector<std::string> lines = utils::str_split(m_headers, constants::crlf);
 	for (size_t i = 0; i < lines.size(); ++i)
 	{
 		const std::string& line = lines[i];

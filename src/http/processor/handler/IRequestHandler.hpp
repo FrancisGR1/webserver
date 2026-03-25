@@ -1,7 +1,6 @@
 #ifndef AMETHODHANDLER_HPP
 #define AMETHODHANDLER_HPP
 
-#include "config/ConfigTypes.hpp"
 #include "http/response/Response.hpp"
 
 class IRequestHandler

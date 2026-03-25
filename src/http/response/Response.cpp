@@ -14,7 +14,7 @@ Response::Response()
 	, m_send_phase(Response::StatusPhase)
 	, m_offset(0)
 {
-	//@QUESTION can we set default headers?
+	Logger::trace("Response: constructor");
 }
 
 Response::Response(StatusCode::Code status)
@@ -24,7 +24,7 @@ Response::Response(StatusCode::Code status)
 	, m_send_phase(Response::StatusPhase)
 	, m_offset(0)
 {
-	//@QUESTION can we set default headers?
+	Logger::trace("Response: constructor");
 }
 
 Response::Response(const Response& other)
@@ -75,7 +75,7 @@ m_status_line = make_status_line();
 					m_send_phase = HeadersPhase;
 					m_offset = 0;
 					m_headers_str = utils::map_to_str(m_headers);
-					m_headers_str += "\n\r";
+					m_headers_str += constants::crlf;
 				}
 				else
 				{
@@ -105,27 +105,29 @@ m_status_line = make_status_line();
 			}
 		case BodyPhase: 
 			{
-				ssize_t sent = 0;
+				ssize_t sent_bytes = 0;
 				if (m_body_fd > -1) // send body from file/pipe
 				{
-					Logger::trace("Response: send body from fd=%d", m_body_fd);
+					Logger::debug("Response: send body from fd=%d", m_body_fd);
 
 					// m_body_str is used as a leftover for the next call
 					if (!m_body_str.empty())
 					{
-						Logger::debug("Response: send body (headers leftover): %s", m_body_str.c_str());
-						sent = ::send(fd, m_body_str.c_str(), m_body_str.size(), 0);
-						if (sent <= 0)
-							return sent; // nothing to send, or error or EAGAIN, which shouldn't happen (@QUESTION: you sure?)
+						Logger::trace("Response: send body (headers leftover): %s", m_body_str.c_str());
+						sent_bytes = ::send(fd, m_body_str.c_str(), m_body_str.size(), 0);
+						if (sent_bytes <= 0)
+							return sent_bytes; // nothing to send, or error or EAGAIN, which shouldn't happen (@QUESTION: you sure?)
 
-						m_body_str.erase(0, sent);
+						m_body_str.erase(0, sent_bytes);
 						if (!m_body_str.empty())
-							return sent; // socket is full
+							return sent_bytes; // socket is full
 					}
 
 					// read and send to socket
-					char buffer[constants::read_chunk_size + 1];
+					// @TODO: substitude read() -> send() with sendfile()
+					char buffer[constants::read_chunk_size];
 					ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
+					Logger::trace("Response: read %ld bytes: '%s'", read_bytes, buffer);
 					if (read_bytes < 0)
 					{
 						return -1;
@@ -137,23 +139,24 @@ m_status_line = make_status_line();
 					}
 					buffer[read_bytes] = '\0';
 
-					sent = ::send(fd, buffer, read_bytes, 0);
-					if (sent <= 0)
-						return sent;
-					if (sent < read_bytes)
+					sent_bytes = ::send(fd, buffer, read_bytes, 0);
+					Logger::trace("Response: sent %ld bytes", sent_bytes);
+					if (sent_bytes <= 0)
+						return sent_bytes;
+					if (sent_bytes < read_bytes)
 					{
 						// store leftover for next call
-						m_body_str.assign(buffer + sent, read_bytes - sent);
+						m_body_str.assign(buffer + sent_bytes, read_bytes - sent_bytes);
 					}
 				}
 				else if (!m_body_str.empty()) // send body from string
 				{
-					Logger::debug("Response: send body (string[%zu]): %s", m_body_str.size() - m_offset, (m_body_str.c_str() + m_offset));
-					sent = ::send(fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
-					if (sent < 0)
-						return sent;
+					Logger::trace("Response: send body (string[%zu]): %s", m_body_str.size() - m_offset, (m_body_str.c_str() + m_offset));
+					sent_bytes = ::send(fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
+					if (sent_bytes < 0)
+						return sent_bytes;
 
-					m_offset += sent;
+					m_offset += sent_bytes;
 					if (m_offset == m_body_str.size())
 						m_send_phase = Done;
 				}
@@ -163,7 +166,7 @@ m_status_line = make_status_line();
 					m_send_phase = Done;
 				}
 
-				return sent;
+				return sent_bytes;
 			}
 		default:
 			{
@@ -222,6 +225,7 @@ StatusCode::Code Response::status() const { return m_status; }
 
 Response::~Response()
 {
+	Logger::trace("Response: destructor");
 	if (m_body_fd >= 0) 
 		close (m_body_fd);
 }
@@ -240,7 +244,7 @@ std::string Response::make_status_line()
 	status_line += ss.str() + " ";
 
 	// reason
-	status_line += StatusCode::to_reason(m_status) + "\r\n";
+	status_line += StatusCode::to_reason(m_status) + constants::crlf;
 
 	return status_line;
 }

@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include "http/request/Request.hpp"
 #include "http/processor/RequestProcessor.hpp"
 #include "core/constants.hpp"
@@ -39,6 +41,7 @@ void Connection::work(const epoll_event& on_event)
 				if (bytes <= 0)
 				{
 					//@TODO
+					//@QUESTION erro do parser?
 					break;
 				}
 
@@ -48,7 +51,7 @@ void Connection::work(const epoll_event& on_event)
 				// parse
 				parser_.feed(buffer);
 
-				Logger::debug(parser_.get());
+				Logger::debug_obj(parser_.get(), "Connection: Request: ");
 				if (parser_.done())
 				{
 					const Request& request_ = parser_.get();
@@ -56,18 +59,18 @@ void Connection::work(const epoll_event& on_event)
 					//events_.modify(socket_.fd(), EPOLLOUT);
 					work_state_ = Processing;		
 				}
+				//std::exit(1);
 				break;
 			}
 		case Processing:
 			{
-				Logger::trace("Connection: state - Processing");
-
 				processor_.process();
 
 				if (processor_.done())
 				{
+					Logger::trace("Connection: RequestProcessor: Done!");
 					response_ = processor_.response();
-					Logger::debug(response_, "Connection: Response:\n");
+					Logger::debug_obj(response_, "Connection: Response:\n");
 					work_state_ = Sending;		
 				}
 				break;
@@ -80,7 +83,7 @@ void Connection::work(const epoll_event& on_event)
 
 				if (response_.done())
 				{
-					Logger::debug(response_);
+					Logger::debug_obj(response_, "Connection: Response:\n");
 					work_state_ = Done;		
 					//@TODO cleanup de quê?
 				}

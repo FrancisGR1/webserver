@@ -21,7 +21,8 @@ Webserver::~Webserver()
 // if there's an error in setup(), server won't run
 void Webserver::setup()
 {
-	// run all the services and create sockets from listeners
+
+	Logger::info("Webserver: setting up sockets");
 	for(size_t i = 0; i < config_.services.size(); i++)
 	{
 		const ServiceConfig& service = config_.services[i];
@@ -38,7 +39,7 @@ void Webserver::setup()
 				throw std::runtime_error("Failed to add socket to events");
 			}
 
-			Logger::info("Listening on %s:%s", listener.host.c_str(), listener.port.c_str());
+			Logger::info("Webserver: listening on %s:%s", listener.host.c_str(), listener.port.c_str());
 		}
 	}
 }
@@ -50,7 +51,7 @@ bool	Webserver::isServerSocket(int fd)
 
 void	Webserver::run()
 {
-	Logger::trace("Server starts running");
+	Logger::info("Webserver: running");
 
 	while (is_running)
 	{

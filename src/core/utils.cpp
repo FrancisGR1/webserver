@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <ctime>
 
+#include "constants.hpp"
 #include "utils.hpp"
 
 namespace utils
@@ -111,6 +112,7 @@ namespace utils
 
 	std::string fmt(const char* fmt, ...)
 	{
+		//@TODO substituir por constant?
 		char buffer[5000];
 		va_list args;
 		va_start(args, fmt);
@@ -125,7 +127,7 @@ namespace utils
 
 		for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
 		{
-			str += it->first + ": " + it->second + "\r\n";
+			str += it->first + ": " + it->second + constants::crlf;
 		}
 
 		return str;
