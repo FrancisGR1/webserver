@@ -172,8 +172,15 @@ void RequestParser::parse()
 
 				if (m_ch == '\r')
 				{
-					//@TODO: substituir por um constant set
 					std::string pv = m_protocol_version;
+
+					if (!is_http_version(pv))
+					{
+						m_state = S::Error;
+						m_status_code = StatusCode::BadRequest;
+						break;
+					}
+
 					if (pv != "HTTP/1.0" && pv != "HTTP/1.1")
 					{
 						m_state = S::Error;
@@ -181,6 +188,7 @@ void RequestParser::parse()
 						Logger::error("RequestParser: invalid version: %s", pv.c_str());
 						break;
 					}
+
 					m_state = S::StartLineCR;
 				}
 				else
@@ -246,6 +254,8 @@ void RequestParser::parse()
 						Logger::error("RequestParser: duplicated header: %s", k.c_str());
 						break;
 					}
+					//@QUESTION: é suposto limpar os lados de espaços do valor?
+					utils::str_trim_sides(m_header_value, constants::body_whitespaces);
 					m_headers[k] = m_header_value;
 					m_header_key.clear();
 					m_header_value.clear();
@@ -631,4 +641,13 @@ bool RequestParser::is_vchar(char c)
 bool RequestParser::is_ows(char c)
 {
 	return c == ' ' || c == '\t';
+}
+
+bool RequestParser::is_http_version(const std::string& v)
+{
+	return  v == "HTTP/0.9" ||
+		v == "HTTP/1.0" ||
+		v == "HTTP/1.1" ||
+		v == "HTTP/2" ||
+		v == "HTTP/3";
 }

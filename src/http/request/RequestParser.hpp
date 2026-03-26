@@ -96,6 +96,9 @@ class RequestParser
 		bool is_tchar(char c);
 		bool is_vchar(char c);
 		bool is_ows(char c);
+
+		// utils
+		bool is_http_version(const std::string& v);
 };
 
 #endif // REQUESTPARSER_HPP

@@ -22,8 +22,7 @@ Request::Request(const std::string& method,
 	, m_protocol_version(protocol_version)
 	, m_headers(headers)
 	, m_body(body)
-	, m_status_code(c)
-{}
+	, m_status_code(c) {}
 
 const std::string& Request::method() const { return m_method; }
 const std::string& Request::target_path() const { return m_target_path; }
