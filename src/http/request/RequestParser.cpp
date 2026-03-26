@@ -22,6 +22,12 @@ void RequestParser::feed(const char* raw)
 	parse();
 }
 
+void RequestParser::feed(const std::string& raw)
+{
+	m_buffer += raw;
+	parse();
+}
+
 void RequestParser::feed(char c)
 {
 	m_buffer += c;

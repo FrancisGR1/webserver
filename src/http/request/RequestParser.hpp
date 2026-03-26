@@ -53,6 +53,7 @@ class RequestParser
 		RequestParser();
 
 		void feed(const char* raw);
+		void feed(const std::string& raw);
 		void feed(char c);
 		bool done() const;
 		Request get() const;
