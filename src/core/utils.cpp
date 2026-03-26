@@ -58,8 +58,13 @@ namespace utils
 		for (size_t i = 0; i < str.size(); i++)
 		{
 			unsigned char c = static_cast<unsigned char>(str.at(i));
-			if (!std::isdigit(c) && (std::isspace(c) && !skip_spaces))
-				return false;
+			if (!std::isdigit(c))
+			{
+				if (!std::isspace(c))
+					return false;
+				if (std::isspace(c) && !skip_spaces)
+					return false;
+			}
 		}
 		return true;
 	}
