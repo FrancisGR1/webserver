@@ -8,7 +8,7 @@
 #include "http/request/RequestParser.hpp"
 
 RequestParser::RequestParser()
-	: m_status_code(StatusCode::Ok)
+	: m_status_code(StatusCode::BadRequest)
 	, m_state(Parser::StartLineMethod)
 	, m_idx(0)
 	, m_ch('\0')
@@ -63,7 +63,7 @@ void RequestParser::clear()
 	m_protocol_version.clear();
 	m_headers.clear();
 	m_body.clear();
-	m_status_code = StatusCode::Ok;
+	m_status_code = StatusCode::BadRequest;
 
 	m_state = Parser::StartLineMethod;
 	m_idx = 0;
@@ -95,17 +95,23 @@ void RequestParser::parse()
 
 				if (m_ch == ' ') 
 				{
-					//@TODO: substituir por um constant set
+					if (!is_valid_method(m_method))
+					{	
+						Logger::error("RequestParser: invalid method: %s", m_method.c_str());
+						m_status_code = StatusCode::BadRequest;
+						m_state = S::Error;
+						break;
+
+					}
 					if (m_method != "GET" && m_method != "POST" && m_method != "DELETE")
 					{
-						Logger::error("RequestParser: invalid method: %s", m_method.c_str());
-						m_state = S::Error;
+						Logger::error("RequestParser: didn't implement method: %s", m_method.c_str());
 						m_status_code = StatusCode::NotImplemented;
+						m_state = S::Error;
+						break;
 					}
-					else
-					{
-						m_state = S::StartLineTargetPath;
-					}
+
+					m_state = S::StartLineTargetPath;
 				}
 				else 
 				{
@@ -196,7 +202,7 @@ void RequestParser::parse()
 					m_protocol_version += m_ch;
 				}
 				break ;
-			// Start Line - End
+				// Start Line - End
 			case S::StartLineCR:
 				Logger::trace("RequestParser: state - Status CR: '%c'", m_ch);
 
@@ -211,7 +217,7 @@ void RequestParser::parse()
 					m_state = S::HeaderKey;
 				}
 				break ;
-			// Header
+				// Header
 			case S::HeaderKey:
 				Logger::trace("RequestParser: state - Key: '%c'", m_ch);
 
@@ -254,7 +260,7 @@ void RequestParser::parse()
 						Logger::error("RequestParser: duplicated header: %s", k.c_str());
 						break;
 					}
-					//@QUESTION: é suposto limpar os lados de espaços do valor?
+
 					utils::str_trim_sides(m_header_value, constants::body_whitespaces);
 					m_headers[k] = m_header_value;
 					m_header_key.clear();
@@ -276,7 +282,7 @@ void RequestParser::parse()
 					}
 				}
 				break;
-			// Header Line - End
+				// Header Line - End
 			case S::HeaderEndLineCR:
 				Logger::trace("RequestParser: state - Header Line CR: '%c'", m_ch);
 
@@ -365,6 +371,7 @@ void RequestParser::parse()
 						else if (cl == 0) 
 						{
 							m_state = S::Done;
+							m_status_code = StatusCode::Ok;
 						}
 						else
 						{
@@ -377,13 +384,14 @@ void RequestParser::parse()
 					else
 					{
 						m_state = S::Done; /* MODIFICADO */
-					// 	m_state = S::Error;
-					// 	m_status_code = StatusCode::LengthRequired;
-					// Logger::error("Http Parser: doesn't contain neither 'Content-Length' or 'Transfer-Encoding' headers");
+						m_status_code = StatusCode::Ok;
+						// 	m_state = S::Error;
+						// 	m_status_code = StatusCode::LengthRequired;
+						// Logger::error("Http Parser: doesn't contain neither 'Content-Length' or 'Transfer-Encoding' headers");
 					}
 					break;
 				}
-			// Body string
+				// Body string
 			case S::Body:
 				Logger::trace("RequestParser: state - Body(%ld): '%c'", m_body.size() + 1, m_ch);
 
@@ -394,6 +402,7 @@ void RequestParser::parse()
 					if (m_body.size() == m_content_length)
 					{
 						m_state = S::Done;
+						m_status_code = StatusCode::Ok;
 					}
 				}
 				else
@@ -406,7 +415,7 @@ void RequestParser::parse()
 					Logger::error("RequestParser: body (%ld) is largerthan expected size (%ld)", m_body.size(), m_content_length);
 				}
 				break;
-			// Body chunked
+				// Body chunked
 			case S::BodyChunkSize:
 				Logger::trace("RequestParser: state - Body Chunk Size: '%c'", m_ch);
 
@@ -565,11 +574,13 @@ void RequestParser::parse()
 						Logger::error("RequestParser: duplicated trailer header: %s", k.c_str());
 						break;
 					}
+
+					utils::str_trim_sides(m_header_value, constants::body_whitespaces);
 					m_headers[k] = m_header_value;
 					m_header_key.clear();
 					m_header_value.clear();
-					m_state = S::BodyChunkTrailerCR;
 
+					m_state = S::BodyChunkTrailerCR;
 				}
 				else if (is_vchar(m_ch) || is_ows(m_ch))
 				{
@@ -608,6 +619,7 @@ void RequestParser::parse()
 				else
 				{
 					m_state = S::Done;
+					m_status_code = StatusCode::Ok;
 				}
 				break;
 			default:
@@ -648,6 +660,19 @@ bool RequestParser::is_http_version(const std::string& v)
 	return  v == "HTTP/0.9" ||
 		v == "HTTP/1.0" ||
 		v == "HTTP/1.1" ||
-		v == "HTTP/2" ||
-		v == "HTTP/3";
+		v == "HTTP/2"   ||
+		v == "HTTP/3"   ;
+}
+
+bool RequestParser::is_valid_method(const std::string& m)
+{
+	return  m == "GET"     ||
+		m == "PUT"     ||
+		m == "POST"    ||
+		m == "DELETE"  ||
+		m == "CONNECT" ||
+		m == "OPTIONS" ||
+		m == "PATCH"   ||
+		m == "TRACE"   ||
+		m == "HEAD"    ;
 }

@@ -99,6 +99,7 @@ class RequestParser
 
 		// utils
 		bool is_http_version(const std::string& v);
+		bool is_valid_method(const std::string& m);
 };
 
 #endif // REQUESTPARSER_HPP
