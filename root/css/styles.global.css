@@ -1,0 +1,40 @@
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	margin: 0;
+	padding: 0;
+	background-color: silver;
+	/* background-image: url('background_site.jpg'); */
+	/* background-size: cover; A imagem cobre todo o fundo */
+	/* background-repeat: no-repeat; Não repete a imagem */
+	/* background-position: center; Centraliza a imagem */
+	/* background-attachment: fixed; Opcional: fixa a imagem ao rolar */
+}
+
+header {
+	font-size: 20px;
+	background-color: #333;
+	color: white;
+	padding: 15px;
+	text-align: center;
+}
+
+nav {
+	background-color: #555;
+	padding: 10px;
+	text-align: right;
+}
+
+nav a {
+	color: white;
+	margin-right: 15px;
+	text-decoration: none;
+}
+
+nav a:hover {
+	text-decoration: underline;
+}
+
+main {
+	padding: 20px;
+	text-align: center;
+}
