@@ -70,7 +70,7 @@ void PostHandler::process()
 			// make upload real path
 			m_upload = utils::join_paths(upload_dir.raw, file_name);
 			//@TODO add fd to event pool
-			m_fd = open(m_upload.raw.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+			m_fd = open(m_upload.raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
 			if (m_fd <= 2)
 			{
 				http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
