@@ -2,25 +2,26 @@ body {
 	font-family: Arial, Helvetica, sans-serif;
 	margin: 0;
 	padding: 0;
-	background-color: silver;
-	/* background-image: url('background_site.jpg'); */
-	/* background-size: cover; A imagem cobre todo o fundo */
-	/* background-repeat: no-repeat; Não repete a imagem */
-	/* background-position: center; Centraliza a imagem */
-	/* background-attachment: fixed; Opcional: fixa a imagem ao rolar */
+	background-image: url('../img/background_site.jpg'); 
+	background-size: cover; 
+	background-repeat: no-repeat; 
+	background-position: center;
+	background-attachment: fixed;
 }
 
 header {
 	font-size: 20px;
-	background-color: #333;
-	color: white;
-	padding: 15px;
+    color: white;
+	padding: 10px;
 	text-align: center;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 nav {
-	background-color: #555;
+    border: 1px solid white;
+    border-radius: 8px;
 	padding: 10px;
+    margin: 10px 10px;
 	text-align: right;
 }
 
@@ -28,13 +29,16 @@ nav a {
 	color: white;
 	margin-right: 15px;
 	text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 5px;
 }
 
 nav a:hover {
-	text-decoration: underline;
+	background-color: rgba(255, 255, 255, 0.2);
 }
 
 main {
+    color: white;
 	padding: 20px;
 	text-align: center;
 }

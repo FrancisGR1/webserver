@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <fcntl.h>
+#include <cerrno>
 
 #include "core/constants.hpp"
 #include "core/utils.hpp"
