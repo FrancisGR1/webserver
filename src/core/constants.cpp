@@ -43,6 +43,6 @@ namespace constants
     const char* reset = "\033[0m";
 
     // - logging
-    const Log::Level log_level = Log::Trace;
+    const Log::Level log_level = Log::Debug;
 
 } // namespace constants

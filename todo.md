@@ -25,8 +25,10 @@
     - [x] ignorar trailing headers
     - [x] overload do feed() com chars
     - [x] clear()
+    - [ ] uploads pela página não funcionam ou funcionam mal
     - [ ] melhorar log erros
     - [ ] processa GET simples? (sem Transfer-Encoding e Content-Length)
+
 - [ ] Implementar testes em tabela
 - [ ] Enum de métodos/string correspondente http como StatusCode e Token
 
