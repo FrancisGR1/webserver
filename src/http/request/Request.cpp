@@ -22,8 +22,7 @@ Request::Request(const std::string& method,
 	, m_protocol_version(protocol_version)
 	, m_headers(headers)
 	, m_body(body)
-	, m_status_code(c)
-{}
+	, m_status_code(c) {}
 
 const std::string& Request::method() const { return m_method; }
 const std::string& Request::target_path() const { return m_target_path; }
@@ -37,6 +36,19 @@ StatusCode::Code Request::status_code() const { return m_status_code; }
 static void print_field(std::ostream& os, const std::string& title, const std::string& value, int width = 14)
 {
     os << std::left << std::setw(width) << (title + ": ") << value << "\n";
+}
+
+bool Request::operator==(const Request& other)
+{
+	return ( 
+			m_method == other.m_method &&
+			m_target_path == other.m_target_path &&
+			m_target_query == other.m_target_query &&
+			m_protocol_version == other.m_protocol_version &&
+			m_headers == other.m_headers &&
+			m_body == other.m_body &&
+			m_status_code == other.m_status_code
+	       );
 }
 
 std::ostream& operator<<(std::ostream& os, const Request& request)

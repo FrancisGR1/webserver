@@ -24,6 +24,9 @@ namespace constants
 	extern const Seconds cgi_timeout;
 
 	// http
+	// CRLF
+	extern const char* crlf;
+	extern const char* crlfcrlf;
 	// - body
 	extern const size_t max_body_size;
 	extern const size_t max_uri_size;

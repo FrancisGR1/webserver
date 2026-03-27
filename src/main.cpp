@@ -6,6 +6,7 @@
 #include "config/Config.hpp"
 #include "server/Webserver.hpp"
 
+// @TODO mudar para setup()
 void	handle_signal(int sig)
 {
 	(void)sig;
@@ -24,9 +25,8 @@ int main(int argc, char *argv[])
 	{
 		// config
 		const char* file_path = argc == 2 ? argv[1] : constants::default_conf;
-		Config config(file_path);
-		config.load();
-		Logger::debug(config);
+		Config config;
+		config.load(file_path);
 
 		// server
 		Webserver server(config);
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "Error: " << e.what() << "\n";
+		Logger::fatal("%s", e.what());
 	}
 
 	return (0);

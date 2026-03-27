@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include "http/request/Request.hpp"
 #include "http/processor/RequestProcessor.hpp"
 #include "core/constants.hpp"
@@ -13,13 +15,13 @@ Connection::Connection(Socket& conn_socket, EventManager& events)
 	, events_(events)
 	, processor_(conn_socket, events) 
 {
-	Logger::trace("Create connection: %d", socket_.fd());
+	Logger::trace("Connection: constructor");
 }
 
 
 Connection::~Connection() 
 {
-	Logger::trace("Destroy connection: %d", socket_.fd());
+	Logger::trace("Connection: destructor");
 }
 
 void Connection::work(const epoll_event& on_event)
@@ -31,12 +33,15 @@ void Connection::work(const epoll_event& on_event)
 	{
 		case Receiving:
 			{
+				Logger::trace("Connection: state - Receiving");
+
 				// read client info to buffer
-				char buffer[constants::read_chunk_size];
-				ssize_t bytes = recv(socket_.fd(), buffer, sizeof(buffer), 0);
+				char buffer[constants::read_chunk_size + 1];
+				ssize_t bytes = recv(socket_.fd(), buffer, constants::read_chunk_size, 0);
 				if (bytes <= 0)
 				{
 					//@TODO
+					//@QUESTION erro do parser?
 					break;
 				}
 
@@ -46,7 +51,7 @@ void Connection::work(const epoll_event& on_event)
 				// parse
 				parser_.feed(buffer);
 
-				Logger::debug(parser_.get());
+				Logger::debug_obj(parser_.get(), "Connection: Request: ");
 				if (parser_.done())
 				{
 					const Request& request_ = parser_.get();
@@ -54,6 +59,7 @@ void Connection::work(const epoll_event& on_event)
 					//events_.modify(socket_.fd(), EPOLLOUT);
 					work_state_ = Processing;		
 				}
+				//std::exit(1);
 				break;
 			}
 		case Processing:
@@ -62,18 +68,22 @@ void Connection::work(const epoll_event& on_event)
 
 				if (processor_.done())
 				{
+					Logger::trace("Connection: RequestProcessor: Done!");
 					response_ = processor_.response();
+					Logger::debug_obj(response_, "Connection: Response:\n");
 					work_state_ = Sending;		
 				}
 				break;
 			}
 		case Sending:
 			{
+				Logger::trace("Connection: state - Sending");
+
 				response_.send(socket_.fd());
 
 				if (response_.done())
 				{
-					Logger::debug(response_);
+					Logger::debug_obj(response_, "Connection: Response:\n");
 					work_state_ = Done;		
 					//@TODO cleanup de quê?
 				}

@@ -6,9 +6,7 @@
 
 #include "core/Path.hpp"
 #include "core/Timer.hpp"
-#include "config/types/ServiceConfig.hpp"
 #include "http/request/Request.hpp"
-#include "config/ConfigTypes.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/RequestContext.hpp"

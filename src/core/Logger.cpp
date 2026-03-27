@@ -134,8 +134,8 @@ std::string Logger::log_level_to_string(Log::Level level)
 	{
 		case Log::Trace: return "Trace";
 		case Log::Debug: return "Debug";
-		case Log::Info:  return "Info";
-		case Log::Warn:  return "Warn";
+		case Log::Info:  return "Info ";
+		case Log::Warn:  return "Warn ";
 		case Log::Error: return "Error";
 		case Log::Fatal: return "Fatal";
 		default: return "None";

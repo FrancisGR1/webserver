@@ -20,6 +20,7 @@ class Request
 				const std::string& body,
 				StatusCode::Code c);
 
+		// getters
 		const std::string& method() const;
 		const std::string& target_path() const;
 		const std::string& target_query() const;
@@ -29,6 +30,8 @@ class Request
 		const std::string& contains_header(std::string header) const;
 		bool bad_request() const;
 		StatusCode::Code status_code() const;
+
+		bool operator==(const Request& other);
 
 	private:
 		std::string m_method;

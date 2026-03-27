@@ -1,7 +1,5 @@
 #include <stdexcept>
 
-#include "config/ConfigTypes.hpp"
-#include "config/types/LocationConfig.hpp"
 #include "http/StatusCode.hpp"
 #include "ResponseError.hpp"
 

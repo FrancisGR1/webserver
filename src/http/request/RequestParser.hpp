@@ -53,6 +53,7 @@ class RequestParser
 		RequestParser();
 
 		void feed(const char* raw);
+		void feed(const std::string& raw);
 		void feed(char c);
 		bool done() const;
 		Request get() const;
@@ -95,6 +96,10 @@ class RequestParser
 		bool is_tchar(char c);
 		bool is_vchar(char c);
 		bool is_ows(char c);
+
+		// utils
+		bool is_http_version(const std::string& v);
+		bool is_valid_method(const std::string& m);
 };
 
 #endif // REQUESTPARSER_HPP

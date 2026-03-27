@@ -122,8 +122,12 @@ Path RequestConfig::cgi_interpreter() const
 	const std::string& extension = m_resolved_path.cgi_extension;
 
 	if (m_location && utils::contains(m_location->cgis, extension))
+	{
+		Logger::trace("Path: cgi interpreter: %s", m_location->cgis.at(extension).c_str());
 		return m_location->cgis.at(extension);
+	}
 
+	Logger::trace("Path: cgi interpreter: ''");
 	return Path("");
 }
 
@@ -142,8 +146,8 @@ std::ostream& operator<<(std::ostream& os, const RequestConfig& config)
 {
 	os << "Request Configuration:\n"
 		<< "\tPath: " << config.path()
-		<< "\tService: " << config.service()
-		<< "\tLocation: ";
+		<< "\n\tService: " << config.service()
+		<< "\n\tLocation: ";
 	if (config.has_location())  
 		os << *config.location();
 	else 

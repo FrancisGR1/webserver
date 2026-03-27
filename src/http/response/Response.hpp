@@ -29,7 +29,7 @@ class Response
 		void set_status(StatusCode::Code status);
 		void set_header(const std::string& key, const std::string& value);
 		void set_body_as_str(const std::string& str);
-		void set_body_as_fd(int fd, const std::string& prefix = "");
+		void set_body_as_fd_and_prefix(int fd, const std::string& prefix = "");
 		void set_body_as_path(const Path& path);
 		
 		// getters

@@ -8,16 +8,21 @@
 #include "http/request/RequestParser.hpp"
 
 RequestParser::RequestParser()
-	: m_status_code(StatusCode::Ok)
+	: m_status_code(StatusCode::BadRequest)
 	, m_state(Parser::StartLineMethod)
 	, m_idx(0)
 	, m_ch('\0')
 	, m_content_length(0)
 	, m_chunk_size(0)
-	, m_done(false)
-{}
+	, m_done(false) {}
 
 void RequestParser::feed(const char* raw)
+{
+	m_buffer += raw;
+	parse();
+}
+
+void RequestParser::feed(const std::string& raw)
 {
 	m_buffer += raw;
 	parse();
@@ -58,7 +63,7 @@ void RequestParser::clear()
 	m_protocol_version.clear();
 	m_headers.clear();
 	m_body.clear();
-	m_status_code = StatusCode::Ok;
+	m_status_code = StatusCode::BadRequest;
 
 	m_state = Parser::StartLineMethod;
 	m_idx = 0;
@@ -86,19 +91,27 @@ void RequestParser::parse()
 		{
 			// Start Line
 			case S::StartLineMethod:
+				Logger::trace("RequestParser: state - Method: '%c'", m_ch);
+
 				if (m_ch == ' ') 
 				{
-					//@TODO: substituir por um constant set
+					if (!is_valid_method(m_method))
+					{	
+						Logger::error("RequestParser: invalid method: %s", m_method.c_str());
+						m_status_code = StatusCode::BadRequest;
+						m_state = S::Error;
+						break;
+
+					}
 					if (m_method != "GET" && m_method != "POST" && m_method != "DELETE")
 					{
-						Logger::error("Http Parser: invalid method: %s", m_method.c_str());
-						m_state = S::Error;
+						Logger::error("RequestParser: didn't implement method: %s", m_method.c_str());
 						m_status_code = StatusCode::NotImplemented;
+						m_state = S::Error;
+						break;
 					}
-					else
-					{
-						m_state = S::StartLineTargetPath;
-					}
+
+					m_state = S::StartLineTargetPath;
 				}
 				else 
 				{
@@ -106,13 +119,15 @@ void RequestParser::parse()
 				}
 				break ;
 			case S::StartLineTargetPath:
+				Logger::trace("RequestParser: state - Path: '%c'", m_ch);
+
 				if (m_ch == ' ')
 				{
 					if (m_target_path.empty() || m_target_path.at(0) != '/')
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::BadRequest;
-						Logger::error("Http Parser: invalid target: %s", m_target_path.c_str());
+						Logger::error("RequestParser: invalid target: %s", m_target_path.c_str());
 					}
 					else
 					{
@@ -129,7 +144,7 @@ void RequestParser::parse()
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::UriTooLong;
-						Logger::error("Http Parser: target path too large");
+						Logger::error("RequestParser: target path too large");
 					}
 					else
 					{
@@ -138,6 +153,8 @@ void RequestParser::parse()
 				}
 				break ;
 			case S::StartLineTargetQuery:
+				Logger::trace("RequestParser: state - Query: '%c'", m_ch);
+
 				if (m_ch == ' ')
 				{
 					m_state = S::StartLineProtocolVersion;
@@ -148,7 +165,7 @@ void RequestParser::parse()
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::UriTooLong;
-						Logger::error("Http Parser: target path 'target query too large");
+						Logger::error("RequestParser: target path 'target query too large");
 					}
 					else
 					{
@@ -157,17 +174,27 @@ void RequestParser::parse()
 				}
 				break ;
 			case S::StartLineProtocolVersion:
+				Logger::trace("RequestParser: state - Version: '%c'", m_ch);
+
 				if (m_ch == '\r')
 				{
-					//@TODO: substituir por um constant set
 					std::string pv = m_protocol_version;
+
+					if (!is_http_version(pv))
+					{
+						m_state = S::Error;
+						m_status_code = StatusCode::BadRequest;
+						break;
+					}
+
 					if (pv != "HTTP/1.0" && pv != "HTTP/1.1")
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::HttpVersionNotSupported;
-						Logger::error("Http Parser: invalid version: %s", pv.c_str());
+						Logger::error("RequestParser: invalid version: %s", pv.c_str());
 						break;
 					}
+
 					m_state = S::StartLineCR;
 				}
 				else
@@ -177,11 +204,13 @@ void RequestParser::parse()
 				break ;
 				// Start Line - End
 			case S::StartLineCR:
+				Logger::trace("RequestParser: state - Status CR: '%c'", m_ch);
+
 				if (m_ch != '\n')
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: expected \\n at end of start line");
+					Logger::error("RequestParser: expected \\n at end of start line");
 				}
 				else
 				{
@@ -190,6 +219,8 @@ void RequestParser::parse()
 				break ;
 				// Header
 			case S::HeaderKey:
+				Logger::trace("RequestParser: state - Key: '%c'", m_ch);
+
 				if (m_ch == '\r')
 				{
 					m_state = S::HeadersEndCR;
@@ -204,7 +235,7 @@ void RequestParser::parse()
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::BadRequest;
-						Logger::error("Http Parser: invalid header key char: '%c'", m_ch);
+						Logger::error("RequestParser: invalid header key char: '%c'", m_ch);
 					}
 					else
 					{
@@ -213,6 +244,8 @@ void RequestParser::parse()
 				}
 				break ;
 			case S::HeaderValue:
+				Logger::trace("RequestParser: state - Value: '%c'", m_ch);
+
 				if (m_ch == '\r')
 				{
 					// key is normalized
@@ -224,9 +257,11 @@ void RequestParser::parse()
 						//alternativa: concatenam-se os valores
 						m_state = S::Error;
 						m_status_code = StatusCode::BadRequest;
-						Logger::error("Http Parser: duplicated header: %s", k.c_str());
+						Logger::error("RequestParser: duplicated header: %s", k.c_str());
 						break;
 					}
+
+					utils::str_trim_sides(m_header_value, constants::body_whitespaces);
 					m_headers[k] = m_header_value;
 					m_header_key.clear();
 					m_header_value.clear();
@@ -239,7 +274,7 @@ void RequestParser::parse()
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::BadRequest;
-						Logger::error("Http Parser: invalid header value char: '%c'", m_ch );
+						Logger::error("RequestParser: invalid header value char: '%c'", m_ch );
 					}
 					else
 					{
@@ -249,6 +284,8 @@ void RequestParser::parse()
 				break;
 				// Header Line - End
 			case S::HeaderEndLineCR:
+				Logger::trace("RequestParser: state - Header Line CR: '%c'", m_ch);
+
 				if (m_ch == '\n')
 				{
 					m_state = S::HeaderKey;
@@ -257,16 +294,18 @@ void RequestParser::parse()
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: expected \\n at end of header line");
+					Logger::error("RequestParser: expected \\n at end of header line");
 				}
 				break;
 			case S::HeadersEndCR:
+				Logger::trace("RequestParser: state - Headers CR: '%c'", m_ch);
+
 				{
 					if (m_ch != '\n')
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::BadRequest;
-						Logger::error("Http Parser: expected \\n at end of headers");
+						Logger::error("RequestParser: expected \\n at end of headers");
 						break;
 					}
 
@@ -278,7 +317,7 @@ void RequestParser::parse()
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::BadRequest;
-						Logger::error("Http Parser: contains incompatible headers: Content-Length and Transfer-Encoding");
+						Logger::error("RequestParser: contains incompatible headers: Content-Length and Transfer-Encoding");
 						break;
 					}
 
@@ -293,7 +332,7 @@ void RequestParser::parse()
 							m_state = S::Error;
 							m_status_code = StatusCode::NotImplemented;
 
-							Logger::error("Http Parser: %s is not implemented for transfer-enconding", te.c_str());
+							Logger::error("RequestParser: %s is not implemented for transfer-enconding", te.c_str());
 							break ;
 						}
 
@@ -311,7 +350,7 @@ void RequestParser::parse()
 							m_state = S::Error;
 							m_status_code = StatusCode::BadRequest;
 
-							Logger::error("Http Parser: Content-Length doesn't contain a digit: %s", value.c_str());
+							Logger::error("RequestParser: Content-Length doesn't contain a digit: %s", value.c_str());
 							break;
 						}
 
@@ -321,17 +360,18 @@ void RequestParser::parse()
 						{
 							m_state = S::Error; 
 							m_status_code = StatusCode::BadRequest;
-							Logger::error("Http Parser: Content-Length is negative: %ld", cl);
+							Logger::error("RequestParser: Content-Length is negative: %ld", cl);
 						}
 						else if (cl > static_cast<long>(constants::max_body_size))
 						{
 							m_state = S::Error;
 							m_status_code = StatusCode::ContentTooLarge;
-							Logger::error("Http Parser: Content-Length (%ld) exceeds max_body_size(%ld)", cl, constants::max_body_size);
+							Logger::error("RequestParser: Content-Length (%ld) exceeds max_body_size(%ld)", cl, constants::max_body_size);
 						}
 						else if (cl == 0) 
 						{
 							m_state = S::Done;
+							m_status_code = StatusCode::Ok;
 						}
 						else
 						{
@@ -339,26 +379,31 @@ void RequestParser::parse()
 						}
 
 						m_content_length = static_cast<long unsigned int>(cl);
+						Logger::trace("RequestParser: content-length: %ld", m_content_length);
 					}
 					else
 					{
 						m_state = S::Done; /* MODIFICADO */
-					// 	m_state = S::Error;
-					// 	m_status_code = StatusCode::LengthRequired;
-					// Logger::error("Http Parser: doesn't contain neither 'Content-Length' or 'Transfer-Encoding' headers");
+						m_status_code = StatusCode::Ok;
+						// 	m_state = S::Error;
+						// 	m_status_code = StatusCode::LengthRequired;
+						// Logger::error("Http Parser: doesn't contain neither 'Content-Length' or 'Transfer-Encoding' headers");
 					}
 					break;
 				}
 				// Body string
 			case S::Body:
-				if (m_body.size() == m_content_length)
-				{
-					m_state = S::Done;
-				}
-				else if (m_body.size() < m_content_length)
+				Logger::trace("RequestParser: state - Body(%ld): '%c'", m_body.size() + 1, m_ch);
+
+				if (m_body.size() < m_content_length)
 				{
 					m_body += m_ch;
 					m_state = S::Body;
+					if (m_body.size() == m_content_length)
+					{
+						m_state = S::Done;
+						m_status_code = StatusCode::Ok;
+					}
 				}
 				else
 				{
@@ -367,11 +412,13 @@ void RequestParser::parse()
 						m_status_code = StatusCode::LengthRequired;
 					else // @NOTE: should never reach here
 						m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: body (%ld) is largerthan expected size (%ld)", m_body.size(), m_content_length);
+					Logger::error("RequestParser: body (%ld) is largerthan expected size (%ld)", m_body.size(), m_content_length);
 				}
 				break;
 				// Body chunked
 			case S::BodyChunkSize:
+				Logger::trace("RequestParser: state - Body Chunk Size: '%c'", m_ch);
+
 				if (m_ch == '\r')
 				{
 					m_state = S::BodyChunkSizeCR;
@@ -388,10 +435,12 @@ void RequestParser::parse()
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: expected a hexadecimal char, but got this '%c' instead", m_ch);
+					Logger::error("RequestParser: expected a hexadecimal char, but got this '%c' instead", m_ch);
 				}
 				break ;
 			case S::BodyChunkSizeExtension:
+				Logger::trace("RequestParser: state - Body Chunk Size Extension: '%c'", m_ch);
+
 				if (m_ch == '\r')
 				{
 					m_state = S::BodyChunkSizeCR;
@@ -402,11 +451,13 @@ void RequestParser::parse()
 				}
 				break;
 			case S::BodyChunkSizeCR:
+				Logger::trace("RequestParser: state - Body Chunk Size CR: '%c'", m_ch);
+
 				if (m_ch != '\n')
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: expected \\n at end of body chunk size");
+					Logger::error("RequestParser: expected \\n at end of body chunk size");
 				}
 				else
 				{
@@ -415,14 +466,14 @@ void RequestParser::parse()
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::BadRequest;
-						Logger::error("Http Parser: hexadecimal is negative: %ld", hexa);
+						Logger::error("RequestParser: hexadecimal is negative: %ld", hexa);
 						break;
 					}
 					if (hexa > static_cast<long long>(constants::max_body_size))
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::ContentTooLarge;
-						Logger::error("Http Parser: chunk size (%ld) larger than max_body_size (%ld)", hexa, constants::max_body_size);
+						Logger::error("RequestParser: chunk size (%ld) larger than max_body_size (%ld)", hexa, constants::max_body_size);
 						break;
 					}
 					m_chunk_size = static_cast<size_t>(hexa);
@@ -439,6 +490,8 @@ void RequestParser::parse()
 				}
 				break;
 			case S::BodyChunkData:
+				Logger::trace("RequestParser: state - Body Chunk Data: '%c'", m_ch);
+
 				if (m_chunk_size == 0 && m_ch == '\r')
 				{
 					m_state = S::BodyChunkDataCR;
@@ -452,22 +505,24 @@ void RequestParser::parse()
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::ContentTooLarge;
-						Logger::error("Http Parser: body chunk data (%ld) larger than max_body_size (%ld)", m_body.size(), constants::max_body_size);
+						Logger::error("RequestParser: body chunk data (%ld) larger than max_body_size (%ld)", m_body.size(), constants::max_body_size);
 					}
 				}
 				else
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::ContentTooLarge;
-					Logger::error("Http Parser: body chunk larger than expected");
+					Logger::error("RequestParser: body chunk larger than expected");
 				}
 				break;
 			case S::BodyChunkDataCR:
+				Logger::trace("RequestParser: state - Body Chunk Data CR: '%c'", m_ch);
+
 				if (m_ch != '\n')
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: expected \\n at end of body chunk data section");
+					Logger::error("RequestParser: expected \\n at end of body chunk data section");
 				}
 				else
 				{
@@ -476,6 +531,8 @@ void RequestParser::parse()
 				}
 				break;
 			case S::BodyChunkTrailerKey:
+				Logger::trace("RequestParser: state - Body Chunk Trailer Key: '%c'", m_ch);
+
 				if (m_ch == '\r')
 				{
 					if (m_header_key.size() == 0)
@@ -495,7 +552,7 @@ void RequestParser::parse()
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: invalid trailer header key char: '%c'", m_ch);
+					Logger::error("RequestParser: invalid trailer header key char: '%c'", m_ch);
 				}
 				else
 				{
@@ -503,6 +560,8 @@ void RequestParser::parse()
 				}
 				break;
 			case S::BodyChunkTrailerValue:
+				Logger::trace("RequestParser: state - Body Chunk Trailer Value: '%c'", m_ch);
+
 				if (m_ch == '\r')
 				{
 					// key is normalized
@@ -512,14 +571,16 @@ void RequestParser::parse()
 					{
 						m_state = S::Error;
 						m_status_code = StatusCode::BadRequest;
-						Logger::error("Http Parser: duplicated trailer header: %s", k.c_str());
+						Logger::error("RequestParser: duplicated trailer header: %s", k.c_str());
 						break;
 					}
+
+					utils::str_trim_sides(m_header_value, constants::body_whitespaces);
 					m_headers[k] = m_header_value;
 					m_header_key.clear();
 					m_header_value.clear();
-					m_state = S::BodyChunkTrailerCR;
 
+					m_state = S::BodyChunkTrailerCR;
 				}
 				else if (is_vchar(m_ch) || is_ows(m_ch))
 				{
@@ -529,15 +590,17 @@ void RequestParser::parse()
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: invalid trailer value char: '%c'", m_ch);
+					Logger::error("RequestParser: invalid trailer value char: '%c'", m_ch);
 				}
 				break;
 			case S::BodyChunkTrailerCR:
+				Logger::trace("RequestParser: state - Body Chunk Trailer CR: '%c'", m_ch);
+
 				if (m_ch != '\n')
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: expected \\n at end of body chunk trailer");
+					Logger::error("RequestParser: expected \\n at end of body chunk trailer");
 				}
 				else
 				{
@@ -545,29 +608,32 @@ void RequestParser::parse()
 				}
 				break;
 			case S::BodyChunkTrailerEndCR:
+				Logger::trace("RequestParser: state - Body Chunk Trailer End CR: '%c'", m_ch);
+
 				if (m_ch != '\n')
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: expected \\n at end of body chunk trailer section");
+					Logger::error("RequestParser: expected \\n at end of body chunk trailer section");
 				}
 				else
 				{
 					m_state = S::Done;
+					m_status_code = StatusCode::Ok;
 				}
 				break;
 			default:
 				{
 					m_state = S::Error;
 					m_status_code = StatusCode::BadRequest;
-					Logger::error("Http Parser: error at default fallthrough");
+					Logger::error("RequestParser: error at default fallthrough");
 				}
 		}
 	}
 }
 
-//https://www.rfc-editor.org/rfc/rfc9110.html#name-field-names 
-//see 5.6.2
+// https://www.rfc-editor.org/rfc/rfc9110.html#name-field-names 
+// see 5.6.2
 bool RequestParser::is_tchar(char c)
 {
 	return (std::isalnum(static_cast<unsigned char>(c)) ||
@@ -587,4 +653,26 @@ bool RequestParser::is_vchar(char c)
 bool RequestParser::is_ows(char c)
 {
 	return c == ' ' || c == '\t';
+}
+
+bool RequestParser::is_http_version(const std::string& v)
+{
+	return  v == "HTTP/0.9" ||
+		v == "HTTP/1.0" ||
+		v == "HTTP/1.1" ||
+		v == "HTTP/2"   ||
+		v == "HTTP/3"   ;
+}
+
+bool RequestParser::is_valid_method(const std::string& m)
+{
+	return  m == "GET"     ||
+		m == "PUT"     ||
+		m == "POST"    ||
+		m == "DELETE"  ||
+		m == "CONNECT" ||
+		m == "OPTIONS" ||
+		m == "PATCH"   ||
+		m == "TRACE"   ||
+		m == "HEAD"    ;
 }

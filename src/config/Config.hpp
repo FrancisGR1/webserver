@@ -4,7 +4,6 @@
 #include <string>
 #include <ostream>
 
-#include "config/ConfigTypes.hpp"
 #include "config/types/ServiceConfig.hpp"
 
 //https://github.com/h5bp/server-configs-nginx
@@ -13,12 +12,10 @@ class Config
 {
 	public: 
 		Config();
-		Config(const char *file_path);
 
 		std::vector<ServiceConfig> services;
 
-		void load();
-
+		void load(const char *file_path);
 
 	private:
 		std::string m_file_content;

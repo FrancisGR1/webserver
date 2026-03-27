@@ -8,20 +8,20 @@
 #include "constants.hpp"
 
 template<typename logT>
-void Logger::trace(const logT& to_log)
+void Logger::trace_obj(const logT& to_log, const std::string prefix)
 {
 	if (should_log(Log::Trace))
 	{
-		tlog(Log::Trace, to_log);
+		tlog(Log::Trace, to_log, prefix);
 	}
 }
 
 template<typename logT>
-void Logger::debug(const logT& to_log)
+void Logger::debug_obj(const logT& to_log, const std::string prefix)
 {
 	if (should_log(Log::Debug))
 	{
-		tlog(Log::Debug, to_log);
+		tlog(Log::Debug, to_log, prefix);
 	}
 }
 
@@ -30,12 +30,12 @@ void Logger::debug(const logT& to_log)
 namespace constants { extern const char* reset; }
 
 template<typename Tlog>
-void Logger::tlog(Log::Level level, const Tlog& to_log)
+void Logger::tlog(Log::Level level, const Tlog& to_log, const std::string prefix)
 {
 	if (m_log_stream == &std::cout)
 		(*m_log_stream) << log_level_to_color(level) << "[" << log_level_to_string(level) << "] " << constants::reset;
 	else
 		(*m_log_stream) << "[" << log_level_to_string(level) << "] ";
-	(*m_log_stream) << to_log << "\n";
+	(*m_log_stream) << prefix << to_log << "\n";
 }
 # endif // LOGGER_TEMPLATES_HPP

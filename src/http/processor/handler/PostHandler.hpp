@@ -2,10 +2,8 @@
 #define POSTHANDLER_HPP
 
 #include "core/Path.hpp"
-#include "config/ConfigTypes.hpp"
 #include "http/request/Request.hpp"
 #include "http/processor/RequestContext.hpp"
-#include "http/processor/RequestConfig.hpp"
 #include "http/response/Response.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/processor/handler/CgiHandler.hpp"

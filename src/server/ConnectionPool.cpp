@@ -70,7 +70,7 @@ void ConnectionPool::remove(Connection& conn)
 
 Connection& ConnectionPool::get(int fd)
 {
-	Logger::trace("ConnectionPool: Get fd %d", fd);
+	Logger::trace("ConnectionPool: Get connection with fd=%d", fd);
 
 	if (!utils::contains(conn_by_fd_, fd))
 		throw std::logic_error("ConnectionPool: looking up fd that doesn't exist!\n");

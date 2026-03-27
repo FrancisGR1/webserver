@@ -15,6 +15,7 @@
 - [ ] parser - dividir em Lexer → Parser → AST → Semantic Validator → Config Builder
 - [ ] mapa de listeners -> serviço seria muito conveniente
 - [ ] deve have sempre um root, quer ao nível de LocationConfig, ServiceConfig ou constant do server
+- [ ] eliminar upload_dir -> não é necessário, root já faz isso
 
 # HTTP - Receber Pedido
 - [x] Processamento
@@ -41,6 +42,7 @@
 # CGI
 - [ ] lidar com programas infinitos/timeouts, crashes, aborts, etc. Construir uma sandbox
 - [x] converter raw string em respostas
+- [ ] implementar pool de processos, como o FastCGI
 
 # Servidor
 - [x] Pesquisar como colocar um ip no bind ao inves de INADDR_ANY 
@@ -65,12 +67,14 @@
 - [x] implementar maquina de estados - receber - processar - enviar
 - [x] múltiplos fds podem estar associados à mesma ligação - fazer pool de ligações
 - [ ] Gestão: Substituir connection pool for event.data.ptr (ptr para ligações em vez de pool de fds)
+- [ ] Refazer a arquitetura para chegar a 1 milhão de ligações -> múltiplos even pools e forks()
 
 # Utils
 ## Logger
 - [x] Print básico
 - [ ] O logger deve ser instanciável
 - [ ] Escrever mais logs (úteis) no código
+- [ ] Criar id para ligação, request e resposta de modo a facilitar registo nos logs
 
 ## Path
 - [ ] criar classes derivadas: ServerPath e CgiPath; ou então separar informação (struct CgiInfo)
@@ -84,6 +88,7 @@
 - [ ] Melhorar mensagens de erro (especificar dados)
 - [ ] Dividr classe context em diferentes versões de acordo com o escopo: RequestContext, ConnectionContext
 - [ ] Redesenhar melhor EventManager e ConnectionPool de modo a que dependam menos uma da outra (é estranho a connection pool usar o EventManager para gerir eventos, não?)
+- [ ] Como chegar a 1 milhão de ligações: https://medium.com/@gsaidheeraj/how-nginx-handles-millions-of-requests-with-just-1-process-0aa4a504663c
 
 # Testes
 ## Valgrind
@@ -102,6 +107,14 @@ Testar:
     - [ ] deadlock?
     - [ ] while(true)
 - [ ] fazer isto em formato de table-driven tests
+- [ ] testes de unidade para:
+    - [ ] Path
+    - [ ] CgiHandler
+    - [ ] RequestParser
+    - [ ] GetHandler
+    - [ ] PostHandler
+    - [ ] DeleteHandler
+
 
 # Mais importante
 - [ ] Tester em go
