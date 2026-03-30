@@ -108,7 +108,7 @@ Path RequestConfig::upload_dir() const
 
 Path RequestConfig::get_error_page_or_nonexistent_path(size_t code) const
 {
-	Logger::trace("Path: Lookup error %zu page", code);
+	Logger::trace("RequestConfig: Lookup error %zu page", code);
 	if (m_location && utils::contains(m_location->error_pages, code))
 		return m_location->error_pages.at(code);
 	else if (utils::contains(m_service.error_pages, code))
@@ -123,11 +123,11 @@ Path RequestConfig::cgi_interpreter() const
 
 	if (m_location && utils::contains(m_location->cgis, extension))
 	{
-		Logger::trace("Path: cgi interpreter: %s", m_location->cgis.at(extension).c_str());
+		Logger::trace("RequestConfig: cgi interpreter: %s", m_location->cgis.at(extension).c_str());
 		return m_location->cgis.at(extension);
 	}
 
-	Logger::trace("Path: cgi interpreter: ''");
+	Logger::trace("RequestConfig: cgi interpreter: ''");
 	return Path("");
 }
 

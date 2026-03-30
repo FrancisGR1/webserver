@@ -9,6 +9,9 @@
 
 struct Directive
 {
+	Directive();
+	Directive(Token::Type, std::vector<std::string>);
+
 	std::string name;
 	Token::Type type;
 	size_t start_pos;
