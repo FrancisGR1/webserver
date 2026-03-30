@@ -1,6 +1,8 @@
 #ifndef TOKEN_HPP
 # define TOKEN_HPP
 
+#include <string>
+
 struct Token
 {
 	enum Type

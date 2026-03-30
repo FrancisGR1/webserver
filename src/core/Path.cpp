@@ -71,7 +71,6 @@ void Path::init(const std::string& str_path)
 		std::string ext = raw.substr(dot);
 		if (ext == constants::py_ext)
 		{
-			Logger::trace("Path: has cgi extension");
 
 			// script path
 			cgi_path = raw.substr(0, ext_end);
@@ -90,6 +89,8 @@ void Path::init(const std::string& str_path)
 			else
 				cgi_name = cgi_path;
 			raw = cgi_path;
+
+			Logger::trace("Path: cgi: '%s'", raw.c_str());
 		}
 	}
 
