@@ -12,6 +12,7 @@ class RequestContext
 		//@TODO: adicionar session manager e cookies?
 		RequestContext(const Socket& conn_socket, EventManager& events, const ServiceConfig& service);
 
+		//RequestContext(const Socket& conn_socket, EventManager& events, const RequestConfig& request_config);
 		const RequestConfig& config() const;
 		RequestConfig& config();
 		~RequestContext();

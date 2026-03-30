@@ -1,4 +1,4 @@
-#include <exception>
+#include <stdexcept>
 
 #include "http/processor/RequestConfig.hpp"
 #include "http/processor/RequestContext.hpp"
@@ -7,6 +7,11 @@ RequestContext::RequestContext(const Socket& conn_socket, EventManager& events, 
 	: m_socket(conn_socket)
 	, m_events(events)
 	, m_request_config(new RequestConfig(service)) {}
+
+//RequestContext::RequestContext(const Socket& conn_socket, EventManager& events, const RequestConfig& request_config)
+//	: m_socket(conn_socket)
+//	, m_events(events)
+//	, m_request_config(new RequestConfig(request_config)) {}
 
 const RequestConfig& RequestContext::config() const 
 { 

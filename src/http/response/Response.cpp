@@ -1,260 +1,303 @@
-#include <sstream>
-#include <unistd.h>
 #include <fcntl.h>
+#include <sstream>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
+#include "config/types/Route.hpp"
 #include "core/constants.hpp"
 #include "core/utils.hpp"
-#include "config/types/Route.hpp"
 #include "http/response/Response.hpp"
 
 Response::Response()
-	: m_body_fd(-1)
-	, m_send_phase(Response::StatusPhase)
-	, m_offset(0)
+    : m_status(StatusCode::None)
+    , m_body_fd(-1)
+    , m_send_phase(Response::StatusPhase)
+    , m_offset(0)
 {
-	Logger::trace("Response: constructor");
+    Logger::trace("Response: constructor");
 }
 
 Response::Response(StatusCode::Code status)
-	: m_status(status)
-	, m_status_line(make_status_line())
-	, m_body_fd(-1)
-	, m_send_phase(Response::StatusPhase)
-	, m_offset(0)
+    : m_status(status)
+    , m_body_fd(-1)
+    , m_send_phase(Response::StatusPhase)
+    , m_offset(0)
 {
-	Logger::trace("Response: constructor");
+    Logger::trace("Response: status constructor");
+}
+
+Response::Response(StatusCode::Code status, std::map<std::string, std::string> headers, std::string body)
+    : m_status(status)
+    , m_headers(headers)
+    , m_body_str(body)
+    , m_body_fd(-1)
+    , m_send_phase(Response::StatusPhase)
+    , m_offset(0)
+{
+    Logger::trace("Response: status/headers/body constructor");
 }
 
 Response::Response(const Response& other)
-	: m_status(other.m_status)
-	, m_status_line(other.m_status_line)
-	, m_headers_str(other.m_headers_str)
-	, m_headers(other.m_headers)
-	, m_body_str(other.m_body_str)
-	, m_body_fd(other.m_body_fd)
-	, m_send_phase(other.m_send_phase)
-	, m_offset(other.m_offset) {}
+    : m_status(other.m_status)
+    , m_status_line(other.m_status_line)
+    , m_headers_str(other.m_headers_str)
+    , m_headers(other.m_headers)
+    , m_body_str(other.m_body_str)
+    , m_body_fd(other.m_body_fd)
+    , m_send_phase(other.m_send_phase)
+    , m_offset(other.m_offset)
+{
+    Logger::trace("Response: copy constructor");
+}
 
 Response& Response::operator=(const Response& other)
 {
-	if (this != &other)
-	{
-		m_status = other.m_status;
-		m_status_line = other.m_status_line;
-		m_headers_str = other.m_headers_str;
-		m_headers = other.m_headers;
-		m_body_str = other.m_body_str;
-		m_body_fd = other.m_body_fd;
-		m_send_phase = other.m_send_phase;
-		m_offset = other.m_offset;
-	}
+    Logger::trace("Response: assign operator");
 
-	return *this;
+    if (this != &other)
+    {
+        m_status = other.m_status;
+        m_status_line = other.m_status_line;
+        m_headers_str = other.m_headers_str;
+        m_headers = other.m_headers;
+        m_body_str = other.m_body_str;
+        m_body_fd = other.m_body_fd;
+        m_send_phase = other.m_send_phase;
+        m_offset = other.m_offset;
+    }
+
+    return *this;
+}
+
+Response::~Response()
+{
+    Logger::trace("Response: destructor");
+
+    if (m_body_fd >= 0)
+        close(m_body_fd);
 }
 
 ssize_t Response::send(int fd)
 {
-	switch (m_send_phase)
-	{
-		case StatusPhase:
-			{
-				Logger::trace("Response: send status");
+    switch (m_send_phase)
+    {
+        case StatusPhase:
+        {
+            Logger::trace("Response: send status");
 
-				if (m_status == 0)
-					throw std::logic_error("Response: status wasn't set"); // @ASSUMPTION: status should always be set
+            if (m_status == StatusCode::None)
+                throw std::logic_error("Response: status wasn't set"); // @ASSUMPTION: status should always be set
 
-				if (m_status_line.empty())
-m_status_line = make_status_line();
-				ssize_t sent = ::send(fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
-				if (sent < 0)
-					;
-				else if (sent + m_offset == m_status_line.size())
-				{
-					m_send_phase = HeadersPhase;
-					m_offset = 0;
-					m_headers_str = utils::map_to_str(m_headers);
-					m_headers_str += constants::crlf;
-				}
-				else
-				{
-					m_offset += sent;
-				}
+            m_status_line = make_status_line();
+            ssize_t sent = ::send(fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
+            if (sent < 0)
+                ;
+            else if (sent + m_offset == m_status_line.size())
+            {
+                m_send_phase = HeadersPhase;
+                m_offset = 0;
+                m_headers_str = utils::map_to_str(m_headers);
+                m_headers_str += constants::crlf;
+            }
+            else
+            {
+                m_offset += sent;
+            }
 
-				return sent;
-			}
-		case HeadersPhase:
-			{
-				Logger::trace("Response: send headers");
+            return sent;
+        }
+        case HeadersPhase:
+        {
+            Logger::trace("Response: send headers");
 
-				ssize_t sent = ::send(fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, 0);
-				if (sent < 0)
-					;
-				else if (sent + m_offset == m_headers_str.size())
-				{
-					m_send_phase = BodyPhase;
-					m_offset = 0;
-				}
-				else
-				{
-					m_offset += sent;
-				}
+            ssize_t sent = ::send(fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, 0);
+            if (sent < 0)
+                ;
+            else if (sent + m_offset == m_headers_str.size())
+            {
+                m_send_phase = BodyPhase;
+                m_offset = 0;
+            }
+            else
+            {
+                m_offset += sent;
+            }
 
-				return sent;
-			}
-		case BodyPhase: 
-			{
-				ssize_t sent_bytes = 0;
-				if (m_body_fd > -1) // send body from file/pipe
-				{
-					Logger::debug("Response: send body from fd=%d", m_body_fd);
+            return sent;
+        }
+        case BodyPhase:
+        {
+            ssize_t sent_bytes = 0;
+            if (m_body_fd > -1) // send body from file/pipe
+            {
+                Logger::debug("Response: send body from fd=%d", m_body_fd);
 
-					// m_body_str is used as a leftover for the next call
-					if (!m_body_str.empty())
-					{
-						Logger::trace("Response: send body (headers leftover): %s", m_body_str.c_str());
-						sent_bytes = ::send(fd, m_body_str.c_str(), m_body_str.size(), 0);
-						if (sent_bytes <= 0)
-							return sent_bytes; // nothing to send, or error or EAGAIN, which shouldn't happen (@QUESTION: you sure?)
+                // m_body_str is used as a leftover for the next call
+                if (!m_body_str.empty())
+                {
+                    Logger::trace("Response: send body (headers leftover): %s", m_body_str.c_str());
+                    sent_bytes = ::send(fd, m_body_str.c_str(), m_body_str.size(), 0);
+                    if (sent_bytes <= 0)
+                        return sent_bytes; // nothing to send, or error or EAGAIN, which shouldn't happen (@QUESTION:
+                                           // you sure?)
 
-						m_body_str.erase(0, sent_bytes);
-						if (!m_body_str.empty())
-							return sent_bytes; // socket is full
-					}
+                    m_body_str.erase(0, sent_bytes);
+                    if (!m_body_str.empty())
+                        return sent_bytes; // socket is full
+                }
 
-					// read and send to socket
-					// @TODO: substitude read() -> send() with sendfile()
-					char buffer[constants::read_chunk_size];
-					ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
-					Logger::trace("Response: read %ld bytes: '%s'", read_bytes, buffer);
-					if (read_bytes < 0)
-					{
-						return -1;
-					}
-					if (read_bytes == 0)
-					{
-						m_send_phase = Done;
-						return 0;
-					}
-					buffer[read_bytes] = '\0';
+                // read and send to socket
+                // @TODO: substitude read() -> send() with sendfile()
+                char buffer[constants::read_chunk_size];
+                ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
+                Logger::trace("Response: read %ld bytes: '%s'", read_bytes, buffer);
+                if (read_bytes < 0)
+                {
+                    return -1;
+                }
+                if (read_bytes == 0)
+                {
+                    m_send_phase = Done;
+                    return 0;
+                }
+                buffer[read_bytes] = '\0';
 
-					sent_bytes = ::send(fd, buffer, read_bytes, 0);
-					Logger::trace("Response: sent %ld bytes", sent_bytes);
-					if (sent_bytes <= 0)
-						return sent_bytes;
-					if (sent_bytes < read_bytes)
-					{
-						// store leftover for next call
-						m_body_str.assign(buffer + sent_bytes, read_bytes - sent_bytes);
-					}
-				}
-				else if (!m_body_str.empty()) // send body from string
-				{
-					Logger::trace("Response: send body (string[%zu]): %s", m_body_str.size() - m_offset, (m_body_str.c_str() + m_offset));
-					sent_bytes = ::send(fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
-					if (sent_bytes < 0)
-						return sent_bytes;
+                sent_bytes = ::send(fd, buffer, read_bytes, 0);
+                Logger::trace("Response: sent %ld bytes", sent_bytes);
+                if (sent_bytes <= 0)
+                    return sent_bytes;
+                if (sent_bytes < read_bytes)
+                {
+                    // store leftover for next call
+                    m_body_str.assign(buffer + sent_bytes, read_bytes - sent_bytes);
+                }
+            }
+            else if (!m_body_str.empty()) // send body from string
+            {
+                Logger::trace(
+                    "Response: send body (string[%zu]): %s",
+                    m_body_str.size() - m_offset,
+                    (m_body_str.c_str() + m_offset));
+                sent_bytes = ::send(fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
+                if (sent_bytes < 0)
+                    return sent_bytes;
 
-					m_offset += sent_bytes;
-					if (m_offset == m_body_str.size())
-						m_send_phase = Done;
-				}
-				else // no body
-				{
-					Logger::trace("Response: done!");
-					m_send_phase = Done;
-				}
+                m_offset += sent_bytes;
+                if (m_offset == m_body_str.size())
+                    m_send_phase = Done;
+            }
+            else // no body
+            {
+                Logger::trace("Response: done!");
+                m_send_phase = Done;
+            }
 
-				return sent_bytes;
-			}
-		default:
-			{
-				return 0;
-			}
-	}
+            return sent_bytes;
+        }
+        default:
+        {
+            return 0;
+        }
+    }
 }
 
 bool Response::done() const
 {
-	return m_send_phase == Done;
+    return m_send_phase == Done;
 }
 
 void Response::make_redirection_response(StatusCode::Code status, const Route& redirection)
 {
-	set_status(status);
-	set_header("Location", redirection.raw_path);
-	set_header("Connection", "close");
-	set_header("Date", utils::http_date());
+    set_status(status);
+    set_header("Location", redirection.raw_path);
+    set_header("Connection", "close");
+    set_header("Date", utils::http_date());
 }
-
 
 void Response::set_status(StatusCode::Code status)
 {
-	m_status = status;
+    Logger::trace("Response: set status to: '%d'", status);
+    m_status = status;
 }
 
 void Response::set_header(const std::string& key, const std::string& value)
 {
-	m_headers[key] = value;
+    Logger::trace("Response: set header: ['%s']='%s'", key.c_str(), value.c_str());
+    m_headers[key] = value;
 }
 
 void Response::set_body_as_str(const std::string& str)
 {
-	m_body_str = str;
+    Logger::trace("Response: set body str: '%s'", str.c_str());
+    m_body_str = str;
 }
 
-// prefix is something you might want to send after the headers and before reading the file, for example a read() call that processed the headers and a bit of the body
-void Response::set_body_as_fd_and_prefix(int fd, const std::string& prefix)
+// prefix is something you might want to send after the headers and before reading the file, for example a read() call
+// that processed the headers and a bit of the body
+void Response::set_body_as_fd(int fd)
 {
-	Logger::trace("Response: set body: '%d' with prefix: '%s'", fd, prefix.c_str());
-	m_body_fd = fd;
-	m_body_str = prefix;
+    Logger::trace("Response: set body: '%d'", fd);
+    m_body_fd = fd;
 }
 
 void Response::set_body_as_path(const Path& path)
 {
-	if (path.exists)
-	{
-		//@QUESTION @TODO add to the event loop?
-		m_body_fd = open(path.raw.c_str(), O_RDONLY);
-	}
+    if (path.exists)
+    {
+        //@QUESTION @TODO add to the event loop?
+        m_body_fd = open(path.raw.c_str(), O_RDONLY);
+    }
 }
 
-StatusCode::Code Response::status() const { return m_status; }
-
-Response::~Response()
+StatusCode::Code Response::status_code() const
 {
-	Logger::trace("Response: destructor");
-	if (m_body_fd >= 0) 
-		close (m_body_fd);
+    return m_status;
 }
 
 std::string Response::make_status_line()
 {
-	std::string status_line;
+    std::string status_line;
 
-	// version
-	status_line = constants::server_http_version;
-	status_line += " ";
+    // version
+    status_line = constants::server_http_version;
+    status_line += " ";
 
-	// code
-	std::stringstream ss;
-	ss << m_status;
-	status_line += ss.str() + " ";
+    // status code
+    std::stringstream ss;
+    ss << m_status;
+    status_line += ss.str() + " ";
 
-	// reason
-	status_line += StatusCode::to_reason(m_status) + constants::crlf;
+    // reason
+    status_line += StatusCode::to_reason(m_status) + constants::crlf;
 
-	return status_line;
+    return status_line;
+}
+
+bool Response::operator==(const Response& other) const
+{
+    // clang-format off
+	return ( 
+		m_status   == other.m_status &&
+		m_headers  == other.m_headers &&
+		m_body_str == other.m_body_str
+	       );
+    // clang-format on
 }
 
 std::ostream& operator<<(std::ostream& os, const Response& response)
 {
-	os << "Is done: " << std::boolalpha << response.done() << std::endl;
-	os << "Status:  '" << response.m_status_line  << "'\n";
-	os << "Headers:  '" << response.m_headers_str  << "'\n";
-	os << "Body fd:  " << response.m_body_fd << "\n";
-	os << "Body str: '" << response.m_body_str << "'\n";
-	return os;
+    os << "Is done: " << std::boolalpha << response.done() << std::endl;
+    os << "Status:  '" << response.m_status_line << "'\n";
+    os << "Headers str:  '" << response.m_headers_str << "'\n";
+    os << "Headers map:\n";
+    for (std::map<std::string, std::string>::const_iterator it = response.m_headers.begin();
+         it != response.m_headers.end();
+         ++it)
+    {
+        os << "\t'" << it->first << "': '" << it->second << "'\n";
+    }
+    os << "Body fd:  " << response.m_body_fd << "\n";
+    os << "Body str: '" << response.m_body_str << "'\n";
+    return os;
 }
