@@ -1,21 +1,23 @@
-#include "core/utils.hpp"
-#include "core/Logger.hpp"
-#include "Socket.hpp"
 #include "Webserver.hpp"
 #include "Connection.hpp"
 #include "EventManager.hpp"
+#include "Socket.hpp"
+#include "core/Logger.hpp"
+#include "core/utils.hpp"
 
-bool	Webserver::is_running = true;
+bool Webserver::is_running = true;
 
 Webserver::Webserver(const Config& config)
-	: config_(config)
-	, connection_pool_(events_) {}
+    : config_(config)
+    , connection_pool_(events_)
+{
+}
 
 Webserver::~Webserver()
 {
-	/* fechar sockets do servidor */
-	for (std::map<int, Socket*>::iterator it = server_sockets_.begin(); it != server_sockets_.end(); it++)
-		delete it->second;
+    /* fechar sockets do servidor */
+    for (std::map<int, Socket*>::iterator it = server_sockets_.begin(); it != server_sockets_.end(); it++)
+        delete it->second;
 }
 
 bool	Webserver::isServerSocket(int fd)
@@ -116,44 +118,44 @@ Socket* Webserver::make_client_socket(int server_socket_fd)
 void Webserver::setup()
 {
 
-	Logger::info("Webserver: setting up sockets");
-	for(size_t i = 0; i < config_.services.size(); i++)
-	{
-		const ServiceConfig& service = config_.services[i];
-		for (size_t j = 0; j < service.listeners.size(); j++)
-		{
-			// make server socket
-			const Listener& listener = service.listeners[j];
-			Socket* socket = make_server_socket(listener, service);
+    Logger::info("Webserver: setting up sockets");
+    for (size_t i = 0; i < config_.services.size(); i++)
+    {
+        const ServiceConfig& service = config_.services[i];
+        for (size_t j = 0; j < service.listeners.size(); j++)
+        {
+            // make server socket
+            const Listener& listener = service.listeners[j];
+            Socket* socket = make_server_socket(listener, service);
 
-			// store socket
-			server_sockets_.insert(std::pair<int, Socket*>(socket->fd(), socket));
-			if (events_.add(socket->fd(), EPOLLIN) == -1)
-			{
-				throw std::runtime_error("Failed to add socket to events");
-			}
+            // store socket
+            server_sockets_.insert(std::pair<int, Socket*>(socket->fd(), socket));
+            if (events_.add(socket->fd(), EPOLLIN) == -1)
+            {
+                throw std::runtime_error("Failed to add socket to events");
+            }
 
-			Logger::info("Webserver: listening on %s:%s", listener.host.c_str(), listener.port.c_str());
-		}
-	}
+            Logger::info("Webserver: listening on %s:%s", listener.host.c_str(), listener.port.c_str());
+        }
+    }
 }
 
 void	Webserver::run()
 {
-	Logger::info("Webserver: running");
+    Logger::info("Webserver: running");
 
-	while (is_running)
-	{
-		int n_events = events_.wait();
+    while (is_running)
+    {
+        int n_events = events_.wait();
 
 		if (n_events == -1)
 			continue ;
 
-		//@TODO colocar try catch dentro do for loop
-		for (int i = 0; i < n_events; ++i)
-		{
-			epoll_event& event = events_.getEvent(i);
-			int event_fd = event.data.fd;
+        //@TODO colocar try catch dentro do for loop
+        for (int i = 0; i < n_events; ++i)
+        {
+            epoll_event& event = events_.getEvent(i);
+            int event_fd = event.data.fd;
 
 			if (event.events & (EPOLLERR | EPOLLHUP)) // event error
 			{

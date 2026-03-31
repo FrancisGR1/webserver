@@ -25,8 +25,14 @@
     - [x] ignorar trailing headers
     - [x] overload do feed() com chars
     - [x] clear()
+    - [ ] uploads pela página não funcionam ou funcionam mal
     - [ ] melhorar log erros
     - [ ] processa GET simples? (sem Transfer-Encoding e Content-Length)
+    - [ ] lidar com casos específicos de headers:
+        - [ ] x-www-form-urlencoded:
+        - [ ] multipart/form-data:
+        - [ ] Range
+
 - [ ] Implementar testes em tabela
 - [ ] Enum de métodos/string correspondente http como StatusCode e Token
 
@@ -66,7 +72,8 @@
 # Ligacao
 - [x] implementar maquina de estados - receber - processar - enviar
 - [x] múltiplos fds podem estar associados à mesma ligação - fazer pool de ligações
-- [ ] Gestão: Substituir connection pool for event.data.ptr (ptr para ligações em vez de pool de fds)
+- [ ] Gestão: Substituir connection pool for event.data.ptr (ptr para context) (ligação + tipo de fd + fd) em vez de pool de fds)
+- [ ] Dividir work() em read() e send(), o caller passa a gerir o próximo estado, conforme state()
 - [ ] Refazer a arquitetura para chegar a 1 milhão de ligações -> múltiplos even pools e forks()
 
 # Utils
@@ -74,6 +81,7 @@
 - [x] Print básico
 - [ ] O logger deve ser instanciável
 - [ ] Escrever mais logs (úteis) no código
+- [ ] Usar std::clog
 - [ ] Criar id para ligação, request e resposta de modo a facilitar registo nos logs
 
 ## Path
@@ -92,25 +100,16 @@
 
 # Testes
 ## Valgrind
-O valgrind não está a dar?
+- [ ] fix de leaks
+
 
 ## Tester
 Testar:
-- [ ] GET
-- [ ] POST
-- [ ] DELETE
 - [ ] Máximo número de ligações concurrentes
-- [ ] CGI
-    - [ ] aborta
-    - [ ] core dump
-    - [ ] sleep(999)
-    - [ ] deadlock?
-    - [ ] while(true)
-- [ ] fazer isto em formato de table-driven tests
 - [ ] testes de unidade para:
     - [ ] Path
-    - [ ] CgiHandler
-    - [ ] RequestParser
+    - [x] CgiHandler
+    - [x] RequestParser
     - [ ] GetHandler
     - [ ] PostHandler
     - [ ] DeleteHandler
@@ -122,3 +121,9 @@ Testar:
 - [ ] Implementar timeouts de ligacoes
 - [ ] Criar configuracoes para testar
 - [ ] Melhorar configuracao
+
+# AGORA
+- [ ] Testar parser (unidade), ver se Post e Delete funcionam com curl
+PostHandler não estã a funcionar porque o parser nunca dá done(), com o seguinte cmd: 
+
+curl -X POST http://127.0.0.4:8080/upload -d "hello=world"

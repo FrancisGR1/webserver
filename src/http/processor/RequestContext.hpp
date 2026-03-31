@@ -1,25 +1,26 @@
 #ifndef REQUESTCONTEXT_HPP
-# define REQUESTCONTEXT_HPP
+#define REQUESTCONTEXT_HPP
 
+#include "http/processor/RequestConfig.hpp"
 #include "server/EventManager.hpp"
 #include "server/Socket.hpp"
-#include "http/processor/RequestConfig.hpp"
 
 // scoped to request processor
 class RequestContext
 {
-	public: 
-		//@TODO: adicionar session manager e cookies?
-		RequestContext(const Socket& conn_socket, EventManager& events, const ServiceConfig& service);
+  public:
+    //@TODO: adicionar session manager e cookies?
+    RequestContext(const Socket& conn_socket, EventManager& events, const ServiceConfig& service);
 
-		const RequestConfig& config() const;
-		RequestConfig& config();
-		~RequestContext();
+    // RequestContext(const Socket& conn_socket, EventManager& events, const RequestConfig& request_config);
+    const RequestConfig& config() const;
+    RequestConfig& config();
+    ~RequestContext();
 
-	private:
-		const Socket& m_socket;
-		EventManager& m_events;
-		RequestConfig* m_request_config;
+  private:
+    const Socket& m_socket;
+    EventManager& m_events;
+    RequestConfig* m_request_config;
 };
 
 #endif // REQUESTCONTEXT_HPP
