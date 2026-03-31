@@ -16,7 +16,7 @@ std::map<std::string, std::string> MimeTypes::make_mimes()
     std::map<std::string, std::string> m;
 
     m["html"] = "text/html";
-    m["htm "] = "text/html";
+    m["htm"] = "text/html";
     m["shtml"] = "text/html";
     m["css"] = "text/css";
     m["xml"] = "text/xml";
@@ -29,9 +29,14 @@ std::map<std::string, std::string> MimeTypes::make_mimes()
 
     m["mml"] = "text/mathml";
     m["txt"] = "text/plain";
+    m["md"] = "text/markdown";
     m["jad"] = "text/vnd.sun.j2me.app-descriptor";
     m["wml"] = "text/vnd.wap.wml";
     m["htc"] = "text/x-component";
+    m["csv"] = "text/csv";
+    m["ics"] = "text/calendar";
+    m["yaml"] = "text/yaml";
+    m["yml"] = "text/yaml";
 
     m["avif"] = "image/avif";
     m["png"] = "image/png";
@@ -44,9 +49,13 @@ std::map<std::string, std::string> MimeTypes::make_mimes()
     m["ico"] = "image/x-icon";
     m["jng"] = "image/x-jng";
     m["bmp"] = "image/x-ms-bmp";
+    m["heic"] = "image/heic";
+    m["heif"] = "image/heif";
 
     m["woff"] = "font/woff";
     m["woff2"] = "font/woff2";
+    m["ttf"] = "font/ttf";
+    m["otf"] = "font/otf";
 
     m["jar"] = "application/java-archive";
     m["war"] = "application/java-archive";
@@ -113,6 +122,11 @@ std::map<std::string, std::string> MimeTypes::make_mimes()
     m["ogg"] = "audio/ogg";
     m["m4a"] = "audio/x-m4a";
     m["ra"] = "audio/x-realaudio";
+    m["opus"] = "audio/opus";
+    m["aac"] = "audio/aac";
+    m["flac"] = "audio/flac";
+    m["ogv"] = "video/ogg";
+    m["mkv"] = "video/x-matroska";
 
     m["3gp"] = "video/3gpp";
     m["3gpp"] = "video/3gpp";
