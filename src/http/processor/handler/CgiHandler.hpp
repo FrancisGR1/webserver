@@ -10,7 +10,6 @@
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/request/Request.hpp"
-#include "http/request/RequestParser.hpp"
 #include "http/response/Response.hpp"
 
 // https://datatracker.ietf.org/doc/html/rfc3875

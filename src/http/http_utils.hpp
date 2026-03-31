@@ -9,9 +9,7 @@
 
 namespace http_utils
 {
-//@TODO: give ctx to every one of these
-//@TODO: also status code doesnt have to be said in function
-// error throwers
+// Error throwers
 // generic
 void throw_code(StatusCode::Code code, const RequestContext& ctx);
 // MovedPermanently 301

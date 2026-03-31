@@ -1,3 +1,3 @@
 #include "IRequestHandler.hpp"
 
-IRequestHandler::~IRequestHandler() {};
+IRequestHandler::~IRequestHandler(){};

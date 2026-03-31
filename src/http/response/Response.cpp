@@ -233,8 +233,6 @@ void Response::set_body_as_str(const std::string& str)
     m_body_str = str;
 }
 
-// prefix is something you might want to send after the headers and before reading the file, for example a read() call
-// that processed the headers and a bit of the body
 void Response::set_body_as_fd(int fd)
 {
     Logger::trace("Response: set body: '%d'", fd);
@@ -280,7 +278,8 @@ bool Response::operator==(const Response& other) const
 	return ( 
 		m_status   == other.m_status &&
 		m_headers  == other.m_headers &&
-		m_body_str == other.m_body_str
+		(m_body_str == other.m_body_str || 
+		(m_body_str == other.m_body_str.substr(0, m_body_str.size())  && m_body_fd != -1)) // half string half file bodies
 	       );
     // clang-format on
 }
