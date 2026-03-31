@@ -126,16 +126,16 @@ void CgiHandler::process()
             Logger::trace("CgiHandler: read pipe");
 
             // read pipe to buffer
-            char buffer[constants::read_chunk_size + 1];
-            ssize_t bytes = read(m_fd[0], buffer, constants::read_chunk_size);
+            char buffer[constants::read_pipe_chunk_size + 1];
+            ssize_t bytes = read(m_fd[0], buffer, constants::read_pipe_chunk_size);
             Logger::trace("CgiHandler: read %ld from pipe", bytes);
 
             if (bytes > 0) // read data
             {
                 buffer[bytes] = '\0';
-                Logger::trace("CgiHandler: read buffer:'%s'", buffer);
 
                 m_total_read += bytes;
+                Logger::trace("CgiHandler: total bytes read: %zu", m_total_read);
                 if (m_total_read > constants::cgi_max_output)
                 {
                     throw ResponseError(

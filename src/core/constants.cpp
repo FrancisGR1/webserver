@@ -9,6 +9,7 @@ namespace constants
 // server
 const char* server_name = "webserv/1.0";
 const size_t read_chunk_size = 4096;
+const size_t read_pipe_chunk_size = 1048576;
 const size_t write_chunk_size = 4096;
 // - timeouts
 // -- connection

@@ -16,6 +16,7 @@ extern const char* default_conf;
 extern const char* server_http_version;
 extern const std::string py_ext;
 extern const size_t read_chunk_size;
+extern const size_t read_pipe_chunk_size; // should match /proc/sys/fs/pipe-max-size
 extern const size_t write_chunk_size;
 // - timeouts
 // -- connection
