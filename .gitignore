@@ -3,5 +3,8 @@ tmp/*
 *.a
 *.pdf
 webserv
+*.out
 .cache
 compile_commands.json
+__pycache__
+logs/
