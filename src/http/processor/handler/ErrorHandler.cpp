@@ -1,103 +1,102 @@
-#include "ErrorHandler.hpp"
+#include "core/utils.hpp"
 #include "core/Logger.hpp"
 #include "core/MimeTypes.hpp"
-#include "core/utils.hpp"
 #include "http/processor/RequestContext.hpp"
+#include "ErrorHandler.hpp"
 
 ErrorHandler::ErrorHandler(const ResponseError& error)
-    : m_code(error.status_code())
-    , m_ctx(error.has_ctx() ? &error.ctx() : NULL)
-    , m_done(false)
+	: m_code(error.status())
+	, m_ctx(error.has_ctx() ? &error.ctx() : NULL)
+	, m_done(false)
 {
-    Logger::trace("ErrorHandler: constructor");
+	Logger::trace("ErrorHandler: constructor");
 }
 
 ErrorHandler::ErrorHandler(StatusCode::Code code)
-    : m_code(code)
-    , m_ctx(NULL)
-    , m_done(false)
+	: m_code(code)
+	, m_ctx(NULL)
+	, m_done(false)
 {
-    Logger::trace("ErrorHandler: constructor");
+	Logger::trace("ErrorHandler: constructor");
 }
 
 ErrorHandler::ErrorHandler(StatusCode::Code code, const RequestContext& ctx)
-    : m_code(code)
-    , m_ctx(&ctx)
-    , m_done(false)
+	: m_code(code)
+	, m_ctx(&ctx)
+	, m_done(false)
 {
-    Logger::trace("ErrorHandler: constructor");
+	Logger::trace("ErrorHandler: constructor");
 }
 
 // all in one go
 void ErrorHandler::process()
 {
-    Logger::trace("ErrorHandler: processing...");
+	Logger::trace("ErrorHandler: processing...");
 
-    size_t error = static_cast<size_t>(m_code);
+	size_t error = static_cast<size_t>(m_code);
 
-    // status
-    m_response.set_status(m_code);
+	// status
+	m_response.set_status(m_code);
 
-    // default headers
-    m_response.set_header("Connection", "close");
-    m_response.set_header("Connection", "close");
-    m_response.set_header("Date", utils::http_date());
+	// default headers
+	m_response.set_header("Connection", "close");
+	m_response.set_header("Connection", "close");
+	m_response.set_header("Date", utils::http_date());
 
-    if (m_ctx != NULL)
-    {
-        const RequestConfig& config = m_ctx->config();
-        const Path& error_page = config.get_error_page_or_nonexistent_path(error);
-        if (error_page.exists)
-        {
-            // headers
-            m_response.set_header("Content-Length", utils::to_string(error_page.size));
-            m_response.set_header("Content-Type", error_page.mime);
+	if (m_ctx != NULL)
+	{
+		const RequestConfig& config = m_ctx->config();
+		const Path& error_page = config.get_error_page_or_nonexistent_path(error);
+		if (error_page.exists)
+		{
+			// headers
+			m_response.set_header("Content-Length", utils::to_string(error_page.size));
+			m_response.set_header("Content-Type", error_page.mime);
 
-            // body
-            m_response.set_body_as_path(error_page);
+			// body
+			m_response.set_body_as_path(error_page);
 
-            m_done = true;
+			m_done = true;
 
-            return;
-        }
-    }
+			return;
+		}
+	}
 
-    // build default body
-    std::string title = utils::to_string(error) + " " + StatusCode::to_reason(m_code);
 
-    std::string html = "<html>\n"
-                       "<head><title>" +
-                       title +
-                       "</title></head>\n"
-                       "<body>\n"
-                       "<center><h1>" +
-                       title +
-                       "</h1></center>\n"
-                       "</body>\n"
-                       "</html>\n";
+	// build default body
+	std::string title = utils::to_string(error) + " " + 
+		StatusCode::to_reason(m_code);
 
-    // headers
-    m_response.set_header("Content-Length", utils::to_string(html.size()));
-    m_response.set_header("Content-Type", MimeTypes::from_extension("html"));
+	std::string html = \
+			   "<html>\n" 
+			   "<head><title>" + title + "</title></head>\n" 
+			   "<body>\n" 
+			   "<center><h1>"  + title + "</h1></center>\n" 
+			   "</body>\n" 
+			   "</html>\n";
 
-    // body
-    m_response.set_body_as_str(html);
+	// headers
+	m_response.set_header("Content-Length", utils::to_string(html.size()));
+	m_response.set_header("Content-Type", MimeTypes::from_extension("html"));
 
-    m_done = true;
+	// body
+	m_response.set_body_as_str(html);
+
+	m_done = true;
 }
 
 bool ErrorHandler::done() const
 {
-    return m_done;
+	return m_done;
 }
 
 const Response& ErrorHandler::response() const
 {
-    return m_response;
+	return m_response;
 }
 
 ErrorHandler::~ErrorHandler()
 {
-    Logger::trace("ErrorHandler: destructor");
-    delete m_ctx;
+	Logger::trace("ErrorHandler: destructor");
+	delete m_ctx;
 }

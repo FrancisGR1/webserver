@@ -1,5 +1,5 @@
 #ifndef ROUTE_HPP
-#define ROUTE_HPP
+# define ROUTE_HPP
 
 #include <string>
 
@@ -7,10 +7,10 @@
 
 struct Route
 {
-    Route(StatusCode::Code code, std::string path);
+	Route(StatusCode::Code code, std::string path);
 
-    StatusCode::Code code;
-    std::string raw_path;
+	StatusCode::Code code;
+	std::string raw_path;
 };
 
 #endif // ROUTE_HPP

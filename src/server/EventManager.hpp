@@ -6,21 +6,23 @@
 
 class EventManager
 {
-  public:
-    EventManager();
-    ~EventManager();
+	public:
+		EventManager();
+		~EventManager();
 
-    epoll_event& getEvent(int index);
-    int wait();
+		epoll_event&	getEvent(int index);
+		int				wait();
+		
+		int			add(int socket, uint32_t events);
+		int			modify(int socket, uint32_t events);
+		int			remove(int socket);
 
-    int add(int socket, uint32_t events);
-    int modify(int socket, uint32_t events);
-    int remove(int socket);
+	private:
+		int			epoll_fd_;
+		// events are either sockets, files or pipes
+		epoll_event	events_[1024];
 
-  private:
-    int epoll_fd_;
-    // events are either sockets, files or pipes
-    epoll_event events_[1024];
+	
 };
 
 #endif /* EVENT_MANAGER */

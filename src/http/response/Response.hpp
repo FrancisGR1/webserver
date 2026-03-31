@@ -1,72 +1,67 @@
 #ifndef RESPONSE_HPP
-#define RESPONSE_HPP
+# define RESPONSE_HPP
 
 #include <map>
 #include <string>
 #include <sys/types.h>
 
-#include "config/types/Route.hpp"
 #include "core/Path.hpp"
+#include "config/types/Route.hpp"
 #include "http/StatusCode.hpp"
 
 class Response
 {
-  public:
-    // construct/copy/destruct
-    Response();
-    explicit Response(StatusCode::Code status);
-    Response(StatusCode::Code status, std::map<std::string, std::string> m_headers, std::string body);
-    Response(const Response& other);
-    Response& operator=(const Response& other);
-    ~Response();
+	public:
+		Response();
+		explicit Response(StatusCode::Code status);
+		Response(const Response& other);
+		Response& operator=(const Response& other);
+		~Response();
 
-    // api
-    ssize_t send(int fd);
-    bool done() const;
+		// api
+		ssize_t send(int fd);
+		bool done() const;
 
-    // makers
-    void make_redirection_response(StatusCode::Code status, const Route& redirection);
+		// makers
+		void make_redirection_response(StatusCode::Code status, const Route& redirection);
 
-    // setters
-    void set_status(StatusCode::Code status);
-    void set_header(const std::string& key, const std::string& value);
-    void set_body_as_str(const std::string& str);
-    void set_body_as_fd(int fd);
-    void set_body_as_path(const Path& path);
+		// setters
+		void set_status(StatusCode::Code status);
+		void set_header(const std::string& key, const std::string& value);
+		void set_body_as_str(const std::string& str);
+		void set_body_as_fd_and_prefix(int fd, const std::string& prefix = "");
+		void set_body_as_path(const Path& path);
+		
+		// getters
+		StatusCode::Code status() const;
 
-    // getters
-    StatusCode::Code status_code() const;
+	private:
+		StatusCode::Code m_status;
+		std::string m_status_line;
+		std::string m_headers_str;
+		std::map<std::string, std::string> m_headers;
 
-    // overloads
-    bool operator==(const Response& other) const;
-    friend std::ostream& operator<<(std::ostream& os, const Response& response);
+		// body is either one of the following
+		std::string m_body_str;
+		int m_body_fd;
 
-  private:
-    // status, headers, body
-    StatusCode::Code m_status;
-    std::string m_status_line;
-    std::string m_headers_str;
-    std::map<std::string, std::string> m_headers;
-    // body is either one or both of the following
-    // @ASSUMPTION: if its both, m_body_str is a prefix
-    std::string m_body_str;
-    int m_body_fd;
+		// transmission state
+		enum SendPhase
+		{
+			StatusPhase = 0,
+			HeadersPhase,
+			BodyPhase,
+			Done
+		};
 
-    // transmission state
-    enum SendPhase
-    {
-        StatusPhase = 0,
-        HeadersPhase,
-        BodyPhase,
-        Done
-    };
-    SendPhase m_send_phase;
-    size_t m_offset;
+		SendPhase m_send_phase;
+		size_t m_offset;
 
-    // utils
-    std::string make_status_line();
+		// utils
+		std::string make_status_line();
+		friend std::ostream& operator<<(std::ostream& os, const Response& response);
 };
 
 std::ostream& operator<<(std::ostream& os, const Response& response);
 
-#endif // RESPONSE_HPP
+# endif // RESPONSE_HPP

@@ -1,12 +1,11 @@
 SERVER      = ../../webserv
 LIB         = ../../libwebserv.a
-CXX         = c++ -g
+CXX         = c++
 CXXFLAGS    = -Wall -Werror -Wextra -std=c++23 -I../../src/
 
 # Add more test binaries here
-TESTS       = test_resolve_target.out \
-	      test_RequestParser.out \
-	      test_CgiHandler.out
+TESTS       = test_resolve_target \
+	      test_RequestParser
 
 .PHONY: all tests clean
 
@@ -24,7 +23,8 @@ $(SERVER):
 $(LIB): $(SERVER)
 	$(MAKE) -C ../../ lib
 
-test_%.out: test_%.cpp $(LIB)
+# Pattern rule — each test_*.cpp compiles into its own binary
+test_%: test_%.cpp $(LIB)
 	$(CXX) $(CXXFLAGS) $< $(LIB) -o $@
 
 clean:

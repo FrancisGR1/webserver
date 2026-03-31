@@ -5,21 +5,21 @@
 
 class Socket
 {
-  public:
-    Socket(int fd, const ServiceConfig& service);
-    ~Socket();
+	public:
+		Socket(int fd, const ServiceConfig& service);
+		~Socket();
 
-    int fd() const;
-    int close();
-    const ServiceConfig& service() const;
+		int						fd() const;
+		int close();
+		const ServiceConfig&	service() const;
 
-  private:
-    int fd_;
-    const ServiceConfig& service_;
+	private:
+		int						fd_;
+		const ServiceConfig&	service_;
 
-    // illegal
-    Socket(const Socket&);
-    Socket& operator=(const Socket&);
+		// illegal
+		Socket(const Socket&);
+		Socket& operator=(const Socket&);
 };
 
 #endif /* SOCKET_HPP */

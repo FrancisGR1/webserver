@@ -3,12 +3,9 @@ tmp/*
 *.a
 *.pdf
 webserv
-*.out
 .cache
 
 .vscode
 
 
 compile_commands.json
-__pycache__
-logs/
