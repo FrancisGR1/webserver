@@ -174,14 +174,14 @@ void CgiHandler::process()
             else // nothing was read
             {
                 ++m_failed_reads;
-                if (m_failed_reads == constants::cgi_max_failed_reads)
-                {
-                    ::kill(m_subprocess_id, SIGKILL);
-                    throw ResponseError(
-                        StatusCode::BadGateway,
-                        utils::fmt("CgiHandler: Failed to read the pipe %zu times!", m_failed_reads),
-                        &m_ctx);
-                };
+                // if (m_failed_reads == constants::cgi_max_failed_reads)
+                //{
+                //     ::kill(m_subprocess_id, SIGKILL);
+                //     throw ResponseError(
+                //         StatusCode::BadGateway,
+                //         utils::fmt("CgiHandler: Failed to read the pipe %zu times!", m_failed_reads),
+                //         &m_ctx);
+                // };
                 Logger::warn("CgiHandler: Failed to read the pipe %zu times!", m_failed_reads);
             }
             break;
