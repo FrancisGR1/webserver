@@ -10,7 +10,7 @@ ResponseError::ResponseError(StatusCode::Code code, const std::string& msg, cons
 {
 }
 
-StatusCode::Code ResponseError::status() const
+StatusCode::Code ResponseError::status_code() const
 {
     return m_status;
 }
