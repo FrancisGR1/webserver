@@ -51,6 +51,7 @@ struct StatusCode
     };
 
     static std::string to_reason(StatusCode::Code c);
+    static bool exists(StatusCode::Code code);
     static bool is_redirection(size_t code);
     //@TODO:
     // is_valid(size_t code)

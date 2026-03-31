@@ -210,7 +210,16 @@ void CgiHandler::process()
 
                     // status code
                     if (key == "Status")
-                        m_response.set_status(static_cast<StatusCode::Code>(std::atoi(value.c_str())));
+                    {
+                        StatusCode::Code code = static_cast<StatusCode::Code>(std::atoi(value.c_str()));
+                        if (StatusCode::exists(code))
+                            m_response.set_status(code);
+                        else
+                            throw ResponseError(
+                                StatusCode::BadGateway,
+                                utils::fmt("CgiHandler: Code doesn't exist: %zu", code),
+                                &m_ctx);
+                    }
 
                     m_response.set_header(key, value);
                 }

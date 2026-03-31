@@ -38,9 +38,14 @@ std::string StatusCode::to_reason(StatusCode::Code c)
         case SC::GatewayTimeout: return "Gateway Timeout";
         case SC::HttpVersionNotSupported: return "HTTP Version Not Supported";
 
-        // @NOTE: should never reach here
-        default: return "OK";
+        default: return "";
     };
+}
+
+bool StatusCode::exists(StatusCode::Code code)
+{
+    std::string reason = to_reason(code);
+    return reason != "";
 }
 
 bool StatusCode::is_redirection(size_t code)
