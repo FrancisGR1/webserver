@@ -16,7 +16,7 @@
 class CgiHandler : public IRequestHandler
 {
   public:
-    CgiHandler(const Request& request, const RequestContext& ctx);
+    CgiHandler(const Request& request, const RequestContext& ctx, Seconds timeout);
     void process();
     bool done() const;
     const Response& response() const;

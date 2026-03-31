@@ -16,11 +16,12 @@
 #include "http/response/Response.hpp"
 #include "http/response/ResponseError.hpp"
 
-CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx)
+CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Seconds timeout)
     : m_request(request)
     , m_ctx(ctx)
     , m_script(ctx.config().path())
     , m_response(StatusCode::Ok) //@ASSUMPTION: response is ok by default
+    , m_timeout(timeout)
     , m_failed_reads(0)
     , m_env(init_env())
     , m_state(StartTimer)
@@ -37,7 +38,7 @@ void CgiHandler::process()
         case StartTimer:
         {
             Logger::trace("CgiHandler: start timer");
-            m_timer.set(constants::cgi_timeout);
+            m_timer.set(m_timeout);
             m_timer.start();
             m_state = ForkExec;
         }
@@ -107,23 +108,20 @@ void CgiHandler::process()
 
                 // check subprocess status (in case of fast fail)
                 // @TODO: é melhor isto ir para read pipe não?
-                int status;
-                waitpid(m_subprocess_id, &status, WNOHANG); // don't wait for subprocess
-                if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-                {
-                    throw ResponseError(
-                        StatusCode::BadGateway,
-                        utils::fmt("CgiHandler: subprocess exited with %d code", status),
-                        &m_ctx);
-                }
+                m_state = ReadPipe;
+                break;
             }
-
-            m_state = ReadPipe;
-            break;
         }
-
         case ReadPipe:
         {
+            int status;
+            waitpid(m_subprocess_id, &status, WNOHANG); // don't wait for subprocess
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+            {
+                throw ResponseError(
+                    StatusCode::BadGateway, utils::fmt("CgiHandler: subprocess exited with %d code", status), &m_ctx);
+            }
+
             Logger::trace("CgiHandler: read pipe");
 
             // read pipe to buffer

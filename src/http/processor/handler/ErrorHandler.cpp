@@ -5,7 +5,7 @@
 #include "http/processor/RequestContext.hpp"
 
 ErrorHandler::ErrorHandler(const ResponseError& error)
-    : m_code(error.status())
+    : m_code(error.status_code())
     , m_ctx(error.has_ctx() ? &error.ctx() : NULL)
     , m_done(false)
 {
