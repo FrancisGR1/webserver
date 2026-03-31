@@ -6,6 +6,7 @@
 
 #include "core/Path.hpp"
 #include "core/Timer.hpp"
+#include "core/constants.hpp"
 #include "http/processor/RequestContext.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
@@ -16,7 +17,7 @@
 class CgiHandler : public IRequestHandler
 {
   public:
-    CgiHandler(const Request& request, const RequestContext& ctx, Seconds timeout);
+    CgiHandler(const Request& request, const RequestContext& ctx, Seconds timeout = constants::cgi_max_output);
     void process();
     bool done() const;
     const Response& response() const;
@@ -38,11 +39,13 @@ class CgiHandler : public IRequestHandler
     const Path& m_script;
     Response m_response;
     Timer m_timer;
+    Seconds m_timeout;
     size_t m_failed_reads;
     std::map<std::string, std::string> m_env;
     int m_fd[2];
     std::string m_headers;
     std::string m_body_str;
+    size_t m_total_read;
     State m_state;
     pid_t m_subprocess_id;
 

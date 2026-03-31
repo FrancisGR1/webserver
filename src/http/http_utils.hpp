@@ -4,6 +4,7 @@
 #include <string>
 
 #include "core/Path.hpp"
+#include "core/Timer.hpp"
 #include "http/StatusCode.hpp"
 #include "processor/RequestContext.hpp"
 
@@ -44,7 +45,7 @@ void throw_internal_server_error_unknown_file_type(const Path& path, const Reque
 // NotImplemented 501
 void throw_not_implemented(const std::string& method, const RequestContext& ctx);
 // GatewayTimeout 504
-void throw_gateway_timeout(const std::string& cgi_raw_path, const RequestContext& ctx);
+void throw_gateway_timeout(const std::string& cgi_raw_path, Seconds timeout, const RequestContext& ctx);
 } // namespace http_utils
 
 #endif // HTTPUTILS_HPP

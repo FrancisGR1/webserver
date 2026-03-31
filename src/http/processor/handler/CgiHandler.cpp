@@ -24,6 +24,7 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Second
     , m_timeout(timeout)
     , m_failed_reads(0)
     , m_env(init_env())
+    , m_total_read(0)
     , m_state(StartTimer)
 {
     Logger::trace("CgiHandler: constructor");
@@ -134,6 +135,18 @@ void CgiHandler::process()
                 buffer[bytes] = '\0';
                 Logger::trace("CgiHandler: read buffer:'%s'", buffer);
 
+                m_total_read += bytes;
+                if (m_total_read > constants::cgi_max_output)
+                {
+                    throw ResponseError(
+                        StatusCode::BadGateway,
+                        utils::fmt(
+                            "CgiHandler: output (%zu) exceeded max capacity (%zu)",
+                            m_total_read,
+                            constants::cgi_max_output),
+                        &m_ctx);
+                }
+
                 m_headers += buffer;
 
                 size_t body_start = m_headers.find(constants::crlfcrlf);
@@ -161,7 +174,7 @@ void CgiHandler::process()
             else // nothing was read
             {
                 ++m_failed_reads;
-                if (m_failed_reads == constants::max_failed_reads)
+                if (m_failed_reads == constants::cgi_max_failed_reads)
                 {
                     ::kill(m_subprocess_id, SIGKILL);
                     throw ResponseError(
@@ -292,5 +305,5 @@ std::string CgiHandler::to_uppercase_and_underscore(const std::string& str)
 void CgiHandler::expect_has_time_left() const
 {
     if (m_timer.expired())
-        http_utils::throw_gateway_timeout(m_script.raw, m_ctx);
+        http_utils::throw_gateway_timeout(m_script.raw, m_timeout, m_ctx);
 }

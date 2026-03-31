@@ -10,7 +10,7 @@
 DeleteHandler::DeleteHandler(const Request& request, const RequestContext& ctx)
     : m_ctx(ctx)
     , m_done(false)
-    , m_cgi(request, ctx, constants::cgi_timeout)
+    , m_cgi(request, ctx)
 {
     Logger::trace("DeleteHandler: constructor");
 }

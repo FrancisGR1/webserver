@@ -22,7 +22,8 @@ extern const size_t write_chunk_size;
 extern const Seconds connection_timeout;
 // -- cgi
 extern const Seconds cgi_timeout;
-extern const size_t max_failed_reads;
+extern const size_t cgi_max_failed_reads;
+extern const size_t cgi_max_output;
 
 // http
 // CRLF

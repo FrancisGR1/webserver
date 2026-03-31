@@ -15,7 +15,8 @@ const size_t write_chunk_size = 4096;
 // const Seconds idle_connection_timeout = 30; @TODO: implementar Timer na ligacao
 // -- cgi
 const Seconds cgi_timeout = 60.0;
-const size_t max_failed_reads = 5;
+const size_t cgi_max_failed_reads = 5;
+const size_t cgi_max_output = 100000;
 //
 // - configuration
 const char* default_conf = "config/default.conf";

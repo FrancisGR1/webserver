@@ -146,10 +146,10 @@ namespace http_utils
 			    utils::fmt("%s method is not implemented by the server", method.c_str()), &ctx);
 	}
 	
-	void throw_gateway_timeout(const std::string& cgi_raw_path, const RequestContext& ctx)
+	void throw_gateway_timeout(const std::string& cgi_raw_path, Seconds timeout, const RequestContext& ctx)
 	{
 	    throw ResponseError(StatusCode::GatewayTimeout, 
-			    utils::fmt( "Timeout: CGI script '%s' took more than %.2f seconds", cgi_raw_path.c_str(), constants::cgi_timeout), &ctx);
+			    utils::fmt( "Timeout: CGI script '%s' took more than %.2f seconds", cgi_raw_path.c_str(), timeout), &ctx);
 	}
 
 } // namespace http_util&s
