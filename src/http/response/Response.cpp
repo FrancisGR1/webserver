@@ -14,6 +14,7 @@ Response::Response()
     , m_body_fd(-1)
     , m_send_phase(Response::StatusPhase)
     , m_offset(0)
+    , m_total_sent(0)
 {
     Logger::trace("Response: constructor");
 }
@@ -23,6 +24,7 @@ Response::Response(StatusCode::Code status)
     , m_body_fd(-1)
     , m_send_phase(Response::StatusPhase)
     , m_offset(0)
+    , m_total_sent(0)
 {
     Logger::trace("Response: status constructor");
 }
@@ -34,6 +36,7 @@ Response::Response(StatusCode::Code status, std::map<std::string, std::string> h
     , m_body_fd(-1)
     , m_send_phase(Response::StatusPhase)
     , m_offset(0)
+    , m_total_sent(0)
 {
     Logger::trace("Response: status/headers/body constructor");
 }
@@ -47,6 +50,7 @@ Response::Response(const Response& other)
     , m_body_fd(other.m_body_fd)
     , m_send_phase(other.m_send_phase)
     , m_offset(other.m_offset)
+    , m_total_sent(other.m_total_sent)
 {
     Logger::trace("Response: copy constructor");
 }
@@ -65,6 +69,7 @@ Response& Response::operator=(const Response& other)
         m_body_fd = other.m_body_fd;
         m_send_phase = other.m_send_phase;
         m_offset = other.m_offset;
+        m_total_sent = other.m_total_sent;
     }
 
     return *this;
@@ -105,6 +110,8 @@ ssize_t Response::send(int fd)
                 m_offset += sent;
             }
 
+            m_total_sent += sent;
+
             return sent;
         }
         case HeadersPhase:
@@ -124,6 +131,8 @@ ssize_t Response::send(int fd)
                 m_offset += sent;
             }
 
+            m_total_sent += sent;
+
             return sent;
         }
         case BodyPhase:
@@ -142,6 +151,8 @@ ssize_t Response::send(int fd)
                         return sent_bytes; // nothing to send, or error or EAGAIN, which shouldn't happen (@QUESTION:
                                            // you sure?)
 
+                    m_total_sent += sent_bytes;
+
                     m_body_str.erase(0, sent_bytes);
                     if (!m_body_str.empty())
                         return sent_bytes; // socket is full
@@ -149,7 +160,7 @@ ssize_t Response::send(int fd)
 
                 // read and send to socket
                 // @TODO: substitude read() -> send() with sendfile()
-                char buffer[constants::read_chunk_size];
+                char buffer[constants::read_chunk_size + 1] = {};
                 ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
                 Logger::trace("Response: read %ld bytes: '%s'", read_bytes, buffer);
                 if (read_bytes < 0)
@@ -164,14 +175,19 @@ ssize_t Response::send(int fd)
                 buffer[read_bytes] = '\0';
 
                 sent_bytes = ::send(fd, buffer, read_bytes, 0);
-                Logger::trace("Response: sent %ld bytes", sent_bytes);
-                if (sent_bytes <= 0)
-                    return sent_bytes;
+                Logger::trace("Response: sent %ld(%ld) bytes", sent_bytes, m_total_sent);
                 if (sent_bytes < read_bytes)
                 {
                     // store leftover for next call
-                    m_body_str.assign(buffer + sent_bytes, read_bytes - sent_bytes);
+                    if (sent_bytes > 0)
+                        m_body_str.assign(buffer + sent_bytes, read_bytes - sent_bytes);
+                    else // buffer is full, save everything
+                        m_body_str.assign(buffer, read_bytes);
                 }
+                if (sent_bytes <= 0)
+                    return sent_bytes;
+
+                m_total_sent += sent_bytes;
             }
             else if (!m_body_str.empty()) // send body from string
             {
@@ -182,6 +198,8 @@ ssize_t Response::send(int fd)
                 sent_bytes = ::send(fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
                 if (sent_bytes < 0)
                     return sent_bytes;
+
+                m_total_sent += sent_bytes;
 
                 m_offset += sent_bytes;
                 if (m_offset == m_body_str.size())
@@ -235,16 +253,18 @@ void Response::set_body_as_str(const std::string& str)
 
 void Response::set_body_as_fd(int fd)
 {
-    Logger::trace("Response: set body: '%d'", fd);
+    Logger::trace("Response: set body fd: '%d'", fd);
     m_body_fd = fd;
 }
 
 void Response::set_body_as_path(const Path& path)
 {
+    Logger::trace("Response: set body path: '%s'", path.raw.c_str());
     if (path.exists)
     {
         //@QUESTION @TODO add to the event loop?
         m_body_fd = open(path.raw.c_str(), O_RDONLY);
+        fcntl(m_body_fd, F_SETFL, O_NONBLOCK);
     }
 }
 

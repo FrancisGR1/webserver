@@ -62,6 +62,7 @@ class Response
     };
     SendPhase m_send_phase;
     size_t m_offset;
+    size_t m_total_sent;
 
     // utils
     std::string make_status_line();
