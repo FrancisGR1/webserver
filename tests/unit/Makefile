@@ -6,6 +6,7 @@ CXXFLAGS    = -Wall -Werror -Wextra -std=c++23 -I../../src/
 # Add more test binaries here
 TESTS       = test_resolve_target.out \
 	      test_RequestParser.out \
+	      test_GetHandler.out \
 	      test_CgiHandler.out
 
 .PHONY: all tests clean

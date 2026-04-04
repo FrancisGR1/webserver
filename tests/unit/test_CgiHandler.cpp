@@ -13,8 +13,6 @@
 
 const Seconds TEST_TIMEOUT = 6;
 
-// @TODO definir path e location durante os testes
-
 struct TestCase
 {
     TestCase(const std::string title, Path script_path, Request req, Response expected)
@@ -216,7 +214,7 @@ void test_bad_CgiHandler(const TestCase& test)
         try
         {
             ch.process();
-            sleep(1); // give initial time to os to setup the pipe/subprocess //@TODO: substituir por epoll wait
+            sleep(1); // give initial time to os to setup the pipe/subprocess //@OPTIMIZE substituir por epoll wait
         }
         catch (const ResponseError& error)
         {
