@@ -28,7 +28,14 @@ LocationConfig::LocationConfig(const std::string name, const std::string root_di
 {
 }
 
+LocationConfig::LocationConfig(Directive directive)
+    : redirection(StatusCode::None, "")
+{
+    set(directive);
+}
+
 LocationConfig::LocationConfig(std::vector<Directive> directives)
+    : redirection(StatusCode::None, "")
 {
     for (size_t i = 0; i < directives.size(); ++i)
         set(directives[i]);
