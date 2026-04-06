@@ -2,6 +2,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "Directive.hpp"
 #include "LocationConfig.hpp"
@@ -25,6 +26,12 @@ LocationConfig::LocationConfig(const std::string name, const std::string root_di
     , redirection(StatusCode::None, "")
     , max_body_size(constants::max_body_size)
 {
+}
+
+LocationConfig::LocationConfig(std::vector<Directive> directives)
+{
+    for (size_t i = 0; i < directives.size(); ++i)
+        set(directives[i]);
 }
 
 void LocationConfig::set(Directive& directive)
