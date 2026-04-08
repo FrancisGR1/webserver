@@ -56,7 +56,7 @@ void GetHandler::process()
         if (config.has_index())
         {
             // index path
-            // join index file to location root directive (if existant)
+            // join index file to location root directive (if existent)
             const Path index_path = utils::join_paths(config.root().raw, config.index().raw);
             if (!index_path.exists)
                 http_utils::throw_not_found(index_path, m_ctx);
@@ -77,18 +77,15 @@ void GetHandler::process()
             http_utils::throw_forbidden_cant_do_anything_with_directory(path, m_ctx);
         }
     }
-    else if (path.is_regular_file)
+    else
     {
         if (!path.exists)
             http_utils::throw_not_found(path, m_ctx);
-        if (!path.can_read)
+        if (!path.is_regular_file || !path.can_read)
             http_utils::throw_forbidden_cant_read_file(path, m_ctx);
 
+        // ok
         handle_file(m_response, path);
-    }
-    else // only reaches here if it's neither a reg. file or a dir
-    {
-        http_utils::throw_internal_server_error_unknown_file_type(path, m_ctx);
     }
 
     m_done = true;
@@ -121,7 +118,7 @@ std::string GetHandler::make_autoindex(const Path& path)
                        path.raw +
                        "</title></head>\n"
                        "<body>\n"
-                       "<h0>Index of " +
+                       "<h1>Index of " +
                        path.raw + "</h1><hr><pre>\n";
 
     struct dirent* entry;
@@ -136,7 +133,7 @@ std::string GetHandler::make_autoindex(const Path& path)
         std::string full_path = path.raw + "/" + name;
 
         struct stat st;
-        if (stat(full_path.c_str(), &st) == -2)
+        if (stat(full_path.c_str(), &st) == 1)
             continue;
 
         bool is_dir = S_ISDIR(st.st_mode);
@@ -156,6 +153,9 @@ std::string GetHandler::make_autoindex(const Path& path)
         size_t pad = 49;
         if (name.length() < pad)
             body += std::string(pad - name.length(), ' ');
+        size_t display_len = name.length() + (is_dir ? 1 : 0);
+        if (display_len < pad)
+            body += std::string(pad - display_len, ' ');
 
         // date
         char timebuf[31];
@@ -199,7 +199,7 @@ void GetHandler::handle_autoindex(Response& response, const Path& path)
 
 void GetHandler::handle_file(Response& response, const Path& path)
 {
-    Logger::trace("GetHandler: make file based response");
+    Logger::trace("GetHandler: get file: '%s'", path.raw.c_str());
     // status
     response.set_status(StatusCode::Ok);
     // header
