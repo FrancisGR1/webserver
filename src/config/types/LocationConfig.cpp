@@ -9,6 +9,7 @@
 #include "core/constants.hpp"
 #include "http/StatusCode.hpp"
 
+//@TODO susbtituri código repetido por um init()
 LocationConfig::LocationConfig()
     : name("")
     , enable_dir_listing(false)
@@ -28,14 +29,22 @@ LocationConfig::LocationConfig(const std::string name, const std::string root_di
 {
 }
 
-LocationConfig::LocationConfig(Directive directive)
-    : redirection(StatusCode::None, "")
+LocationConfig::LocationConfig(const std::string name, Directive directive)
+    : name(name)
+    , enable_dir_listing(false)
+    , enable_upload_files(false)
+    , redirection(StatusCode::None, "")
+    , max_body_size(constants::max_body_size)
 {
     set(directive);
 }
 
-LocationConfig::LocationConfig(std::vector<Directive> directives)
-    : redirection(StatusCode::None, "")
+LocationConfig::LocationConfig(const std::string name, std::vector<Directive> directives)
+    : name(name)
+    , enable_dir_listing(false)
+    , enable_upload_files(false)
+    , redirection(StatusCode::None, "")
+    , max_body_size(constants::max_body_size)
 {
     for (size_t i = 0; i < directives.size(); ++i)
         set(directives[i]);

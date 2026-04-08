@@ -14,8 +14,8 @@ class LocationConfig
   public:
     LocationConfig();
     LocationConfig(const std::string name, const std::string root_dir);
-    LocationConfig(Directive directive);
-    LocationConfig(std::vector<Directive> directives);
+    LocationConfig(const std::string name, Directive directive);
+    LocationConfig(const std::string name, std::vector<Directive> directives);
 
     // exclusive to location block scope
     std::string name;
