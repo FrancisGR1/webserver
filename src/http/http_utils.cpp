@@ -137,7 +137,7 @@ namespace http_utils
 	void throw_internal_server_error_unknown_file_type(const Path& path, const RequestContext& ctx)
 	{
 	    throw ResponseError(StatusCode::InternalServerError, 
-			    utils::fmt("Uknown file type '%s", path.raw.c_str()), &ctx);
+			    utils::fmt("Unknown file type '%s", path.raw.c_str()), &ctx);
 	}
 	
 	void throw_not_implemented(const std::string& method, const RequestContext& ctx)
