@@ -1,3 +1,4 @@
+#include <ostream>
 #include <stdexcept>
 
 #include "ResponseError.hpp"
@@ -31,4 +32,11 @@ const RequestContext& ResponseError::ctx() const
 
 ResponseError::~ResponseError() throw()
 {
+}
+
+std::ostream& operator<<(std::ostream& os, const ResponseError& error)
+{
+    os << "Error:\n\tStatus: " << error.status_code() << " " << StatusCode::to_reason(error.status_code())
+       << "\n\tMsg: " << error.msg() << "\n";
+    return os;
 }

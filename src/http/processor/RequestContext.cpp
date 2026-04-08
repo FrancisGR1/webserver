@@ -33,3 +33,9 @@ RequestContext::~RequestContext()
 {
     delete m_request_config;
 }
+
+std::ostream& operator<<(std::ostream& os, const RequestContext& ctx)
+{
+    os << ctx.config();
+    return os;
+}

@@ -26,4 +26,6 @@ class ResponseError : public std::exception
     ResponseError();
 };
 
+std::ostream& operator<<(std::ostream& os, const ResponseError& error);
+
 #endif // RESPONSEERROR_HPP

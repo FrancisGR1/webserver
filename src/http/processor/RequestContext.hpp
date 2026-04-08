@@ -23,4 +23,6 @@ class RequestContext
     RequestConfig* m_request_config;
 };
 
+std::ostream& operator<<(std::ostream& os, const RequestContext& ctx);
+
 #endif // REQUESTCONTEXT_HPP
