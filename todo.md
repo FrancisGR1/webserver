@@ -16,6 +16,7 @@
 - [ ] mapa de listeners -> serviço seria muito conveniente
 - [ ] deve have sempre um root, quer ao nível de LocationConfig, ServiceConfig ou constant do server
 - [ ] eliminar upload_dir -> não é necessário, root já faz isso
+- [ ] o name de LocationConfig devia ser const!
 
 # HTTP - Receber Pedido
 - [x] Processamento
@@ -32,6 +33,8 @@
         - [ ] x-www-form-urlencoded:
         - [ ] multipart/form-data:
         - [ ] Range
+    - [ ] substituir body em std::string por struct "File" que envie os bytes diretamente para um ficheiro associado ao pedido 
+    (esta abordagem é melhor para binários)
 
 - [ ] Implementar testes em tabela
 - [ ] Enum de métodos/string correspondente http como StatusCode e Token
@@ -102,15 +105,16 @@
 ## Valgrind
 - [ ] fix de leaks
 
-
 ## Tester
 Testar:
 - [ ] Máximo número de ligações concurrentes
 - [ ] testes de unidade para:
-    - [ ] Path
+    - [x] path resolution algorithm
+        - [ ] adicionar testes para casos com "../../.."
     - [x] CgiHandler
     - [x] RequestParser
-    - [ ] GetHandler
+    - [x] RequestParser
+    - [x] GetHandler
     - [ ] PostHandler
     - [ ] DeleteHandler
 

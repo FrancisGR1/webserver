@@ -31,7 +31,6 @@ test_%.out: test_%.cpp $(LIB)
 clean:
 	rm -f $(TESTS)
 
-fclean:
-	$(MAKE) -C ../../ fclean
+fclean: clean
 
 re: clean fclean all $(TESTS)

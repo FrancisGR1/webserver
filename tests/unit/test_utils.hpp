@@ -2,6 +2,7 @@
 #include <string>
 
 #include "core/Logger.hpp"
+#include "core/constants.hpp"
 
 namespace test_utils
 {

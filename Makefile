@@ -20,20 +20,21 @@ SOURCES  = \
 	  src/core/constants.cpp \
 	  src/core/utils.cpp \
 	  \
-	  src/server/Webserver.cpp \
 	  src/server/Connection.cpp \
 	  src/server/ConnectionPool.cpp \
 	  src/server/EventManager.cpp \
 	  src/server/Socket.cpp \
+	  src/server/Webserver.cpp \
 	  \
 	  src/config/Config.cpp \
 	  src/config/ConfigTypes.cpp \
-	  src/config/types/ServiceConfig.cpp \
-	  src/config/types/LocationConfig.cpp \
-	  src/config/types/Route.cpp \
 	  src/config/parser/ConfigLexer.cpp \
 	  src/config/parser/ConfigParser.cpp \
 	  src/config/parser/Token.cpp \
+	  src/config/types/Directive.cpp \
+	  src/config/types/LocationConfig.cpp \
+	  src/config/types/Route.cpp \
+	  src/config/types/ServiceConfig.cpp \
 	  \
 	  src/http/StatusCode.cpp \
 	  src/http/http_utils.cpp \
@@ -54,8 +55,6 @@ SOURCES  = \
 	  \
 	  src/http/response/Response.cpp \
 	  src/http/response/ResponseError.cpp
-
-
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
 OBJ     += $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter-out src/%.cpp, $(SOURCES)))
@@ -80,10 +79,11 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 	rm -f $(LIB)
+	cd $(TESTS_DIR) && $(MAKE) -C unit/ fclean
 
 re: fclean all
 
 TESTS_DIR = tests/
 .PHONY: tests
-tests:
-	cd $(TESTS_DIR) && $(MAKE)
+tests: all lib
+	cd $(TESTS_DIR) && $(MAKE) -C unit/
