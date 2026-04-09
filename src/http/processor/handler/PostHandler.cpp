@@ -35,9 +35,9 @@ static void expect_uploadable(
     if (request.body().size() > config.max_body_size())
         http_utils::throw_content_too_large(ctx);
     if (!upload_dir.exists)
-        http_utils::throw_internal_server_error_doesnt_exist(upload_dir, ctx);
+        http_utils::throw_not_found(upload_dir, ctx);
     if (!upload_dir.is_directory)
-        http_utils::throw_internal_server_error_not_a_directory(upload_dir, ctx);
+        http_utils::throw_conflict_delete(upload_dir, ctx);
     if (!upload_dir.can_write || !upload_dir.can_execute)
         http_utils::throw_forbidden_cant_upload(upload_dir, ctx);
 }
@@ -125,11 +125,9 @@ void PostHandler::process()
             m_response.set_header("Content-Length", utils::to_string(json.size()));
         }
     }
-    else
+    else // can't upload
     {
-        //@TODO: que código de erro é aqui? 404?
-        std::cout << "TODO: implement\n";
-        http_utils::throw_internal_server_error_cant_upload("", m_ctx);
+        http_utils::throw_forbidden_cant_upload("", m_ctx);
     }
 }
 

@@ -77,7 +77,7 @@ namespace http_utils
 	void throw_forbidden_cant_upload(const Path& path, const RequestContext& ctx)
 	{
 	    throw ResponseError(StatusCode::Forbidden, 
-			    utils::fmt("'%s' upload directory doesn't have write and/or execution permission(s)", path.raw.c_str()), &ctx);
+			    utils::fmt("'%s' upload directory doesn't have permission(s)", path.raw.c_str()), &ctx);
 	}
 	
 	void throw_not_found(const Path& path, const RequestContext& ctx)
@@ -86,10 +86,16 @@ namespace http_utils
 			    utils::fmt("'%s' path not found", path.raw.c_str()), &ctx);
 	}
 	
-	void throw_conflict(const Path& path, const RequestContext& ctx)
+	void throw_conflict_delete(const Path& path, const RequestContext& ctx)
 	{
 	    throw ResponseError(StatusCode::Conflict, 
 			    utils::fmt("Cannot delete directory: '%s", path.raw.c_str()), &ctx);
+	}
+
+	void throw_conflict_upload(const Path& path, const RequestContext& ctx)
+	{
+	    throw ResponseError(StatusCode::Conflict, 
+			    utils::fmt("Trying to upload to a non-directory: '%s", path.raw.c_str()), &ctx);
 	}
 	
 	void throw_content_too_large(const RequestContext& ctx)

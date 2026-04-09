@@ -37,7 +37,7 @@ void DeleteHandler::process()
     const Path& path = config.path();
 
     if (path.is_directory)
-        http_utils::throw_conflict(path, m_ctx);
+        http_utils::throw_conflict_delete(path, m_ctx);
 
     // delete file
     if (std::remove(path.raw.c_str()) != 0)

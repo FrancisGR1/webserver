@@ -31,7 +31,8 @@ void throw_forbidden_cant_upload(const Path& path, const RequestContext& ctx);
 // NotFound 404
 void throw_not_found(const Path& path, const RequestContext& ctx);
 // Conflict 409
-void throw_conflict(const Path& path, const RequestContext& ctx);
+void throw_conflict_delete(const Path& path, const RequestContext& ctx);
+void throw_conflict_upload(const Path& path, const RequestContext& ctx);
 // ContentTooLarge 413
 void throw_content_too_large(const RequestContext& ctx);
 // InternalServerError 500
