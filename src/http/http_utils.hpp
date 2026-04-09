@@ -37,7 +37,7 @@ void throw_content_too_large(const RequestContext& ctx);
 // InternalServerError 500
 void throw_internal_server_error_cant_delete(const Path& path, const RequestContext& ctx);
 void throw_internal_server_error_not_valid(const Path& path, const RequestContext& ctx);
-void throw_internal_server_error_cant_upload(const RequestContext& ctx);
+void throw_internal_server_error_cant_upload(const Path& path, const RequestContext& ctx);
 void throw_internal_server_error_doesnt_exist(const Path& path, const RequestContext& ctx);
 void throw_internal_server_error_not_a_directory(const Path& path, const RequestContext& ctx);
 void throw_internal_server_error_failed_upload(const Path& path, const RequestContext& ctx);

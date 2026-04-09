@@ -110,10 +110,10 @@ namespace http_utils
 			    utils::fmt("Not valid: '%s'", path.raw.c_str()), &ctx);
 	}
 	
-	void throw_internal_server_error_cant_upload(const RequestContext& ctx)
+	void throw_internal_server_error_cant_upload(const Path& path, const RequestContext& ctx)
 	{
 	    throw ResponseError(StatusCode::InternalServerError, 
-			    utils::fmt("Can't upload file: location is missing upload directory path"), &ctx);
+			    utils::fmt("Can't upload file: location is missing upload directory path for: '%s'", path.raw.c_str()), &ctx);
 	}
 	
 	void throw_internal_server_error_doesnt_exist(const Path& path, const RequestContext& ctx)
