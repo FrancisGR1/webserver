@@ -273,6 +273,16 @@ StatusCode::Code Response::status_code() const
     return m_status;
 }
 
+const std::string& Response::body() const
+{
+    return m_body_str;
+}
+
+const std::map<std::string, std::string>& Response::headers() const
+{
+    return m_headers;
+}
+
 std::string Response::make_status_line()
 {
     std::string status_line;
