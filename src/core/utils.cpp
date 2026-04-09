@@ -92,6 +92,11 @@ long long str_tohexadecimal(const std::string& str)
     return result;
 }
 
+std::string file_to_str(const std::string file_path)
+{
+    return file_to_str(file_path.c_str());
+}
+
 std::string file_to_str(const char* file_path)
 {
     std::ifstream file(file_path);
