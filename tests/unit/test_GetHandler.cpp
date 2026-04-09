@@ -2,15 +2,13 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <memory>
 #include <string>
+#include <string_view>
 
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "config/types/LocationConfig.hpp"
-#include "config/types/ServiceConfig.hpp"
 #include "core/Logger.hpp"
 #include "core/Path.hpp"
 #include "core/constants.hpp"
@@ -21,49 +19,11 @@
 
 #include "test_utils.hpp"
 
-const std::string RESULT_FILE = "result.txt";
-const std::string RESULT_BODY_FILE = "result_body.txt";
-const std::string DIFF_FILE = "diff_log.txt";
+static constexpr std::string_view RESULT_FILE = "./test_data/logs/gh_result.txt";
+static constexpr std::string_view RESULT_BODY_FILE = "./test_data/logs/gh_result_body.txt";
+static constexpr std::string_view DIFF_FILE = "./test_data/logs/gh_diff_log.txt";
 
-struct TestCase
-{
-    TestCase(
-        const std::string title,
-        Path file_path,
-        ServiceConfig sv,
-        const LocationConfig& lc,
-        Request req,
-        Response expected)
-        : title(title)
-        , request(req)
-        , file_path(file_path)
-        , expected(expected)
-    {
-        service = sv;
-        location = lc;
-        socket = std::make_unique<Socket>(3, service); // 3 = dummy fd
-        events = std::make_unique<EventManager>();
-        ctx = std::make_unique<RequestContext>(*socket, *events, service);
-
-        ctx->config().set(file_path);
-        ctx->config().set(location);
-    }
-
-    std::string title;
-    Request request;
-    Path file_path;
-    LocationConfig location;
-    ServiceConfig service;
-
-    // Owned resources
-    std::unique_ptr<Socket> socket;
-    std::unique_ptr<EventManager> events;
-    std::unique_ptr<RequestContext> ctx;
-
-    Response expected;
-};
-
-std::vector<TestCase> generate_good_test_cases(void)
+std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
 {
     // default service
     LocationConfig get{
@@ -73,7 +33,7 @@ std::vector<TestCase> generate_good_test_cases(void)
          {Token::DirectiveDefaultFile, {"default.md"}}}};
     ServiceConfig service{get};
 
-    std::vector<TestCase> test_cases = {};
+    std::vector<tu::HandlerTestCase> test_cases = {};
     test_cases.reserve(100);
 
     // clang-format off
@@ -219,9 +179,9 @@ std::vector<TestCase> generate_good_test_cases(void)
     return test_cases;
 }
 
-std::vector<TestCase> generate_bad_test_cases(void)
+std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
 {
-    std::vector<TestCase> test_cases = {};
+    std::vector<tu::HandlerTestCase> test_cases = {};
     test_cases.reserve(100);
     // clang-format off
 
@@ -291,21 +251,21 @@ std::vector<TestCase> generate_bad_test_cases(void)
     return test_cases;
 }
 
-void test_good_GetHandler(const TestCase& test)
+void test_good_GetHandler(const tu::HandlerTestCase& test)
 {
-    Logger::info("===============\nTest: '%s'", test.title.c_str());
-    GetHandler gh(test.request, *test.ctx);
+    Logger::info("===============\nTest: '%s'", test.title.data());
+    GetHandler handler{test.request, *test.ctx};
 
     // process request
-    while (!gh.done())
+    while (!handler.done())
     {
         try
         {
-            gh.process();
+            handler.process();
         }
         catch (const ResponseError& error)
         {
-            Logger::error("ResponseError: '%s'", error.msg().c_str());
+            Logger::error("ResponseError: '%s'", error.msg().data());
             // these are not supposed to give an error
             std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
             return;
@@ -313,7 +273,7 @@ void test_good_GetHandler(const TestCase& test)
     }
 
     // get response
-    Response res = gh.response();
+    Response res = handler.response();
     Logger::debug_obj(res, "GetHandler: response: ");
 
     // handle specific cases
@@ -337,7 +297,7 @@ void test_good_GetHandler(const TestCase& test)
 
     // socket -> buffer -> file
     char buf[constants::read_chunk_size + 1];
-    std::ofstream out(RESULT_FILE);
+    std::ofstream out(RESULT_FILE.data());
     ssize_t n;
     while (!res.done())
     {
@@ -352,15 +312,15 @@ void test_good_GetHandler(const TestCase& test)
     out.flush();
 
     // create file only  based off response body
-    std::string result_str = utils::file_to_str(RESULT_FILE.c_str());
+    std::string result_str = utils::file_to_str(RESULT_FILE.data());
     size_t pos = result_str.find(constants::crlfcrlf) + 4;
     std::string body_str = result_str.substr(pos);
-    std::ofstream body_file(RESULT_BODY_FILE);
+    std::ofstream body_file(RESULT_BODY_FILE.data());
     body_file << body_str;
     body_file.flush();
 
     // diff expected vs result
-    int diff_result = test_utils::diff_and_log(RESULT_BODY_FILE.c_str(), test.file_path.raw.c_str(), DIFF_FILE.c_str());
+    int diff_result = tu::diff_and_log(RESULT_BODY_FILE.data(), test.file_path.raw.data(), DIFF_FILE.data());
     if (diff_result == 0 && test.expected.status_code() == res.status_code())
     {
         std::cout << constants::green << "[OK] " << constants::reset << test.title << "\n";
@@ -371,19 +331,19 @@ void test_good_GetHandler(const TestCase& test)
         // clang-format off
         std::cerr << "=====\nExpected:\n"
 		  << "Status: " << test.expected.status_code() << "\n"
-                  << test.file_path.raw.c_str() << "':\n'" << utils::file_to_str(test.file_path.raw.c_str()) << "'\n"
+                  << test.file_path.raw.data() << "':\n'" << utils::file_to_str(test.file_path.raw.data()) << "'\n"
                   << "=====\nGot:\n"
 		  << "Status: " << res.status_code() << "\n"
-                  << RESULT_BODY_FILE << "':\n'" << utils::file_to_str(RESULT_BODY_FILE.c_str()) << "'\n"
+                  << RESULT_BODY_FILE << "':\n'" << utils::file_to_str(RESULT_BODY_FILE.data()) << "'\n"
 		  << "=====\nDiff:\n'"
-		  << DIFF_FILE << "':\n'" << utils::file_to_str(DIFF_FILE.c_str()) << "'\n";
+		  << DIFF_FILE << "':\n'" << utils::file_to_str(DIFF_FILE.data()) << "'\n";
         // clang-format on
     }
 }
 
-void test_bad_GetHandler(const TestCase& test)
+void test_bad_GetHandler(const tu::HandlerTestCase& test)
 {
-    Logger::info("===============\nTest: '%s'", test.title.c_str());
+    Logger::info("===============\nTest: '%s'", test.title.data());
     GetHandler gh(test.request, *test.ctx);
 
     // process request
@@ -395,7 +355,7 @@ void test_bad_GetHandler(const TestCase& test)
         }
         catch (const ResponseError& error)
         {
-            Logger::error("ResponseError: '%s'", error.msg().c_str());
+            Logger::error("ResponseError: '%s'", error.msg().data());
             Logger::debug_obj(error, "GetHandler: error response: ");
             // should error
             if (error.status_code() == test.expected.status_code())
@@ -425,7 +385,7 @@ void test_bad_GetHandler(const TestCase& test)
 
     // socket -> buffer -> file
     char buf[constants::read_chunk_size + 1];
-    std::ofstream out(RESULT_FILE);
+    std::ofstream out(RESULT_FILE.data());
     ssize_t n;
     while (!res.done())
     {
@@ -459,7 +419,7 @@ int main(void)
 
     std::cout << "\nGood\n";
 
-    std::vector<TestCase> tests = generate_good_test_cases();
+    std::vector<tu::HandlerTestCase> tests = generate_good_test_cases();
     for (auto& test : tests)
     {
 

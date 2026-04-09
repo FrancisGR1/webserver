@@ -21,7 +21,7 @@ std::vector<TestCase> generate_good_test_cases(void)
 {
     //@NOTE: headers have to be lowercase because of normalization
     std::vector<TestCase> test_cases = {
-        //	// Basic Methods
+        // Basic Methods
         {"Simple GET request",
          "GET /index.html HTTP/1.1\r\nHost: localhost\r\n\r\n",
          Request("GET", "/index.html", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},

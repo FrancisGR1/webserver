@@ -84,8 +84,8 @@ std::vector<TestCase> generate_test_cases(void)
          .service = ServiceConfig({LocationConfig("/", "./root")}),
          .target = "/hello.html",
          .expected = "./root/hello.html"},
-        // tc 9: root with nonexistant target
-        {.title = "root with nonexistant target",
+        // tc 9: root with nonexistent target
+        {.title = "root with nonexistent target",
          .service = ServiceConfig({
              LocationConfig("/", "./root"),
          }),
