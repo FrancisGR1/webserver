@@ -33,38 +33,40 @@ const std::string& Request::method() const
 {
     return m_method;
 }
+
 const std::string& Request::target_path() const
 {
     return m_target_path;
 }
+
 const std::string& Request::target_query() const
 {
     return m_target_query;
 }
+
 const std::string& Request::protocol_version() const
 {
     return m_protocol_version;
 }
+
 const std::map<std::string, std::string>& Request::headers() const
 {
     return m_headers;
 }
+
 const std::string& Request::body() const
 {
     return m_body;
 }
+
 bool Request::bad_request() const
 {
     return m_status_code != StatusCode::Ok;
 }
+
 StatusCode::Code Request::status_code() const
 {
     return m_status_code;
-}
-
-static void print_field(std::ostream& os, const std::string& title, const std::string& value, int width = 14)
-{
-    os << std::left << std::setw(width) << (title + ": ") << value << "\n";
 }
 
 bool Request::operator==(const Request& other)
@@ -80,6 +82,11 @@ bool Request::operator==(const Request& other)
 		m_status_code == other.m_status_code
 	       );
     // clang-format on
+}
+
+static void print_field(std::ostream& os, const std::string& title, const std::string& value, int width = 14)
+{
+    os << std::left << std::setw(width) << (title + ": ") << "'" << value << "'\n";
 }
 
 std::ostream& operator<<(std::ostream& os, const Request& request)
