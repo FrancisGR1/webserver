@@ -19,6 +19,7 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
     , m_cgi(request, ctx)
     , m_upload("")
     , m_fd(-1)
+    , m_offset(0)
 {
     Logger::trace("PostHandler: constructor");
 }
@@ -29,8 +30,8 @@ static void expect_uploadable(
     const Path& upload_dir,
     const RequestContext& ctx)
 {
-    if (!upload_dir.exists)
-        http_utils::throw_internal_server_error_cant_upload(ctx);
+    if (!config.allows_upload())
+        http_utils::throw_internal_server_error_cant_upload(upload_dir, ctx);
     if (request.body().size() > config.max_body_size())
         http_utils::throw_content_too_large(ctx);
     if (!upload_dir.exists)
@@ -127,7 +128,8 @@ void PostHandler::process()
     else
     {
         //@TODO: que código de erro é aqui? 404?
-        http_utils::throw_internal_server_error_cant_upload(m_ctx);
+        std::cout << "TODO: implement\n";
+        http_utils::throw_internal_server_error_cant_upload("", m_ctx);
     }
 }
 

@@ -8,6 +8,8 @@
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
 
+//@REFACTOR: mudar para colocar o nome do ficheiro se estiver o field "name";
+// caso contrário dá um nome aleatório ao ficheiro -> tipo a timestamp atual ou uma chave random
 class PostHandler : public IRequestHandler
 {
   public:
