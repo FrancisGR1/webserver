@@ -126,6 +126,145 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
     return test_cases;
 }
 
+std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
+{
+    // clang-format off
+    std::vector<tu::HandlerTestCase> test_cases;
+    test_cases.reserve(100);
+
+    // to upload huge files
+    auto max = std::to_string(std::numeric_limits<std::size_t>::max());
+
+    // default service
+    LocationConfig post{
+        "/upload",
+        {{Token::DirectiveMethods, {"POST"}},
+         {Token::DirectiveUpload, {"on"}},
+         {Token::DirectiveRoot, {"./test_data/post/upload"}},
+         {Token::DirectiveMaxBodySize, {max.c_str()}}}
+    };
+
+    ServiceConfig service{post};
+
+    // will be used as a dummy file -> should never have to compare uploads
+    const std::string hello_md = TEST_FILES + "hello.md";
+
+    //@NOTE: instead of putting the str in the request/response body we put the file
+    // path which contains the content corresponding to the body.
+    // This makes it easier to insert/validate data
+
+    // --- post not allowed ---
+    LocationConfig no_post{
+        "/upload",
+        {{Token::DirectiveMethods, {"GET"}},
+         {Token::DirectiveUpload, {"on"}},
+         {Token::DirectiveRoot, {"./test_data/post/upload"}},
+         {Token::DirectiveMaxBodySize, {max.c_str()}}}
+    };
+    ServiceConfig service_no_post{no_post};
+    test_cases.emplace_back(
+        "no post allowed",
+        "./test_data/post/upload/",
+        service_no_post,
+        no_post,
+        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
+        Response( StatusCode::MethodNotAllowed, {}, hello_md ) //@NOTE: response body contains file path to expected body //@QUESTION: que erro é que o deve ser dado? neste momento o server está a dar InternalServerError
+	);
+
+    // --- disable upload ---
+    LocationConfig no_upload_allowed = post;
+    Directive off = {Token::DirectiveUpload, {"off"}};
+    no_upload_allowed.set(off);
+    ServiceConfig no_upload{no_upload_allowed};
+
+    test_cases.emplace_back(
+        "disabled upload",
+        "./test_data/post/upload/",
+        no_upload,
+        no_upload_allowed,
+        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
+        Response( StatusCode::Forbidden, {}, hello_md ) //@NOTE: response body contains file path to expected body //@QUESTION: que erro é que o deve ser dado? neste momento o server está a dar InternalServerError
+	);
+
+    // --- forbidden ---
+    // @NOTE: do a chmod 000 on the directory
+    LocationConfig forbidden{
+        "/forbidden",
+        {{Token::DirectiveMethods, {"POST"}},
+         {Token::DirectiveUpload, {"on"}},
+         {Token::DirectiveRoot, {"./test_data/post/forbidden"}},
+         {Token::DirectiveMaxBodySize, {max.c_str()}}}
+    };
+    ServiceConfig forbidden_service{forbidden};
+
+    test_cases.emplace_back(
+        "forbidden",
+        "./test_data/post/forbidden/",
+        forbidden_service,
+        forbidden,
+        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
+        Response( StatusCode::Forbidden, {}, hello_md ) //@NOTE: response body contains file path to expected body //@QUESTION: que erro é que o deve ser dado? neste momento o server está a dar InternalServerError
+	);
+
+    // --- body too large ---
+    LocationConfig no_content{
+        "/no_content",
+        {{Token::DirectiveMethods, {"POST"}},
+         {Token::DirectiveUpload, {"on"}},
+         {Token::DirectiveRoot, {"./test_data/post/"}},
+         {Token::DirectiveMaxBodySize, {"1"}}}
+    };
+    ServiceConfig no_content_service{no_content};
+    test_cases.emplace_back(
+        "body exceeds max body size",
+        "./test_data/post/upload/",
+        no_content_service,
+        no_content,
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, "this body is way too long", StatusCode::Ok),
+        Response(StatusCode::ContentTooLarge, {}, hello_md)
+    );
+
+    // --- upload directory does not exist ---
+    LocationConfig nonexistent_dir{
+        "/upload",
+        {{Token::DirectiveMethods, {"POST"}},
+         {Token::DirectiveUpload, {"on"}},
+         {Token::DirectiveRoot, {"./test_data/post/nonexistent_dir"}},
+         {Token::DirectiveMaxBodySize, {max.c_str()}}}
+    };
+    ServiceConfig nonexistent_dir_service{nonexistent_dir};
+    test_cases.emplace_back(
+        "upload directory does not exist",
+        "./test_data/post/nonexistent_dir/",
+        nonexistent_dir_service,
+        nonexistent_dir,
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok),
+        Response(StatusCode::NotFound, {}, hello_md)
+    );
+
+    // --- upload directory is a file, not a directory ---
+    LocationConfig file_as_dir{
+        "/upload",
+        {{Token::DirectiveMethods, {"POST"}},
+         {Token::DirectiveUpload, {"on"}},
+         {Token::DirectiveRoot, {"./test_data/post/upload/hello.md"}}, // file, not dir
+         {Token::DirectiveMaxBodySize, {max.c_str()}}}
+    };
+    ServiceConfig file_as_dir_service{file_as_dir};
+    test_cases.emplace_back(
+        "upload root is a file not a directory",
+        "./test_data/post/upload/hello.md",
+        file_as_dir_service,
+        file_as_dir,
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok),
+        Response(StatusCode::Conflict, {}, hello_md)
+    );
+
+    // clang-format on
+
+    return test_cases;
+}
+
 std::string get_expected_path(std::string path)
 {
     std::string result(path);
@@ -133,6 +272,62 @@ std::string get_expected_path(std::string path)
     if (pos != std::string::npos)
         result.replace(pos, 6, "/expected/");
     return result;
+}
+
+void test_bad_PostHandler(const tu::HandlerTestCase& test)
+{
+    // upload response
+    // compare files
+    Logger::info("===============\nTest: '%s'", test.title.c_str());
+    PostHandler handler{test.request, *test.ctx};
+    Logger::debug_obj(*test.ctx->config().location(), "Config:\n");
+    Logger::debug_obj(test.request, "Request:\n");
+
+    // process request
+    while (!handler.done())
+    {
+        try
+        {
+            handler.process();
+        }
+        catch (const ResponseError& error)
+        {
+            Logger::trace("ResponseError: '%s'", error.msg().c_str());
+            // these are supposed to give an error
+            if (error.status_code() == test.expected.status_code())
+                std::cerr << constants::green << "[OK] " << constants::reset << test.title << "\n";
+            else
+            {
+                std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
+                std::cerr << "=====\nExpected:\n"
+                          << "Status: " << test.expected.status_code() << "\n"
+                          << "=====\nGot:\n"
+                          << "Status: " << error.status_code() << "\n";
+            }
+            return;
+        }
+    }
+
+    // get response
+    Response res = handler.response();
+    Logger::debug_obj(res, "PostHandler: response: ");
+
+    // diff expected vs result
+    std::string expected_path = get_expected_path(test.expected.body());
+    std::string test_path = res.headers().at("Location"); //@ASSUMPTION: response has a "Location"
+
+    std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
+    std::cerr << "-> Didn't give an error!\n";
+    // clang-format off
+    std::cerr << "=====\nExpected:\n"
+	<< "Status: " << test.expected.status_code() << "\n"
+       	<< test.expected.body().c_str() << "':\n'" << utils::file_to_str(test.expected.body().c_str()) << "'\n"
+       	<< "=====\nGot:\n"
+       	<< "Status: " << res.status_code() << "\n"
+       	<< expected_path << "':\n'" << utils::file_to_str(expected_path.c_str()) << "'\n"
+       	<< "=====\nDiff:\n'"
+       	<< DIFF_FILE << "':\n'" << utils::file_to_str(DIFF_FILE.data()) << "'\n";
+    // clang-format on
 }
 
 // tester functions
@@ -146,6 +341,7 @@ void test_good_PostHandler(const tu::HandlerTestCase& test)
     PostHandler handler{test.request, *test.ctx};
     Logger::debug_obj(*test.ctx->config().location(), "Config:\n");
     Logger::debug_obj(test.request, "Request:\n");
+
     // process request
     while (!handler.done())
     {
@@ -209,12 +405,12 @@ int main()
     Logger::trace("=================");
     Logger::info("POST HANDLER START");
 
-    std::cout << "\n===== GET tests====\n";
+    std::cout << "\n===== POST tests====\n";
 
     std::cout << "\nGood\n";
 
     std::vector<tu::HandlerTestCase> tests = generate_good_test_cases();
-    int idx = 0;
+    int stop = 0;
     for (auto& test : tests)
     {
         try
@@ -225,8 +421,27 @@ int main()
         {
             Logger::fatal("Test: '%s'", e.what());
         }
-        if (idx == -1) // @NOTE: use this to test until a certain point
+        if (stop == -1) // @NOTE: use this to test until a certain point
             break;
-        ++idx;
+        ++stop;
+    }
+
+    std::cout << "\nBad\n";
+
+    tests = generate_bad_test_cases();
+    stop = 0;
+    for (auto& test : tests)
+    {
+        try
+        {
+            test_bad_PostHandler(test);
+        }
+        catch (const std::exception& e)
+        {
+            Logger::fatal("Test: '%s'", e.what());
+        }
+        if (stop == -1) // @NOTE: use this to test until a certain point
+            break;
+        ++stop;
     }
 }
