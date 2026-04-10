@@ -15,6 +15,7 @@
 - [ ] parser - dividir em Lexer → Parser → AST → Semantic Validator → Config Builder
 - [ ] mapa de listeners -> serviço seria muito conveniente
 - [ ] deve have sempre um root, quer ao nível de LocationConfig, ServiceConfig ou constant do server
+- [ ] redireção pode só conter o código: "return 403"
 - [ ] eliminar upload_dir -> não é necessário, root já faz isso
 - [ ] o name de LocationConfig devia ser const!
 
@@ -49,9 +50,11 @@
 - [x] Pequenas funções para throw dos códigos mais utilizados nos erros
 
 # CGI
-- [ ] lidar com programas infinitos/timeouts, crashes, aborts, etc. Construir uma sandbox
+- [x] lidar com programas infinitos/timeouts, crashes, aborts, etc. Construir uma sandbox
 - [x] converter raw string em respostas
 - [ ] implementar pool de processos, como o FastCGI
+- [ ] implementar pipe extra para receber body (de modo a funcionar com POST)
+---> vê exemplo aqui: www.alimnaqvi.com/blog/webserv
 
 # Servidor
 - [x] Pesquisar como colocar um ip no bind ao inves de INADDR_ANY 
@@ -100,6 +103,7 @@
 - [ ] Dividr classe context em diferentes versões de acordo com o escopo: RequestContext, ConnectionContext
 - [ ] Redesenhar melhor EventManager e ConnectionPool de modo a que dependam menos uma da outra (é estranho a connection pool usar o EventManager para gerir eventos, não?)
 - [ ] Como chegar a 1 milhão de ligações: https://medium.com/@gsaidheeraj/how-nginx-handles-millions-of-requests-with-just-1-process-0aa4a504663c
+- [ ] Criar um interface IBody que dê origem a: StringBody, FdBody, PipeBody
 
 # Testes
 ## Valgrind
@@ -109,15 +113,16 @@
 Testar:
 - [ ] Máximo número de ligações concurrentes
 - [ ] testes de unidade para:
+    - [ ] script que prepara ficheiros para testes -> preparas os ficheiros no próprio código em si
     - [x] path resolution algorithm
         - [ ] adicionar testes para casos com "../../.."
     - [x] CgiHandler
     - [x] RequestParser
     - [x] RequestParser
     - [x] GetHandler
-    - [ ] PostHandler
-    - [ ] DeleteHandler
-
+    - [x] PostHandler
+    - [x] DeleteHandler
+    - [ ] ErrorHandler
 
 # Mais importante
 - [ ] Tester em go
