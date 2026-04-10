@@ -89,7 +89,7 @@ namespace http_utils
 	void throw_conflict_delete(const Path& path, const RequestContext& ctx)
 	{
 	    throw ResponseError(StatusCode::Conflict, 
-			    utils::fmt("Cannot delete directory: '%s", path.raw.c_str()), &ctx);
+			    utils::fmt("Cannot delete directory: '%s'", path.raw.c_str()), &ctx);
 	}
 
 	void throw_conflict_upload(const Path& path, const RequestContext& ctx)

@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 
 #include "DeleteHandler.hpp"
 #include "core/Logger.hpp"
@@ -42,7 +43,16 @@ void DeleteHandler::process()
     // delete file
     if (std::remove(path.raw.c_str()) != 0)
     {
-        http_utils::throw_internal_server_error_cant_delete(path, m_ctx);
+        int err = errno;
+        Logger::error("Remove failed: errno says: '%s'", strerror(errno));
+        switch (err)
+        {
+            case EACCES:
+            case EPERM: http_utils::throw_forbidden_invalid_directory(path, m_ctx); break;
+            case ENOENT: http_utils::throw_not_found(path, m_ctx); break;
+            case EISDIR: http_utils::throw_conflict_delete(path, m_ctx); break;
+            default: http_utils::throw_internal_server_error_cant_delete(path, m_ctx); break;
+        }
     }
 
     // status
