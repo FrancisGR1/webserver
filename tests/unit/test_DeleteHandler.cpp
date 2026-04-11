@@ -137,14 +137,11 @@ void test_DeleteHandler(const tu::HandlerTestCase& test)
 
 int main()
 {
-    Logger::set_global_level(Log::Warn);
+    Logger::set_global_level(Log::Fatal);
 
-    Logger::trace("=================");
-    Logger::info("DELETE HANDLER START");
-
-    std::cout << "\n===== DELETE tests====\n";
-
-    std::cout << "\nGood\n";
+    std::cout << "==============================\n";
+    std::cout << "======= DeleteHandler ========\n";
+    std::cout << "==============================\n";
 
     std::vector<tu::HandlerTestCase> tests = generate_test_cases();
     int stop = 0;

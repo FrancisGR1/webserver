@@ -308,7 +308,7 @@ void test_bad_PostHandler(const tu::HandlerTestCase& test)
         }
     }
 
-    // get response
+    // post response
     Response res = handler.response();
     Logger::debug_obj(res, "PostHandler: response: ");
 
@@ -358,7 +358,7 @@ void test_good_PostHandler(const tu::HandlerTestCase& test)
         }
     }
 
-    // get response
+    // post response
     Response res = handler.response();
     Logger::debug_obj(res, "PostHandler: response: ");
 
@@ -400,15 +400,14 @@ void test_good_PostHandler(const tu::HandlerTestCase& test)
 
 int main()
 {
-    Logger::set_global_level(Log::Warn);
+    Logger::set_global_level(Log::Fatal);
 
-    Logger::trace("=================");
-    Logger::info("POST HANDLER START");
+    std::cout << "==============================\n";
+    std::cout << "========= PostHandler ========\n";
+    std::cout << "==============================\n";
 
-    std::cout << "\n===== POST tests====\n";
-
-    std::cout << "\nGood\n";
-
+    // good
+    std::cout << constants::green << "\nGood tests\n" << constants::reset;
     std::vector<tu::HandlerTestCase> tests = generate_good_test_cases();
     int stop = 0;
     for (auto& test : tests)
@@ -426,8 +425,8 @@ int main()
         ++stop;
     }
 
-    std::cout << "\nBad\n";
-
+    // bad
+    std::cout << constants::red << "\nBad tests\n" << constants::reset;
     tests = generate_bad_test_cases();
     stop = 0;
     for (auto& test : tests)

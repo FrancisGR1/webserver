@@ -110,19 +110,33 @@
 - [ ] fix de leaks
 
 ## Tester
+### Geral
+- [x] Fazer regra para testes de unidade no Makefile principal
+- [x] preparar os ficheiros necessários para testar
+
+### Unidade
 Testar:
 - [ ] Máximo número de ligações concurrentes
-- [ ] testes de unidade para:
-    - [ ] script que prepara ficheiros para testes -> preparas os ficheiros no próprio código em si
-    - [x] path resolution algorithm
-        - [ ] adicionar testes para casos com "../../.."
+- [x] testes de unidade para:
     - [x] CgiHandler
     - [x] RequestParser
     - [x] RequestParser
     - [x] GetHandler
     - [x] PostHandler
     - [x] DeleteHandler
-    - [ ] ErrorHandler
+    - [x] ErrorHandler
+    - [x] path resolution algorithm
+        - [ ] adicionar testes para casos com "../../.."
+
+### Integração
+- [ ] Testes ao webserver em GO: POST -> GET -> DELETE -> GET
+- [ ] Tester da escola
+
+### Estresse
+- [ ] Testar número máximo de ligações
+
+### Leaks/Memória
+- [ ] Correr testes de integração com valgrind -> script que deteta leaks automaticamente
 
 # Mais importante
 - [ ] Tester em go
@@ -130,9 +144,3 @@ Testar:
 - [ ] Implementar timeouts de ligacoes
 - [ ] Criar configuracoes para testar
 - [ ] Melhorar configuracao
-
-# AGORA
-- [ ] Testar parser (unidade), ver se Post e Delete funcionam com curl
-PostHandler não estã a funcionar porque o parser nunca dá done(), com o seguinte cmd: 
-
-curl -X POST http://127.0.0.4:8080/upload -d "hello=world"

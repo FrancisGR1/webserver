@@ -16,7 +16,7 @@ struct TestCase
 
 void test_path_resolution(const TestCase& test);
 
-std::vector<TestCase> generate_test_cases(void)
+std::vector<TestCase> generate_good_test_cases(void)
 {
     std::vector<TestCase> test_cases = {
         // --- Basic matching ---
@@ -98,9 +98,12 @@ std::vector<TestCase> generate_test_cases(void)
 
 int main()
 {
-    Logger::set_global_level(Log::Trace);
+    Logger::set_global_level(Log::Fatal);
 
-    std::vector<TestCase> tests = generate_test_cases();
+    std::cout << "====================================\n";
+    std::cout << "======= resolve_path() algo ========\n";
+    std::cout << "====================================\n";
+    std::vector<TestCase> tests = generate_good_test_cases();
     for (auto& test : tests)
     {
         // std::cerr << "\n-------\nService: " << test.service << "\n-----\n";

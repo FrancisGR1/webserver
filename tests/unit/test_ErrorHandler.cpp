@@ -239,12 +239,11 @@ void test_ErrorHandler(const ErrorHandlerTestCase& test)
 
 int main()
 {
-    Logger::set_global_level(Log::Warn);
+    Logger::set_global_level(Log::Fatal);
 
-    Logger::trace("=================");
-    Logger::info("ERROR HANDLER START");
-
-    std::cout << "\n===== ERROR tests====\n";
+    std::cout << "==============================\n";
+    std::cout << "======= ErrorHandler ========\n";
+    std::cout << "==============================\n";
 
     std::vector<ErrorHandlerTestCase> tests = generate_test_cases();
     int stop = 0;

@@ -3,8 +3,9 @@ LIB         = ../../libwebserv.a
 CXX         = c++ -g
 CXXFLAGS    = -Wall -Werror -Wextra -std=c++23 -I../../src/
 
-# Add binaries here
-TESTS       = test_resolve_target.out \
+# Unit test binaries
+# Add here
+UNITS       = test_resolve_target.out \
 	      test_RequestParser.out \
 	      test_GetHandler.out \
 	      test_PostHandler.out \
@@ -14,11 +15,11 @@ TESTS       = test_resolve_target.out \
 
 .PHONY: all tests clean
 
-all: $(SERVER) $(LIB) $(TESTS)
+all: $(SERVER) $(LIB) $(UNITS)
 
-tests: $(TESTS)
-	@for t in $(TESTS); do \
-		echo "Running $$t..."; \
+tests: $(UNITS)
+	@for t in $(UNITS); do \
+		echo "\nMakefile: Running $$t..."; \
 		./$$t; \
 	done
 
@@ -32,8 +33,8 @@ test_%.out: test_%.cpp $(LIB)
 	$(CXX) $(CXXFLAGS) $< $(LIB) -o $@
 
 clean:
-	rm -f $(TESTS)
+	rm -f $(UNITS)
 
 fclean: clean
 
-re: clean fclean all $(TESTS)
+re: clean fclean all $(UNITS)

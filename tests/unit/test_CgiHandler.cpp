@@ -11,6 +11,9 @@
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/response/ResponseError.hpp"
 
+// how much time we should wait for idle subprocesses
+// if the subprocess doesn't do anything for TEST_TIMEOUT time
+// it gives a 504
 const Seconds TEST_TIMEOUT = 6;
 
 struct TestCase
@@ -245,17 +248,18 @@ void test_bad_CgiHandler(const TestCase& test)
 
 int main()
 {
-    Logger::set_global_level(Log::Trace);
+    Logger::set_global_level(Log::Fatal);
+    // send output of cgi to here
+    // to check what subprocess says
     Logger::set_output(
         "/home/francisco/Documents/42_School/05/Webserv/tests/"
         "unit/logs/subprocess_logs.log",
         std::ios::out | std::ios::trunc);
 
-    Logger::trace("=================");
-    Logger::info("CGI HANDLER START");
-    Logger::warn("Testing with delay of %.2f seconds", TEST_TIMEOUT);
-
-    std::cout << "\n=====CGI tests====\n";
+    std::cout << "==============================\n";
+    std::cout << "========== CgiHandler ========\n";
+    std::cout << "==============================\n";
+    std::cout << "--> Testing with delay of " << TEST_TIMEOUT << " seconds!\n";
 
     std::vector<TestCase> tests;
 
@@ -269,7 +273,6 @@ int main()
 
     // bad
     std::cout << constants::red << "\nBad tests\n" << constants::reset;
-    Logger::info("Testing with a timeout of %.2f seconds", TEST_TIMEOUT);
     tests = generate_bad_test_cases();
     for (auto& test : tests)
     {

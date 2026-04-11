@@ -224,8 +224,12 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
          Response(StatusCode::NotFound, {}, "")
      );
 
-    // No permissions default file
-    // @NOTE: chmod a-rwx no_perms.md
+     // create file with no permissions
+     const std::string no_perms_file = std::string("./test_data/get/error/") + "no_perms.md";
+     std::ofstream(no_perms_file.c_str()).close();
+     chmod(no_perms_file.c_str(), 0000);
+
+     // No permissions default file
      directive = {Token::DirectiveDefaultFile, {{"no_perms.md"}}};
      error.set(directive);
      test_cases.emplace_back(
@@ -237,7 +241,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
          Response(StatusCode::Forbidden, {}, "")
      );
 
-    // No permissions requested file
+     // No permissions requested file
      test_cases.emplace_back(
          "requested file has no permissions",
          "./test_data/get/error/no_perms.md",
@@ -255,6 +259,8 @@ void test_good_GetHandler(const tu::HandlerTestCase& test)
 {
     Logger::info("===============\nTest: '%s'", test.title.data());
     GetHandler handler{test.request, *test.ctx};
+    Logger::debug_obj(*test.ctx->config().location(), "Config:\n");
+    Logger::debug_obj(test.request, "Request:\n");
 
     // process request
     while (!handler.done())
@@ -412,13 +418,12 @@ int main(void)
 {
     Logger::set_global_level(Log::Fatal);
 
-    Logger::trace("=================");
-    Logger::info("GET HANDLER START");
+    std::cout << "==============================\n";
+    std::cout << "========= GetHandler ========\n";
+    std::cout << "==============================\n";
 
-    std::cout << "\n===== GET tests====\n";
-
-    std::cout << "\nGood\n";
-
+    // good
+    std::cout << constants::green << "\nGood tests\n" << constants::reset;
     std::vector<tu::HandlerTestCase> tests = generate_good_test_cases();
     for (auto& test : tests)
     {
@@ -433,8 +438,8 @@ int main(void)
         }
     }
 
-    std::cout << "\nBad\n";
-
+    // bad
+    std::cout << constants::red << "\nBad tests\n" << constants::reset;
     tests = generate_bad_test_cases();
 
     for (auto& test : tests)

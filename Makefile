@@ -87,3 +87,4 @@ TESTS_DIR = tests/
 .PHONY: tests
 tests: all lib
 	cd $(TESTS_DIR) && $(MAKE) -C unit/
+	cd $(TESTS_DIR) && $(MAKE) tests -C unit/

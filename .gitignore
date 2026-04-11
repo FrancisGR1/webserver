@@ -4,6 +4,7 @@ tmp/*
 *.pdf
 webserv
 *.out
+*.data
 .cache
 compile_commands.json
 __pycache__

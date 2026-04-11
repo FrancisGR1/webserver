@@ -229,34 +229,6 @@ std::vector<TestCase> generate_bad_test_cases(void)
     return test_cases;
 }
 
-int main()
-{
-    Logger::set_global_level(Log::Fatal);
-
-    std::cout << "\nNote: one test: \n[Full]\n[Chunked]\n";
-
-    std::vector<TestCase> tests;
-
-    // good
-    std::cout << constants::green << "\nGood tests\n" << constants::reset;
-    tests = generate_good_test_cases();
-    for (auto& test : tests)
-    {
-        test_RequestParser(test);
-        test_RequestParser_with_random_sized_chunks(test);
-    }
-
-    // bad
-    std::cout << constants::red << "\nBad tests\n" << constants::reset;
-    tests = generate_bad_test_cases();
-    for (auto& test : tests)
-    {
-        test_RequestParser(test);
-        test_RequestParser_with_random_sized_chunks(test);
-    }
-    return 0;
-}
-
 void test_RequestParser(const TestCase& test)
 {
     RequestParser parser;
@@ -350,4 +322,35 @@ void test_RequestParser_with_random_sized_chunks(const TestCase& test)
             std::cerr << "\n\n";
         }
     }
+}
+
+int main()
+{
+    Logger::set_global_level(Log::Fatal);
+
+    std::cout << "==============================\n";
+    std::cout << "======= RequestParser ========\n";
+    std::cout << "==============================\n";
+    std::cout << "\nNote: one test, two modes: \n[Full]\n[Chunked]\n";
+
+    std::vector<TestCase> tests;
+
+    // good
+    std::cout << constants::green << "\nGood tests\n" << constants::reset;
+    tests = generate_good_test_cases();
+    for (auto& test : tests)
+    {
+        test_RequestParser(test);
+        test_RequestParser_with_random_sized_chunks(test);
+    }
+
+    // bad
+    std::cout << constants::red << "\nBad tests\n" << constants::reset;
+    tests = generate_bad_test_cases();
+    for (auto& test : tests)
+    {
+        test_RequestParser(test);
+        test_RequestParser_with_random_sized_chunks(test);
+    }
+    return 0;
 }
