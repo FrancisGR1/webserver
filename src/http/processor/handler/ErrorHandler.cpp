@@ -99,5 +99,4 @@ const Response& ErrorHandler::response() const
 ErrorHandler::~ErrorHandler()
 {
     Logger::trace("ErrorHandler: destructor");
-    delete m_ctx;
 }

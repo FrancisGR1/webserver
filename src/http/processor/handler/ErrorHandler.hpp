@@ -1,7 +1,6 @@
 #ifndef ERRORHANDLER_HPP
 #define ERRORHANDLER_HPP
 
-#include "config/ConfigTypes.hpp"
 #include "http/StatusCode.hpp"
 #include "http/processor/RequestContext.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"

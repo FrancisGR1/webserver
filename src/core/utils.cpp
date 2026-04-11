@@ -3,6 +3,8 @@
 #include <fstream>
 #include <sstream>
 
+#include <unistd.h>
+
 #include "constants.hpp"
 #include "utils.hpp"
 
@@ -90,6 +92,18 @@ long long str_tohexadecimal(const std::string& str)
     if (!ss.fail())
         ss >> result;
     return result;
+}
+
+std::string file_to_str(int fd)
+{
+    std::string content;
+
+    char buf[constants::read_chunk_size];
+    ssize_t n;
+    while ((n = ::read(fd, buf, sizeof(buf))) > 0)
+        content.append(buf, n);
+
+    return content;
 }
 
 std::string file_to_str(const std::string file_path)
