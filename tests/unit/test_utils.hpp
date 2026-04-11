@@ -1,9 +1,8 @@
 #include <cstdlib>
-#include <fstream>
 #include <memory>
-#include <sstream>
 #include <string>
-#include <string_view>
+
+#include <sys/stat.h>
 
 #include "config/types/LocationConfig.hpp"
 #include "config/types/ServiceConfig.hpp"
@@ -72,4 +71,9 @@ int diff_and_log(const char* expected, const char* test, const char* log_file)
     return system(cmd.c_str());
 }
 
+bool file_exists(const std::string& path)
+{
+    struct stat st;
+    return stat(path.c_str(), &st) == 0;
+}
 } // namespace tu

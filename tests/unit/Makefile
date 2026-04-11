@@ -9,6 +9,7 @@ TESTS       = test_resolve_target.out \
 	      test_GetHandler.out \
 	      test_PostHandler.out \
 	      test_DeleteHandler.out \
+	      test_ErrorHandler.out \
 	      test_CgiHandler.out
 
 .PHONY: all tests clean
