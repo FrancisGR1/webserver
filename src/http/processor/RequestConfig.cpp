@@ -125,8 +125,9 @@ Path RequestConfig::upload_dir() const
     return Path("");
 }
 
-Path RequestConfig::get_error_page_or_nonexistent_path(size_t code) const
+Path RequestConfig::get_error_page_or_nonexistent_path(StatusCode::Code c) const
 {
+    size_t code = static_cast<size_t>(c);
     Logger::trace("RequestConfig: Lookup error %zu page", code);
     if (m_location && utils::contains(m_location->error_pages, code))
         return m_location->error_pages.at(code);

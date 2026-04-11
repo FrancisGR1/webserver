@@ -34,7 +34,7 @@ class RequestConfig
     Path index() const;
     Path root() const;
     Path upload_dir() const;
-    Path get_error_page_or_nonexistent_path(size_t code) const;
+    Path get_error_page_or_nonexistent_path(StatusCode::Code c) const;
     Path cgi_interpreter() const;
     //@TODO: get listener (a connection é que tem de dar isto)
     size_t max_body_size() const;
