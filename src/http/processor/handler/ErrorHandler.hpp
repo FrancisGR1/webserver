@@ -10,13 +10,17 @@
 class ErrorHandler : public IRequestHandler
 {
   public:
+    // construct/destruct
     ErrorHandler(const ResponseError& error);
     ErrorHandler(StatusCode::Code code);
     ErrorHandler(StatusCode::Code code, const RequestContext& ctx);
+    ~ErrorHandler();
+
+    // api
     void process();
     bool done() const;
     const Response& response() const;
-    ~ErrorHandler();
+    static std::string make_default_body(StatusCode::Code code);
 
   private:
     Response m_response;

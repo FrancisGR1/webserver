@@ -33,8 +33,6 @@ void ErrorHandler::process()
 {
     Logger::trace("ErrorHandler: processing...");
 
-    size_t error = static_cast<size_t>(m_code);
-
     // status
     m_response.set_status(m_code);
 
@@ -46,7 +44,7 @@ void ErrorHandler::process()
     if (m_ctx != NULL)
     {
         const RequestConfig& config = m_ctx->config();
-        const Path& error_page = config.get_error_page_or_nonexistent_path(error);
+        const Path& error_page = config.get_error_page_or_nonexistent_path(m_code);
         if (error_page.exists)
         {
             // headers
@@ -62,19 +60,7 @@ void ErrorHandler::process()
         }
     }
 
-    // build default body
-    std::string title = utils::to_string(error) + " " + StatusCode::to_reason(m_code);
-
-    std::string html = "<html>\n"
-                       "<head><title>" +
-                       title +
-                       "</title></head>\n"
-                       "<body>\n"
-                       "<center><h1>" +
-                       title +
-                       "</h1></center>\n"
-                       "</body>\n"
-                       "</html>\n";
+    std::string html = make_default_body(m_code);
 
     // headers
     m_response.set_header("Content-Length", utils::to_string(html.size()));
@@ -94,6 +80,24 @@ bool ErrorHandler::done() const
 const Response& ErrorHandler::response() const
 {
     return m_response;
+}
+
+std::string ErrorHandler::make_default_body(StatusCode::Code code)
+{
+    // build default body
+    size_t error = static_cast<size_t>(code);
+    std::string title = utils::to_string(error) + " " + StatusCode::to_reason(code);
+    std::string html = "<html>\n"
+                       "<head><title>" +
+                       title +
+                       "</title></head>\n"
+                       "<body>\n"
+                       "<center><h1>" +
+                       title +
+                       "</h1></center>\n"
+                       "</body>\n"
+                       "</html>\n";
+    return html;
 }
 
 ErrorHandler::~ErrorHandler()
