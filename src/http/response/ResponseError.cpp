@@ -15,19 +15,30 @@ StatusCode::Code ResponseError::status_code() const
 {
     return m_status;
 }
+
 const std::string& ResponseError::msg() const
 {
     return m_msg;
 }
+
 bool ResponseError::has_ctx() const
 {
     return m_ctx != NULL;
 }
+
 const RequestContext& ResponseError::ctx() const
 {
     if (m_ctx == NULL)
         throw std::logic_error("ResponseError: Tried to access Null Pointer!");
     return *m_ctx;
+}
+
+void ResponseError::set(RequestContext* ctx)
+{
+    if (ctx)
+    {
+        m_ctx = ctx;
+    }
 }
 
 ResponseError::~ResponseError() throw()

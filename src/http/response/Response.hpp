@@ -37,6 +37,7 @@ class Response
     // getters
     StatusCode::Code status_code() const;
     const std::string& body() const;
+    int body_fd() const;
     const std::map<std::string, std::string>& headers() const;
 
     // overloads

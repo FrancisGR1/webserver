@@ -278,6 +278,11 @@ const std::string& Response::body() const
     return m_body_str;
 }
 
+int Response::body_fd() const
+{
+    return m_body_fd;
+}
+
 const std::map<std::string, std::string>& Response::headers() const
 {
     return m_headers;

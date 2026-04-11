@@ -9,13 +9,18 @@
 class ResponseError : public std::exception
 {
   public:
+    // construct/destruct
     ResponseError(StatusCode::Code code, const std::string& msg, const RequestContext* ctx = NULL);
+    virtual ~ResponseError() throw();
+
+    // getters
     StatusCode::Code status_code() const;
     const std::string& msg() const;
     bool has_ctx() const;
     const RequestContext& ctx() const;
 
-    virtual ~ResponseError() throw();
+    // setters
+    void set(RequestContext* ctx);
 
   private:
     StatusCode::Code m_status;
