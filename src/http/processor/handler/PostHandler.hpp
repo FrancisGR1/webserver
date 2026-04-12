@@ -26,14 +26,17 @@ class PostHandler : public IRequestHandler
     bool m_done;
     CgiHandler m_cgi;
 
-    // upload
-    Path m_upload;
+    // upload file identifiers
+    std::string m_upload_file; // name
+    std::string m_upload_uri;  // location + name
+    Path m_upload_path;        // relative path
+
     int m_fd;
     ssize_t m_offset;
-    static unsigned long long m_uploaded_file_index;
 
     // utils
-    ssize_t handle_upload(const std::string& body, size_t offset, int fd);
+    std::string uri() const;
+    std::string make_file_name() const;
 };
 
 #endif // POSTHANDLER_HPP

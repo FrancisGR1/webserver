@@ -2,7 +2,9 @@
 #include <unistd.h>
 
 #include "PostHandler.hpp"
+#include "core/MimeTypes.hpp"
 #include "core/constants.hpp"
+#include "core/contracts.hpp"
 #include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/http_utils.hpp"
@@ -10,14 +12,12 @@
 #include "http/processor/RequestContext.hpp"
 #include "http/request/Request.hpp"
 
-unsigned long long PostHandler::m_uploaded_file_index;
-
 PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
     : m_request(request)
     , m_ctx(ctx)
     , m_done(false)
     , m_cgi(request, ctx)
-    , m_upload("")
+    , m_upload_path("")
     , m_fd(-1)
     , m_offset(0)
 {
@@ -30,15 +30,13 @@ static void expect_uploadable(
     const Path& upload_dir,
     const RequestContext& ctx)
 {
-    if (!config.allows_upload())
-        http_utils::throw_internal_server_error_cant_upload(upload_dir, ctx);
     if (request.body().size() > config.max_body_size())
         http_utils::throw_content_too_large(ctx);
     if (!upload_dir.exists)
         http_utils::throw_not_found(upload_dir, ctx);
     if (!upload_dir.is_directory)
         http_utils::throw_conflict_delete(upload_dir, ctx);
-    if (!upload_dir.can_write || !upload_dir.can_execute)
+    if (!config.allows_upload() || !upload_dir.can_write || !upload_dir.can_execute)
         http_utils::throw_forbidden_cant_upload(upload_dir, ctx);
 }
 
@@ -52,7 +50,7 @@ void PostHandler::process()
     if (config.is_redirected())
     {
         m_response.set_status(StatusCode::MovedPermanently);
-        m_response.set_header("Location", config.redirection().raw_path);
+        m_response.set_header("Location", uri());
         m_response.set_header("Connection", "close");
         m_response.set_header("Date", utils::http_date());
         m_done = true;
@@ -72,17 +70,19 @@ void PostHandler::process()
             expect_uploadable(m_request, config, upload_dir, m_ctx);
 
             // create a name for the new file to be uploaded
-            std::string file_name = utils::to_string(m_uploaded_file_index++) + ".data";
+            m_upload_file = make_file_name();
+            // make upload location
+            m_upload_uri = uri();
             // make upload real path
-            m_upload = utils::join_paths(upload_dir.raw, file_name);
+            m_upload_path = utils::join_paths(upload_dir.raw, m_upload_file);
             //@TODO add fd to event pool
-            m_fd = open(m_upload.raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            m_fd = open(m_upload_path.raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
             if (m_fd <= 2)
             {
                 http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
             }
 
-            Logger::debug("PostHandler: write to fd=%d '%s'", m_fd, m_upload.raw.c_str());
+            Logger::debug("PostHandler: write to fd=%d '%s'", m_fd, m_upload_path.raw.c_str());
         }
 
         if (!m_done)
@@ -111,14 +111,14 @@ void PostHandler::process()
             std::string json = "{"
                                "\"status\": \"success\","
                                "\"filename\": \"" +
-                               m_upload.raw +
+                               m_upload_uri +
                                "\","
                                "\"size\": " +
                                utils::to_string(m_offset) + "}";
             m_response.set_body_as_str(json);
 
             // headers
-            m_response.set_header("Location", m_upload.raw);
+            m_response.set_header("Location", uri());
             m_response.set_header("Connection", "close"); // @NOTE: HTTP1.0 closes by default;
             m_response.set_header("Date", utils::http_date());
             m_response.set_header("Content-Type", "application/json");
@@ -127,7 +127,7 @@ void PostHandler::process()
     }
     else // can't upload
     {
-        http_utils::throw_forbidden_cant_upload("", m_ctx);
+        http_utils::throw_forbidden_cant_upload(m_ctx.config().path(), m_ctx);
     }
 }
 
@@ -149,3 +149,70 @@ PostHandler::~PostHandler()
     if (m_fd > -1)
         close(m_fd);
 };
+
+std::string PostHandler::uri() const
+{
+    REQUIRE(m_ctx.config().location() != NULL);
+    REQUIRE(m_upload_file != "");
+
+    std::string uri = utils::join_paths(m_ctx.config().location()->name, m_upload_file);
+    Logger::debug("PostHandler: uri: '%s'", uri.c_str());
+    return uri;
+}
+
+std::string PostHandler::make_file_name() const
+{
+    static unsigned long long uploaded_file_index;
+    bool make_default_name = false;
+    std::string file_name = "";
+
+    // filename is in this header
+    if (utils::contains(m_request.headers(), "Content-Disposition"))
+    {
+        const std::string& value = m_request.headers().at("Content-Disposition");
+        size_t pos = value.find("filename");
+        if (pos == std::string::npos)
+        {
+            make_default_name = true;
+        }
+        else
+        // filename parameter exists so extract it
+        {
+            size_t eq = value.find('=', pos);
+            if (eq == std::string::npos)
+            {
+                make_default_name = true;
+            }
+            else
+            // has a value
+            {
+                file_name = value.substr(eq + 1); // everything after '='
+                // remove quotes
+                if (!file_name.empty() && file_name[0] == '"')
+                    file_name = file_name.substr(1);
+                if (!file_name.empty() && file_name[file_name.size() - 1] == '"')
+                    file_name.erase(file_name.size() - 1);
+            }
+        }
+    }
+    else
+    {
+        make_default_name = true;
+    }
+
+    if (make_default_name)
+    {
+        std::string extension = ".data";
+        if (utils::contains(m_request.headers(), "Content-Type"))
+        {
+            const std::string& mime = m_request.headers().at("Content-Type");
+            extension = MimeTypes::from_mime(mime);
+        }
+
+        // default: timestamp + index + extension
+        file_name = utils::to_string(utils::timestamp()) + "_" + utils::to_string(uploaded_file_index++) + extension;
+    }
+
+    Logger::debug("PostHandler: file name: '%s'", file_name.c_str());
+    return file_name;
+}
