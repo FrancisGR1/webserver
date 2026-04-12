@@ -1,6 +1,7 @@
 #ifndef GETHANDLER_HPP
 #define GETHANDLER_HPP
 
+#include "core/EventAction.hpp"
 #include "core/Path.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
@@ -13,6 +14,7 @@ class GetHandler : public IRequestHandler
     void process();
     bool done() const;
     const Response& response() const;
+    std::vector<EventAction> give_events();
     ~GetHandler();
 
   private:
@@ -20,6 +22,7 @@ class GetHandler : public IRequestHandler
     Response m_response;
     bool m_done;
     CgiHandler m_cgi;
+    std::vector<EventAction> m_events;
 
     // utils
     void handle_index(Response& response, const Path& path);

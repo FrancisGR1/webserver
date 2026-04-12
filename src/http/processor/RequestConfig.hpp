@@ -10,18 +10,29 @@
 class RequestConfig
 {
   public:
+    // construct
     RequestConfig(const ServiceConfig& service);
     RequestConfig(const ServiceConfig& service, const Path& path, const LocationConfig& location);
 
+    // setters
     void set(const Path& path);
     void set(const LocationConfig& location);
 
+    // getters
     const ServiceConfig& service() const;
     const Path& path() const;
     bool has_location() const;
     const LocationConfig* location() const;
     const Route& redirection() const;
+    Path index() const;
+    Path root() const;
+    Path upload_dir() const;
+    Path get_error_page_or_nonexistent_path(StatusCode::Code c) const;
+    Path cgi_interpreter() const;
+    //@TODO: get listener (a connection é que tem de dar isto)
+    size_t max_body_size() const;
 
+    // checkers
     bool is_cgi() const;
     bool is_redirected() const;
     bool allows_method(const std::string& method) const;
@@ -30,14 +41,6 @@ class RequestConfig
     bool allows_upload() const;
     bool has_upload_dir() const;
     bool has_file_for_error(size_t code) const;
-
-    Path index() const;
-    Path root() const;
-    Path upload_dir() const;
-    Path get_error_page_or_nonexistent_path(StatusCode::Code c) const;
-    Path cgi_interpreter() const;
-    //@TODO: get listener (a connection é que tem de dar isto)
-    size_t max_body_size() const;
 
   private:
     const ServiceConfig& m_service;

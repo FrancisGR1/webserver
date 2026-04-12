@@ -102,7 +102,8 @@ void GetHandler::handle_index(Response& response, const Path& path)
     response.set_header("Content-Type", path.mime);
     response.set_header("Date", utils::http_date());
     // body
-    response.set_body_as_path(path);
+    int fd = response.set_body_as_path(path);
+    m_events.push_back(EventAction(EventAction::WantReading, fd));
 }
 
 std::string GetHandler::make_autoindex(const Path& path)
@@ -209,7 +210,8 @@ void GetHandler::handle_file(Response& response, const Path& path)
     response.set_header("Date", utils::http_date());
     //@QUESTION: mais headers? Last-Modified? ETag?
     // body
-    response.set_body_as_path(path);
+    int fd = response.set_body_as_path(path);
+    m_events.push_back(EventAction(EventAction::WantReading, fd));
 }
 
 bool GetHandler::done() const
@@ -222,6 +224,15 @@ const Response& GetHandler::response() const
     if (m_ctx.config().is_cgi())
         return m_cgi.response();
     return m_response;
+}
+
+std::vector<EventAction> GetHandler::give_events()
+{
+    if (m_ctx.config().is_cgi())
+        return m_cgi.give_events();
+    std::vector<EventAction> result;
+    result.swap(m_events);
+    return result;
 }
 
 GetHandler::~GetHandler()

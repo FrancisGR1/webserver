@@ -38,7 +38,6 @@ void ErrorHandler::process()
 
     // default headers
     m_response.set_header("Connection", "close");
-    m_response.set_header("Connection", "close");
     m_response.set_header("Date", utils::http_date());
 
     if (m_ctx != NULL)
@@ -52,7 +51,8 @@ void ErrorHandler::process()
             m_response.set_header("Content-Type", error_page.mime);
 
             // body
-            m_response.set_body_as_path(error_page);
+            int fd = m_response.set_body_as_path(error_page);
+            m_events.push_back(EventAction(EventAction::WantReading, fd));
 
             m_done = true;
 
@@ -80,6 +80,13 @@ bool ErrorHandler::done() const
 const Response& ErrorHandler::response() const
 {
     return m_response;
+}
+
+std::vector<EventAction> ErrorHandler::give_events()
+{
+    std::vector<EventAction> result;
+    result.swap(m_events);
+    return result;
 }
 
 std::string ErrorHandler::make_default_body(StatusCode::Code code)

@@ -20,7 +20,7 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Second
     : m_request(request)
     , m_ctx(ctx)
     , m_script(ctx.config().path())
-    , m_response(StatusCode::Ok) //@ASSUMPTION: response is ok by default
+    , m_response(StatusCode::Ok) //@NOTE: rfc says response is ok by default
     , m_timeout(timeout)
     , m_failed_reads(0)
     , m_env(init_env())
@@ -103,12 +103,9 @@ void CgiHandler::process()
                 m_subprocess_id = id;
 
                 // manage resources
-                //@TODO: add fd [0] to events pool
                 close(m_fd[1]);
                 fcntl(m_fd[0], F_SETFL, O_NONBLOCK);
-
-                // check subprocess status (in case of fast fail)
-                // @TODO: é melhor isto ir para read pipe não?
+                m_events.push_back(EventAction(EventAction::WantReading, m_fd[0]));
                 m_state = ReadPipe;
                 break;
             }
@@ -235,7 +232,9 @@ void CgiHandler::process()
 
             m_response.set_body_as_str(m_body_str);
             if (m_fd[0] != -1)
+            {
                 m_response.set_body_as_fd(m_fd[0]); // rest of body is read directly to socket from pipe
+            }
 
             // finish
             m_timer.stop();
@@ -256,6 +255,13 @@ const Response& CgiHandler::response() const
     return m_response;
 }
 
+std::vector<EventAction> CgiHandler::give_events()
+{
+    std::vector<EventAction> result;
+    result.swap(m_events);
+    return result;
+}
+
 CgiHandler::~CgiHandler()
 {
     Logger::trace("CgiHandler: destructor");
@@ -269,20 +275,20 @@ std::map<std::string, std::string> CgiHandler::init_env()
     env["AUTH_TYPE"] = "";
     env["CONTENT_LENGTH"] = "";
     env["CONTENT_TYPE"] = m_script.mime;
-    env["GATEWAY_INTERFACE"] = "CGI/1.1"; //@TODO: é esta a versão?
+    env["GATEWAY_INTERFACE"] = "CGI/1.1";
     env["PATH_INFO"] = m_script.cgi_info;
     env["PATH_TRANSLATED"] = "";
     env["QUERY_STRING"] = m_request.target_query();
     //@TODO: o construtor tem de receber a informação da ligação para fazer isto
     //@QUESTION: podemos receber esta informacao ou nao? de onde vem?
-    env["REMOTE_ADDR"] = "";
+    env["REMOTE_ADDR"] = ""; //@TODO: ip do cliente
     env["REMOTE_HOST"] = "";
     env["REMOTE_IDENT"] = "";
     env["REMOTE_USER"] = "";
     env["REQUEST_METHOD"] = m_request.method();
     env["SCRIPT_NAME"] = m_script.cgi_name;
     env["SERVER_NAME"] = m_ctx.config().service().server_name;
-    env["SERVER_PORT"] = ""; //@TODO: porta do cliente
+    env["SERVER_PORT"] = ""; //@TODO: porta do servidor
     env["SERVER_PROTOCOL"] = constants::server_http_version;
     env["SERVER_SOFTWARE"] = constants::server_name;
 

@@ -75,8 +75,9 @@ void PostHandler::process()
             m_upload_uri = uri();
             // make upload real path
             m_upload_path = utils::join_paths(upload_dir.raw, m_upload_file);
-            //@TODO add fd to event pool
+            // open fd and store in events
             m_fd = open(m_upload_path.raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            m_events.push_back(EventAction(EventAction::WantWriting, m_fd));
             if (m_fd <= 2)
             {
                 http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
@@ -141,6 +142,15 @@ const Response& PostHandler::response() const
     if (m_ctx.config().is_cgi())
         return m_cgi.response();
     return m_response;
+}
+
+std::vector<EventAction> PostHandler::give_events()
+{
+    if (m_ctx.config().is_cgi())
+        return m_cgi.give_events();
+    std::vector<EventAction> result;
+    result.swap(m_events);
+    return result;
 }
 
 PostHandler::~PostHandler()

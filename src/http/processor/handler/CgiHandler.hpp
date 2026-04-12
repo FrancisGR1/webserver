@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+#include "core/EventAction.hpp"
 #include "core/Path.hpp"
 #include "core/Timer.hpp"
 #include "core/constants.hpp"
@@ -21,6 +22,7 @@ class CgiHandler : public IRequestHandler
     void process();
     bool done() const;
     const Response& response() const;
+    std::vector<EventAction> give_events();
     ~CgiHandler();
 
   private:
@@ -48,6 +50,7 @@ class CgiHandler : public IRequestHandler
     size_t m_total_read;
     State m_state;
     pid_t m_subprocess_id;
+    std::vector<EventAction> m_events;
 
     // util
     void fork_and_exec();

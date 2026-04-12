@@ -37,10 +37,10 @@ class Webserver
     void log(const std::string& message);
 
   private:
-    const Config& config_;
-    std::map<int, Socket*> server_sockets_;
-    EventManager events_;
-    ConnectionPool connection_pool_;
+    const Config& m_config;
+    std::map<int, Socket*> m_server_sockets;
+    EventManager m_events;
+    ConnectionPool m_connection_pool;
 
     // utils
     Socket* make_server_socket(const Listener& listener, const ServiceConfig& service);

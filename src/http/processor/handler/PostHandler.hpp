@@ -1,6 +1,7 @@
 #ifndef POSTHANDLER_HPP
 #define POSTHANDLER_HPP
 
+#include "core/EventAction.hpp"
 #include "core/Path.hpp"
 #include "http/processor/RequestContext.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
@@ -8,8 +9,6 @@
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
 
-//@REFACTOR: mudar para colocar o nome do ficheiro se estiver o field "name";
-// caso contrário dá um nome aleatório ao ficheiro -> tipo a timestamp atual ou uma chave random
 class PostHandler : public IRequestHandler
 {
   public:
@@ -17,6 +16,7 @@ class PostHandler : public IRequestHandler
     void process();
     bool done() const;
     const Response& response() const;
+    std::vector<EventAction> give_events();
     ~PostHandler();
 
   private:
@@ -25,6 +25,7 @@ class PostHandler : public IRequestHandler
     Response m_response;
     bool m_done;
     CgiHandler m_cgi;
+    std::vector<EventAction> m_events;
 
     // upload file identifiers
     std::string m_upload_file; // name

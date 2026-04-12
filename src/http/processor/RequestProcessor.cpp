@@ -1,5 +1,6 @@
 #include "http/processor/RequestProcessor.hpp"
 #include "core/Logger.hpp"
+#include "core/contracts.hpp"
 #include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/processor/handler/DeleteHandler.hpp"
@@ -8,9 +9,9 @@
 #include "http/processor/handler/PostHandler.hpp"
 #include "http/response/ResponseError.hpp"
 
-RequestProcessor::RequestProcessor(const Socket& conn_socket, EventManager& events)
+RequestProcessor::RequestProcessor(const Socket& conn_socket)
     : m_state(RequestProcessor::Validating)
-    , m_ctx(conn_socket, events, conn_socket.service())
+    , m_ctx(conn_socket, conn_socket.service())
     , m_handler(NULL)
 {
     Logger::trace("RequestProcessor: constructor");
@@ -85,7 +86,7 @@ std::string RequestProcessor::resolve_path(
         size_t pos = location_str.find_last_of("/");
         location_str = (pos == 0) ? "/" : location_str.substr(0, pos);
     }
-    Logger::trace("RequestProcessor: Resolved path to: '%s'", resolved_path.c_str());
+    Logger::debug("RequestProcessor: Resolved path to: '%s'", resolved_path.c_str());
     //@TODO: se não tem root da localização, então devemos dar root ou do service ou do webserver
     return resolved_path;
 }
@@ -100,7 +101,7 @@ void RequestProcessor::process()
             // so validating -> resolving -> dispatching
             case Validating:
             {
-                Logger::trace("RequestProcessor: state - Validating");
+                Logger::debug("RequestProcessor: state - Validating");
                 if (m_request.bad_request())
                     throw ResponseError(m_request.status_code(), "Bad request status code", &m_ctx);
 
@@ -110,7 +111,7 @@ void RequestProcessor::process()
 
             case Resolving:
             {
-                Logger::trace("RequestProcessor: state - Resolving");
+                Logger::debug("RequestProcessor: state - Resolving");
 
                 const ServiceConfig& service = m_ctx.config().service();
 
@@ -127,12 +128,12 @@ void RequestProcessor::process()
                 m_ctx.config().set(path);
                 if (matched_location)
                 {
-                    Logger::trace("RequestProcessor: Found location '%s'", matched_location->name.c_str());
+                    Logger::debug("RequestProcessor: Found location '%s'", matched_location->name.c_str());
                     m_ctx.config().set(*matched_location);
                 }
                 else
                 {
-                    Logger::trace("RequestProcessor: Didn't find location '%s'", path.raw.c_str());
+                    Logger::debug("RequestProcessor: Didn't find location '%s'", path.raw.c_str());
                 }
                 m_state = Dispatching;
             }
@@ -140,7 +141,7 @@ void RequestProcessor::process()
 
             case Dispatching:
             {
-                Logger::trace("RequestProcessor: state - Dispatching");
+                Logger::debug("RequestProcessor: state - Dispatching");
                 if (m_request.method() == "GET")
                     m_handler = new GetHandler(m_request, m_ctx);
                 else if (m_request.method() == "POST")
@@ -155,7 +156,7 @@ void RequestProcessor::process()
 
             case Handling:
             {
-                Logger::trace("RequestProcessor: state - Handling");
+                Logger::debug("RequestProcessor: state - Handling");
                 m_handler->process();
                 if (m_handler->done())
                 {
@@ -165,7 +166,7 @@ void RequestProcessor::process()
             }
             case Done:
             {
-                Logger::trace("RequestProcessor: state - Done");
+                Logger::debug("RequestProcessor: state - Done");
                 break;
             }
         }
@@ -199,6 +200,13 @@ const Response& RequestProcessor::response() const
     {
         return m_handler->response();
     }
+}
+
+std::vector<EventAction> RequestProcessor::give_events()
+{
+    if (m_state >= Handling)
+        return m_handler->give_events();
+    return std::vector<EventAction>();
 }
 
 void RequestProcessor::set(const Request& request)

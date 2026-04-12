@@ -3,18 +3,21 @@
 
 #include "http/processor/RequestProcessor.hpp"
 #include "http/request/RequestParser.hpp"
-#include "server/EventManager.hpp"
+#include "http/response/Response.hpp"
 #include "server/Socket.hpp"
 
 class Connection
 {
   public:
-    Connection(Socket& conn_socket, EventManager& events);
+    // constructor/destructor
+    Connection(Socket& conn_socket);
     ~Connection();
 
-    void work(const epoll_event& on_event);
+    // api
+    void handle_event(const epoll_event& on_event);
     bool done() const;
     int fd() const;
+    std::vector<EventAction> give_events();
 
   private:
     enum State
@@ -32,8 +35,8 @@ class Connection
     Socket& socket_; // owns the socket
     const ServiceConfig& service_;
 
-    // will add/remove/modify events
-    EventManager& events_;
+    // events
+    std::vector<EventAction> m_events;
 
     // http
     RequestParser parser_;

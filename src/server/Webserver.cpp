@@ -8,15 +8,15 @@
 bool Webserver::is_running = true;
 
 Webserver::Webserver(const Config& config)
-    : config_(config)
-    , connection_pool_(events_)
+    : m_config(config)
+    , m_connection_pool(m_events)
 {
 }
 
 Webserver::~Webserver()
 {
     /* fechar sockets do servidor */
-    for (std::map<int, Socket*>::iterator it = server_sockets_.begin(); it != server_sockets_.end(); it++)
+    for (std::map<int, Socket*>::iterator it = m_server_sockets.begin(); it != m_server_sockets.end(); it++)
         delete it->second;
 }
 
@@ -25,9 +25,9 @@ void Webserver::setup()
 {
 
     Logger::info("Webserver: setting up sockets");
-    for (size_t i = 0; i < config_.services.size(); i++)
+    for (size_t i = 0; i < m_config.services.size(); i++)
     {
-        const ServiceConfig& service = config_.services[i];
+        const ServiceConfig& service = m_config.services[i];
         for (size_t j = 0; j < service.listeners.size(); j++)
         {
             // make server socket
@@ -35,8 +35,8 @@ void Webserver::setup()
             Socket* socket = make_server_socket(listener, service);
 
             // store socket
-            server_sockets_.insert(std::pair<int, Socket*>(socket->fd(), socket));
-            if (events_.add(socket->fd(), EPOLLIN) == -1)
+            m_server_sockets.insert(std::pair<int, Socket*>(socket->fd(), socket));
+            if (m_events.add(socket->fd(), EPOLLIN) == -1)
             {
                 throw std::runtime_error("Failed to add socket to events");
             }
@@ -48,7 +48,7 @@ void Webserver::setup()
 
 bool Webserver::isServerSocket(int fd)
 {
-    return (server_sockets_.find(fd) != server_sockets_.end());
+    return (m_server_sockets.find(fd) != m_server_sockets.end());
 }
 
 void Webserver::run()
@@ -57,38 +57,37 @@ void Webserver::run()
 
     while (is_running)
     {
-        int n_events = events_.wait();
-
-        //@QUESTION: porquê -2?
-        if (n_events == -2)
+        int n_events = m_events.wait();
+        if (n_events == -1)
             continue;
 
         //@TODO colocar try catch dentro do for loop
         for (int i = 0; i < n_events; ++i)
         {
-            epoll_event& event = events_.getEvent(i);
+            const epoll_event& event = m_events.get_event(i);
             int event_fd = event.data.fd;
 
             if (event.events & (EPOLLERR | EPOLLHUP)) // event error @TODO epollhup nem sempre é um erro
             {
                 Logger::error("Webserver: Fd %d - something went wrong", event_fd);
-                Connection& conn = connection_pool_.get(event_fd);
-                connection_pool_.remove(conn);
+                Connection& conn = m_connection_pool.get(event_fd);
+                m_connection_pool.remove(conn);
             }
             else if (isServerSocket(event_fd))
             {
                 Logger::trace("Webserver: Fd %d is a server socket", event_fd);
                 Socket* client_socket = make_client_socket(event_fd);
-                connection_pool_.make(*client_socket);
+                m_connection_pool.make(*client_socket);
             }
             else // is an existing connection
             {
                 Logger::trace("Webserver: Fd %d is an existing connection", event_fd);
-                Connection& conn = connection_pool_.get(event_fd);
-                conn.work(event);
+                Connection& conn = m_connection_pool.get(event_fd);
+                conn.handle_event(event);
+                m_events.apply(conn.give_events(), &conn);
                 if (conn.done())
                 {
-                    connection_pool_.remove(conn);
+                    m_connection_pool.remove(conn);
                 }
             }
         }
@@ -152,7 +151,7 @@ Socket* Webserver::make_server_socket(const Listener& listener, const ServiceCon
     return new Socket(socket_fd, service);
 }
 
-//@TODO colocar throws aqui
+//@TODO retornar nulo
 Socket* Webserver::make_client_socket(int server_socket_fd)
 {
     int fd = accept(server_socket_fd, NULL, NULL);
@@ -173,8 +172,8 @@ Socket* Webserver::make_client_socket(int server_socket_fd)
         Logger::error("fcntl() failed to set client socket to non-blocking mode!");
     }
 
-    std::map<int, Socket*>::iterator it = server_sockets_.find(server_socket_fd);
-    if (it == server_sockets_.end())
+    std::map<int, Socket*>::iterator it = m_server_sockets.find(server_socket_fd);
+    if (it == m_server_sockets.end())
         throw std::runtime_error("Server socket not found");
 
     return new Socket(fd, it->second->service());
