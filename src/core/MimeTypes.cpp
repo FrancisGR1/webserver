@@ -160,8 +160,7 @@ std::string MimeTypes::from_path(const std::string& path)
     if (it != m.end())
         return it->second;
 
-    //@NOTE: default mime type
-    return "application/octet-stream";
+    return "application/octet-stream"; //@NOTE: default mime type
 }
 
 std::string MimeTypes::from_extension(const std::string& ext)
@@ -174,6 +173,17 @@ std::string MimeTypes::from_extension(const std::string& ext)
     if (it != m.end())
         return it->second;
 
-    //@NOTE: default mime type
-    return "application/octet-stream";
+    return "application/octet-stream"; //@NOTE: default mime type
+}
+
+std::string MimeTypes::from_mime(const std::string& mime)
+{
+    const std::map<std::string, std::string>& m = mimes();
+    std::map<std::string, std::string>::const_iterator it;
+    for (it = m.begin(); it != m.end(); ++it)
+    {
+        if (it->second == mime)
+            return "." + it->first;
+    }
+    return ".data"; //@NOTE: default extension type
 }
