@@ -4,6 +4,7 @@
 #include <ctime>
 
 typedef double Seconds;
+typedef int Milliseconds;
 
 class Timer
 {

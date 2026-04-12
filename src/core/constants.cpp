@@ -11,6 +11,9 @@ const char* server_name = "webserv/1.0";
 const size_t read_chunk_size = 4096;
 const size_t read_pipe_chunk_size = 1048576;
 const size_t write_chunk_size = 4096;
+// - events
+const size_t max_events = 1024;
+const Milliseconds epoll_timeout = 1000;
 // - timeouts
 // -- connection
 // const Seconds idle_connection_timeout = 30; @TODO: implementar Timer na ligacao
@@ -44,6 +47,6 @@ const char* bright_red = "\033[91m";
 const char* reset = "\033[0m";
 
 // - logging
-const Log::Level log_level = Log::Debug;
+const Log::Level log_level = Log::Trace;
 
 } // namespace constants

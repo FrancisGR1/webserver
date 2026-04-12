@@ -18,6 +18,9 @@ extern const std::string py_ext;
 extern const size_t read_chunk_size;      // getconf PAGE_SIZE
 extern const size_t read_pipe_chunk_size; // cat /proc/sys/fs/pipe-max-size
 extern const size_t write_chunk_size;
+// - events
+extern const size_t max_events;
+extern const Milliseconds epoll_timeout;
 // - timeouts
 // -- connection
 extern const Seconds connection_timeout;
