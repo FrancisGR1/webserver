@@ -159,6 +159,11 @@ std::string map_to_str(std::map<std::string, std::string> headers)
     return str;
 }
 
+std::string timestamp()
+{
+    return to_string(static_cast<size_t>(std::time(NULL)));
+}
+
 std::string http_date()
 {
     char buf[63];

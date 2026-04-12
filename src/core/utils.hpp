@@ -19,6 +19,7 @@ std::string file_to_str(const char* file_path);
 std::string join_paths(const std::string& left, const std::string& right);
 std::string fmt(const char* fmt, ...);
 std::string map_to_str(std::map<std::string, std::string> headers);
+std::string timestamp();
 std::string http_date();
 
 // find element in container
