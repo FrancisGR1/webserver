@@ -6,6 +6,7 @@
 
 #include "config/types/Route.hpp"
 #include "core/constants.hpp"
+#include "core/contracts.hpp"
 #include "core/utils.hpp"
 #include "http/response/Response.hpp"
 
@@ -257,15 +258,15 @@ void Response::set_body_as_fd(int fd)
     m_body_fd = fd;
 }
 
-void Response::set_body_as_path(const Path& path)
+int Response::set_body_as_path(const Path& path)
 {
+    REQUIRE(path.exists == true);
+
     Logger::trace("Response: set body path: '%s'", path.raw.c_str());
-    if (path.exists)
-    {
-        //@QUESTION @TODO add to the event loop?
-        m_body_fd = open(path.raw.c_str(), O_RDONLY);
-        fcntl(m_body_fd, F_SETFL, O_NONBLOCK);
-    }
+    m_body_fd = open(path.raw.c_str(), O_RDONLY);
+    fcntl(m_body_fd, F_SETFL, O_NONBLOCK);
+
+    return m_body_fd;
 }
 
 StatusCode::Code Response::status_code() const

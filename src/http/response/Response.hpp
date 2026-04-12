@@ -32,7 +32,7 @@ class Response
     void set_header(const std::string& key, const std::string& value);
     void set_body_as_str(const std::string& str);
     void set_body_as_fd(int fd);
-    void set_body_as_path(const Path& path);
+    int set_body_as_path(const Path& path);
 
     // getters
     StatusCode::Code status_code() const;
