@@ -33,6 +33,7 @@ struct HandlerTestCase
     LocationConfig location;
 
     // owned resources
+    Listener listener;
     std::unique_ptr<Socket> socket;
     std::unique_ptr<EventManager> events;
     std::unique_ptr<RequestContext> ctx;
@@ -47,16 +48,17 @@ HandlerTestCase::HandlerTestCase(
     const LocationConfig& lc,
     Request req,
     Response expected)
-    : title(title)
-    , request(req)
-    , file_path(file_path)
-    , expected(expected)
+    : title{title}
+    , request{req}
+    , file_path{file_path}
+    , listener{"0", "0"}
+    , expected{expected}
 {
     service = sv;
     location = lc;
-    socket = std::make_unique<Socket>(3, service); // 3 = dummy fd
-    events = std::make_unique<EventManager>();
-    ctx = std::make_unique<RequestContext>(*socket, *events, service);
+    socket = std::make_unique<Socket>(3, listener); // 3 = dummy fd
+    events = std::make_unique<EventManager>(1024);
+    ctx = std::make_unique<RequestContext>(*socket, service);
 
     ctx->config().set(file_path);
     ctx->config().set(location);

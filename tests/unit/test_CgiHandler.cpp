@@ -10,6 +10,7 @@
 #include "http/StatusCode.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/response/ResponseError.hpp"
+#include "server/EventManager.hpp"
 
 // how much time we should wait for idle subprocesses
 // if the subprocess doesn't do anything for TEST_TIMEOUT time
@@ -19,16 +20,17 @@ const Seconds TEST_TIMEOUT = 6;
 struct TestCase
 {
     TestCase(const std::string title, Path script_path, Request req, Response expected)
-        : title(title)
-        , request(req)
-        , script_path(script_path)
-        , expected(expected)
+        : title{title}
+        , request{req}
+        , script_path{script_path}
+        , listener{"0", "0"}
+        , expected{expected}
     {
         script_location = LocationConfig{"/scripts", "./test_data/"};
         service = ServiceConfig{{script_location}};
-        socket = std::make_unique<Socket>(3, service); // 3 = dummy fd
-        events = std::make_unique<EventManager>();
-        ctx = std::make_unique<RequestContext>(*socket, *events, service);
+        socket = std::make_unique<Socket>(3, listener); // 3 = dummy fd
+        events = std::make_unique<EventManager>(1024);
+        ctx = std::make_unique<RequestContext>(*socket, service);
 
         // create cgi directive
         // @TODO isto deve ser um param
@@ -46,6 +48,7 @@ struct TestCase
     ServiceConfig service;
 
     // Owned resources
+    Listener listener;
     std::unique_ptr<Socket> socket;
     std::unique_ptr<EventManager> events;
     std::unique_ptr<RequestContext> ctx;

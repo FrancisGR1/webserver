@@ -28,6 +28,7 @@ struct ErrorHandlerTestCase
     LocationConfig location;
 
     // owned resources
+    Listener listener;
     std::unique_ptr<Socket> socket;
     std::unique_ptr<EventManager> events;
     std::unique_ptr<RequestContext> ctx;
@@ -44,16 +45,17 @@ ErrorHandlerTestCase::ErrorHandlerTestCase(
     ResponseError err,
     Response expect,
     std::string bf)
-    : title(name)
-    , service(sv)
-    , location(lc)
-    , body_file_path(bf)
-    , error(err)
-    , expected(expect)
+    : title{name}
+    , service{sv}
+    , location{lc}
+    , listener{"0", "0"}
+    , body_file_path{bf}
+    , error{err}
+    , expected{expect}
 {
-    socket = std::make_unique<Socket>(3, service); // 3 = dummy fd
-    events = std::make_unique<EventManager>();
-    ctx = std::make_unique<RequestContext>(*socket, *events, service);
+    socket = std::make_unique<Socket>(3, listener); // 3 = dummy fd
+    events = std::make_unique<EventManager>(1024);
+    ctx = std::make_unique<RequestContext>(*socket, service);
 
     ctx->config().set(location);
 

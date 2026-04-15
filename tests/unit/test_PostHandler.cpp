@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -19,6 +20,7 @@
 
 static constexpr std::string_view DIFF_FILE = "./test_data/logs/ph_diff_log.txt";
 static const std::string TEST_FILES = "./test_data/post/send/";
+static const std::string POST_DIR = "./test_data/post";
 
 // Objective is to test main PostHandler pathways, which are:
 // - Integrity of the uploaded file
@@ -243,11 +245,15 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
     );
 
     // --- upload directory is a file, not a directory ---
+    // create
+    const std::string file_not_dir = std::string("./test_data/get/error/") + "no_perms.md";
+    std::ofstream(file_not_dir.c_str()).close();
+
     LocationConfig file_as_dir{
         "/upload",
         {{Token::DirectiveMethods, {"POST"}},
          {Token::DirectiveUpload, {"on"}},
-         {Token::DirectiveRoot, {"./test_data/post/upload/hello.md"}}, // file, not dir
+         {Token::DirectiveRoot, {file_not_dir.c_str()}},
          {Token::DirectiveMaxBodySize, {max.c_str()}}}
     };
     ServiceConfig file_as_dir_service{file_as_dir};
@@ -259,6 +265,8 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
         Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok),
         Response(StatusCode::Conflict, {}, hello_md)
     );
+
+    //@TODO testar redirection uri
 
     // clang-format on
 
@@ -272,62 +280,6 @@ std::string get_expected_path(std::string path)
     if (pos != std::string::npos)
         result.replace(pos, 6, "/expected/");
     return result;
-}
-
-void test_bad_PostHandler(const tu::HandlerTestCase& test)
-{
-    // upload response
-    // compare files
-    Logger::info("===============\nTest: '%s'", test.title.c_str());
-    PostHandler handler{test.request, *test.ctx};
-    Logger::debug_obj(*test.ctx->config().location(), "Config:\n");
-    Logger::debug_obj(test.request, "Request:\n");
-
-    // process request
-    while (!handler.done())
-    {
-        try
-        {
-            handler.process();
-        }
-        catch (const ResponseError& error)
-        {
-            Logger::trace("ResponseError: '%s'", error.msg().c_str());
-            // these are supposed to give an error
-            if (error.status_code() == test.expected.status_code())
-                std::cerr << constants::green << "[OK] " << constants::reset << test.title << "\n";
-            else
-            {
-                std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
-                std::cerr << "=====\nExpected:\n"
-                          << "Status: " << test.expected.status_code() << "\n"
-                          << "=====\nGot:\n"
-                          << "Status: " << error.status_code() << "\n";
-            }
-            return;
-        }
-    }
-
-    // post response
-    Response res = handler.response();
-    Logger::debug_obj(res, "PostHandler: response: ");
-
-    // diff expected vs result
-    std::string expected_path = get_expected_path(test.expected.body());
-    std::string test_path = res.headers().at("Location"); //@ASSUMPTION: response has a "Location"
-
-    std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
-    std::cerr << "-> Didn't give an error!\n";
-    // clang-format off
-    std::cerr << "=====\nExpected:\n"
-	<< "Status: " << test.expected.status_code() << "\n"
-       	<< test.expected.body().c_str() << "':\n'" << utils::file_to_str(test.expected.body().c_str()) << "'\n"
-       	<< "=====\nGot:\n"
-       	<< "Status: " << res.status_code() << "\n"
-       	<< expected_path << "':\n'" << utils::file_to_str(expected_path.c_str()) << "'\n"
-       	<< "=====\nDiff:\n'"
-       	<< DIFF_FILE << "':\n'" << utils::file_to_str(DIFF_FILE.data()) << "'\n";
-    // clang-format on
 }
 
 // tester functions
@@ -376,7 +328,7 @@ void test_good_PostHandler(const tu::HandlerTestCase& test)
 
     // diff expected vs result
     std::string expected_path = get_expected_path(test.expected.body());
-    std::string test_path = res.headers().at("Location"); //@ASSUMPTION: response has a "Location"
+    std::string test_path = handler.upload_path().raw;
     int diff_result = tu::diff_and_log(expected_path.c_str(), test_path.c_str(), DIFF_FILE.data());
     if (diff_result == 0 && test.expected.status_code() == res.status_code())
     {
@@ -398,9 +350,68 @@ void test_good_PostHandler(const tu::HandlerTestCase& test)
     }
 }
 
+// upload response
+// compare files
+void test_bad_PostHandler(const tu::HandlerTestCase& test)
+{
+    Logger::info("===============\nTest: '%s'", test.title.c_str());
+
+    PostHandler handler{test.request, *test.ctx};
+
+    Logger::debug_obj(*test.ctx->config().location(), "Config:\n");
+    Logger::debug_obj(test.request, "Request:\n");
+
+    // process request
+    while (!handler.done())
+    {
+        try
+        {
+            handler.process();
+        }
+        catch (const ResponseError& error)
+        {
+            Logger::trace("ResponseError: '%s'", error.msg().c_str());
+            // these are supposed to give an error
+            if (error.status_code() == test.expected.status_code())
+                std::cerr << constants::green << "[OK] " << constants::reset << test.title << "\n";
+            else
+            {
+                std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
+                std::cerr << "=====\nExpected:\n"
+                          << "Status: " << test.expected.status_code() << "\n"
+                          << "=====\nGot:\n"
+                          << "Status: " << error.status_code() << "\n";
+            }
+            return;
+        }
+    }
+
+    // post response
+    Response res = handler.response();
+    Logger::debug_obj(res, "PostHandler: response: ");
+
+    // diff expected vs result
+    std::string expected_path = get_expected_path(test.expected.body());
+    std::string test_path = handler.upload_path().raw;
+
+    // log
+    std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
+    std::cerr << "-> Didn't give an error!\n";
+    // clang-format off
+    std::cerr << "=====\nExpected:\n"
+	<< "Status: " << test.expected.status_code() << "\n"
+       	<< test.expected.body().c_str() << "':\n'" << utils::file_to_str(test.expected.body().c_str()) << "'\n"
+       	<< "=====\nGot:\n"
+       	<< "Status: " << res.status_code() << "\n"
+       	<< expected_path << "':\n'" << utils::file_to_str(expected_path.c_str()) << "'\n"
+       	<< "=====\nDiff:\n'"
+       	<< DIFF_FILE << "':\n'" << utils::file_to_str(DIFF_FILE.data()) << "'\n";
+    // clang-format on
+}
+
 int main()
 {
-    Logger::set_global_level(Log::Fatal);
+    Logger::set_global_level(Log::Warn);
 
     std::cout << "==============================\n";
     std::cout << "========= PostHandler ========\n";
@@ -412,16 +423,17 @@ int main()
     int stop = 0;
     for (auto& test : tests)
     {
+        if (stop == -1) // @NOTE: use this to test until a certain point
+            break;
         try
         {
+            //@AGORA estes testes estão a falhar. Porquê?
             test_good_PostHandler(test);
         }
         catch (const std::exception& e)
         {
             Logger::fatal("Test: '%s'", e.what());
         }
-        if (stop == -1) // @NOTE: use this to test until a certain point
-            break;
         ++stop;
     }
 
@@ -431,6 +443,8 @@ int main()
     stop = 0;
     for (auto& test : tests)
     {
+        if (stop == -1) // @NOTE: use this to test until a certain point
+            break;
         try
         {
             test_bad_PostHandler(test);
@@ -439,8 +453,6 @@ int main()
         {
             Logger::fatal("Test: '%s'", e.what());
         }
-        if (stop == -1) // @NOTE: use this to test until a certain point
-            break;
         ++stop;
     }
 }
