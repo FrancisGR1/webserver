@@ -6,13 +6,12 @@
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
-#include "server/EventManager.hpp"
 
 class RequestProcessor : public IRequestHandler
 {
   public:
     //@TODO adicionar informação da ligação
-    RequestProcessor(const Socket& conn_socket);
+    RequestProcessor(const Socket& conn_socket, const ServiceConfig& service);
     ~RequestProcessor();
 
     void process();

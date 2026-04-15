@@ -1,6 +1,5 @@
 #include "http/processor/RequestProcessor.hpp"
 #include "core/Logger.hpp"
-#include "core/contracts.hpp"
 #include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/processor/handler/DeleteHandler.hpp"
@@ -9,9 +8,9 @@
 #include "http/processor/handler/PostHandler.hpp"
 #include "http/response/ResponseError.hpp"
 
-RequestProcessor::RequestProcessor(const Socket& conn_socket)
+RequestProcessor::RequestProcessor(const Socket& conn_socket, const ServiceConfig& service)
     : m_state(RequestProcessor::Validating)
-    , m_ctx(conn_socket, conn_socket.service())
+    , m_ctx(conn_socket, service)
     , m_handler(NULL)
 {
     Logger::trace("RequestProcessor: constructor");

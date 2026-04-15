@@ -1,21 +1,25 @@
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
 
-#include "config/types/ServiceConfig.hpp"
+#include "config/types/Listener.hpp"
 
 class Socket
 {
   public:
-    Socket(int fd, const ServiceConfig& service);
+    // construct/destruct
+    Socket(int fd, const Listener& listener);
     ~Socket();
 
+    // getters
     int fd() const;
+    const Listener& listener() const;
+
+    // close socket fd
     int close();
-    const ServiceConfig& service() const;
 
   private:
-    int fd_;
-    const ServiceConfig& service_;
+    int m_fd;
+    Listener m_listener;
 
     // illegal
     Socket(const Socket&);

@@ -3,33 +3,33 @@
 #include "Socket.hpp"
 #include "core/Logger.hpp"
 
-Socket::Socket(int fd, const ServiceConfig& service)
-    : fd_(fd)
-    , service_(service)
+Socket::Socket(int fd, const Listener& listener)
+    : m_fd(fd)
+    , m_listener(listener)
 {
-    Logger::trace("Socket: construct with fd=%d", fd_);
+    Logger::trace("Socket: construct with fd=%d", m_fd);
 }
 
 Socket::~Socket()
 {
     close();
-    Logger::trace("Socket: destruct with fd=%d", fd_);
+    Logger::trace("Socket: destruct with fd=%d", m_fd);
 }
 
 int Socket::fd() const
 {
-    return (fd_);
+    return (m_fd);
 }
 
 int Socket::close()
 {
-    if (fd_ < 0)
+    if (m_fd < 0)
         return -1;
 
-    return ::close(fd_);
+    return ::close(m_fd);
 }
 
-const ServiceConfig& Socket::service() const
+const Listener& Socket::listener() const
 {
-    return (service_);
+    return (m_listener);
 }
