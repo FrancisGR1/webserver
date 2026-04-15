@@ -96,6 +96,11 @@
 # Compilação
 - [x] Fazer Makefile
 
+# Bónus
+- [ ] Adicionar cgis: javascript, php, lua, bash
+- [ ] Sessão
+- [ ] Cookies
+
 # Outros
 - [ ] Melhor diagrama geral
 - [ ] Inicializar todos os objetos: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es20-always-initialize-an-object
@@ -113,6 +118,7 @@
 ### Geral
 - [x] Fazer regra para testes de unidade no Makefile principal
 - [x] preparar os ficheiros necessários para testar
+- [ ] Comentar .hpp e organizar .cpp com comentários separadores e gerais
 
 ### Unidade
 Testar:
@@ -123,6 +129,7 @@ Testar:
     - [x] RequestParser
     - [x] GetHandler
     - [x] PostHandler
+        - [ ] testar redirection
     - [x] DeleteHandler
     - [x] ErrorHandler
     - [x] path resolution algorithm

@@ -13,6 +13,7 @@ FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG)
 SOURCES  = \
 	   src/main.cpp \
 	  \
+	  src/core/EventAction.cpp \
 	  src/core/Logger.cpp \
 	  src/core/MimeTypes.cpp \
 	  src/core/Path.cpp \
@@ -32,6 +33,7 @@ SOURCES  = \
 	  src/config/parser/ConfigParser.cpp \
 	  src/config/parser/Token.cpp \
 	  src/config/types/Directive.cpp \
+	  src/config/types/Listener.cpp \
 	  src/config/types/LocationConfig.cpp \
 	  src/config/types/Route.cpp \
 	  src/config/types/ServiceConfig.cpp \
