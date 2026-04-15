@@ -50,7 +50,8 @@ void PostHandler::process()
     if (config.is_redirected())
     {
         m_response.set_status(StatusCode::MovedPermanently);
-        m_response.set_header("Location", uri());
+        m_response.set_header(
+            "Location", make_uri()); //@TODO @ABORT @IMPORTANT: m_upload_filename is ""! will set contract off
         m_response.set_header("Connection", "close");
         m_response.set_header("Date", utils::http_date());
         m_done = true;
@@ -70,11 +71,11 @@ void PostHandler::process()
             expect_uploadable(m_request, config, upload_dir, m_ctx);
 
             // create a name for the new file to be uploaded
-            m_upload_file = make_file_name();
+            m_upload_filename = make_file_name();
             // make upload location
-            m_upload_uri = uri();
+            m_upload_uri = make_uri();
             // make upload real path
-            m_upload_path = utils::join_paths(upload_dir.raw, m_upload_file);
+            m_upload_path = utils::join_paths(upload_dir.raw, m_upload_filename);
             // open fd and store in events
             m_fd = open(m_upload_path.raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
             m_events.push_back(EventAction(EventAction::WantWriting, m_fd));
@@ -119,7 +120,7 @@ void PostHandler::process()
             m_response.set_body_as_str(json);
 
             // headers
-            m_response.set_header("Location", uri());
+            m_response.set_header("Location", m_upload_uri);
             m_response.set_header("Connection", "close"); // @NOTE: HTTP1.0 closes by default;
             m_response.set_header("Date", utils::http_date());
             m_response.set_header("Content-Type", "application/json");
@@ -160,12 +161,12 @@ PostHandler::~PostHandler()
         close(m_fd);
 };
 
-std::string PostHandler::uri() const
+std::string PostHandler::make_uri() const
 {
     REQUIRE(m_ctx.config().location() != NULL);
-    REQUIRE(m_upload_file != "");
+    REQUIRE(m_upload_filename != "");
 
-    std::string uri = utils::join_paths(m_ctx.config().location()->name, m_upload_file);
+    std::string uri = utils::join_paths(m_ctx.config().location()->name, m_upload_filename);
     Logger::debug("PostHandler: uri: '%s'", uri.c_str());
     return uri;
 }
@@ -190,6 +191,7 @@ std::string PostHandler::make_file_name() const
         {
             size_t eq = value.find('=', pos);
             if (eq == std::string::npos)
+            // filename parameter doesn't have a value
             {
                 make_default_name = true;
             }
