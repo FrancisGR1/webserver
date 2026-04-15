@@ -12,28 +12,36 @@
 class PostHandler : public IRequestHandler
 {
   public:
+    // construct/destruct
     PostHandler(const Request& request, const RequestContext& ctx);
+    ~PostHandler();
+
+    // IRequestHandler interface
     void process();
     bool done() const;
     const Response& response() const;
     std::vector<EventAction> give_events();
-    ~PostHandler();
+
+    // getters
+    const Path& upload_path() const;
 
   private:
+    // dependencies
     const Request& m_request;
     const RequestContext& m_ctx;
-    Response m_response;
+
+    // state
     bool m_done;
     CgiHandler m_cgi;
     std::vector<EventAction> m_events;
+    Response m_response;
 
-    // upload file identifiers
+    // upload tracking
     std::string m_upload_filename; // name
     std::string m_upload_uri;      // location + name
     Path m_upload_path;            // full path
-
-    int m_fd;
-    ssize_t m_offset;
+    int m_fd;                      // fd of full path
+    ssize_t m_offset;              // current write position
 
     // utils
     std::string make_uri() const;

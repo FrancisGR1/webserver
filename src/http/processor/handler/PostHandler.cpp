@@ -24,6 +24,13 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
     Logger::trace("PostHandler: constructor");
 }
 
+PostHandler::~PostHandler()
+{
+    Logger::trace("PostHandler: destructor");
+    if (m_fd > -1)
+        close(m_fd);
+};
+
 static void expect_uploadable(
     const Request& request,
     const RequestConfig& config,
@@ -154,12 +161,10 @@ std::vector<EventAction> PostHandler::give_events()
     return result;
 }
 
-PostHandler::~PostHandler()
+const Path& PostHandler::upload_path() const
 {
-    Logger::trace("PostHandler: destructor");
-    if (m_fd > -1)
-        close(m_fd);
-};
+    return m_upload_path;
+}
 
 std::string PostHandler::make_uri() const
 {
@@ -174,29 +179,29 @@ std::string PostHandler::make_uri() const
 std::string PostHandler::make_file_name() const
 {
     static unsigned long long uploaded_file_index;
-    bool make_default_name = false;
+    bool req_has_filename = true;
     std::string file_name = "";
 
-    // filename is in this header
+    // check for filename in request
     if (utils::contains(m_request.headers(), "Content-Disposition"))
     {
         const std::string& value = m_request.headers().at("Content-Disposition");
         size_t pos = value.find("filename");
         if (pos == std::string::npos)
         {
-            make_default_name = true;
+            req_has_filename = false;
         }
         else
         // filename parameter exists so extract it
         {
             size_t eq = value.find('=', pos);
             if (eq == std::string::npos)
-            // filename parameter doesn't have a value
+            // no value
             {
-                make_default_name = true;
+                req_has_filename = false;
             }
             else
-            // has a value
+            // has value
             {
                 file_name = value.substr(eq + 1); // everything after '='
                 // remove quotes
@@ -209,10 +214,10 @@ std::string PostHandler::make_file_name() const
     }
     else
     {
-        make_default_name = true;
+        req_has_filename = false;
     }
 
-    if (make_default_name)
+    if (!req_has_filename)
     {
         std::string extension = ".data";
         if (utils::contains(m_request.headers(), "Content-Type"))
