@@ -5,6 +5,13 @@
 
 struct Listener
 {
+    // construct
+    Listener(const char* host, const char* port);
+
+    // api
+    bool operator==(const Listener& other) const;
+
+    // data
     std::string host;
     std::string port;
 };
