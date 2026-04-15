@@ -1,21 +1,27 @@
-#include "Webserver.hpp"
-#include "Connection.hpp"
-#include "EventManager.hpp"
-#include "Socket.hpp"
+#include "server/Webserver.hpp"
 #include "core/Logger.hpp"
+#include "core/contracts.hpp"
 #include "core/utils.hpp"
+#include "server/Connection.hpp"
+#include "server/EventManager.hpp"
+#include "server/Socket.hpp"
 
 bool Webserver::is_running = true;
 
 Webserver::Webserver(const Config& config)
     : m_config(config)
-    , m_connection_pool(m_events)
+    , m_server_sockets()
+    , m_events(constants::max_events)
+    , m_connection_pool(constants::max_connections)
 {
+    Logger::trace("Webserver: constructor");
 }
 
 Webserver::~Webserver()
 {
-    /* fechar sockets do servidor */
+    Logger::trace("Webserver: destructor");
+
+    // close sockets
     for (std::map<int, Socket*>::iterator it = m_server_sockets.begin(); it != m_server_sockets.end(); it++)
         delete it->second;
 }
@@ -32,7 +38,7 @@ void Webserver::setup()
         {
             // make server socket
             const Listener& listener = service.listeners[j];
-            Socket* socket = make_server_socket(listener, service);
+            Socket* socket = make_server_socket(listener);
 
             // store socket
             m_server_sockets.insert(std::pair<int, Socket*>(socket->fd(), socket));
@@ -46,9 +52,35 @@ void Webserver::setup()
     }
 }
 
-bool Webserver::isServerSocket(int fd)
+bool Webserver::is_server_socket(int fd)
 {
     return (m_server_sockets.find(fd) != m_server_sockets.end());
+}
+
+Socket* Webserver::get_server_socket(int fd)
+{
+    REQUIRE(is_server_socket(fd) == true);
+
+    return m_server_sockets.find(fd)->second;
+}
+
+const ServiceConfig& Webserver::get_service(const Socket* server_socket)
+{
+    REQUIRE(server_socket != NULL, "Socket is Null!");
+
+    for (size_t i = 0; i < m_config.services.size(); ++i)
+    {
+        const ServiceConfig& service = m_config.services[i];
+        for (size_t j = 0; j < service.listeners.size(); ++j)
+        {
+            const Listener& config_listener = service.listeners[j];
+            if (server_socket->listener() == config_listener)
+                return service;
+        }
+    }
+
+    INVARIANT(false, "No matching service found for socket");
+    return m_config.services[0]; // unreachable
 }
 
 void Webserver::run()
@@ -64,37 +96,60 @@ void Webserver::run()
         //@TODO colocar try catch dentro do for loop
         for (int i = 0; i < n_events; ++i)
         {
-            const epoll_event& event = m_events.get_event(i);
-            int event_fd = event.data.fd;
-
-            if (event.events & (EPOLLERR | EPOLLHUP)) // event error @TODO epollhup nem sempre é um erro
+            EventAction event = m_events.get_event(i);
+            Connection* conn = event.conn;
+            switch (event.action)
             {
-                Logger::error("Webserver: Fd %d - something went wrong", event_fd);
-                Connection& conn = m_connection_pool.get(event_fd);
-                m_connection_pool.remove(conn);
-            }
-            else if (isServerSocket(event_fd))
-            {
-                Logger::trace("Webserver: Fd %d is a server socket", event_fd);
-                Socket* client_socket = make_client_socket(event_fd);
-                m_connection_pool.make(*client_socket);
-            }
-            else // is an existing connection
-            {
-                Logger::trace("Webserver: Fd %d is an existing connection", event_fd);
-                Connection& conn = m_connection_pool.get(event_fd);
-                conn.handle_event(event);
-                m_events.apply(conn.give_events(), &conn);
-                if (conn.done())
+                case EventAction::WantReading:
+                case EventAction::WantWriting:
+                case EventAction::WantClose:
                 {
-                    m_connection_pool.remove(conn);
+                    if (is_server_socket(event.fd))
+                    {
+                        Logger::trace("Webserver: Fd %d is a server socket", event.fd);
+                        const Socket* ss = get_server_socket(event.fd);
+                        const ServiceConfig& service = get_service(ss);
+                        const EventAction& ec = m_connection_pool.make(ss, service);
+                        m_events.apply(ec);
+                    }
+                    else // is existing connection
+                    {
+                        REQUIRE(conn != NULL, "Connection should never be null!");
+
+                        Logger::trace("Webserver: Fd %d is an existing connection", event.fd);
+                        event.conn->handle_event(event);
+                        m_events.apply(conn->give_events(), conn);
+                        if (conn->done())
+                        {
+                            m_connection_pool.remove(*conn);
+                            // fechar ligação?
+                        }
+                    }
+                    break;
+                }
+                // case EventAction::WantWriting:
+                //{
+                //     //@TODO connection->write
+                //     break;
+                // }
+
+                // case EventAction::WantClose:
+                //{
+                //     //@TODO
+                //     // m_connection_pool.remove()
+                //     // m_events.remove()
+                //     break;
+                // }
+                default:
+                {
                 }
             }
         }
+        //@TODO: fechar ligações idle durante demasiado tempo
     }
 }
 
-Socket* Webserver::make_server_socket(const Listener& listener, const ServiceConfig& service)
+Socket* Webserver::make_server_socket(const Listener& listener)
 {
     struct addrinfo hints = {};
     struct addrinfo* result;
@@ -148,33 +203,6 @@ Socket* Webserver::make_server_socket(const Listener& listener, const ServiceCon
         throw std::runtime_error(
             utils::fmt("listen() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
     }
-    return new Socket(socket_fd, service);
-}
 
-//@TODO retornar nulo
-Socket* Webserver::make_client_socket(int server_socket_fd)
-{
-    int fd = accept(server_socket_fd, NULL, NULL);
-    if (fd < -1)
-    {
-        Logger::error("Failed to accept client connection!");
-    }
-
-    // @QUESTION porquê opt = 0?
-    int opt = 0;
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < -1)
-    {
-        Logger::error("setsockopt() for client failed!");
-    }
-
-    if (fcntl(fd, F_SETFL, O_NONBLOCK) == -2)
-    {
-        Logger::error("fcntl() failed to set client socket to non-blocking mode!");
-    }
-
-    std::map<int, Socket*>::iterator it = m_server_sockets.find(server_socket_fd);
-    if (it == m_server_sockets.end())
-        throw std::runtime_error("Server socket not found");
-
-    return new Socket(fd, it->second->service());
+    return new Socket(socket_fd, listener);
 }
