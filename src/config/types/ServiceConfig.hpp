@@ -5,7 +5,10 @@
 #include <string>
 #include <vector>
 
+#include "config/types/Directive.hpp"
+#include "config/types/Listener.hpp"
 #include "config/types/LocationConfig.hpp"
+#include "config/types/Route.hpp"
 
 class ServiceConfig
 {

@@ -31,7 +31,7 @@ class LocationConfig
     // can be set in LocationConfig or ServiceConfig scope
     std::map<size_t, std::string> error_pages;
     Route redirection;
-    size_t max_body_size;
+    size_t max_body_size; // @NOTE: 0 = not set
 
     void set(Directive& directive);
 
