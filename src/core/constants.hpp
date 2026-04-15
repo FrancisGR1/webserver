@@ -4,8 +4,8 @@
 #include <cstddef>
 #include <string>
 
-#include "Logger.hpp"
-#include "Timer.hpp"
+#include "core/Logger.hpp"
+#include "core/Timer.hpp"
 
 namespace constants
 {
@@ -21,7 +21,9 @@ extern const size_t write_chunk_size;
 // - events
 extern const size_t max_events;
 extern const Milliseconds epoll_timeout;
-// - timeouts
+// - connections
+extern const size_t max_connections;
+// - timeouts                         // e.g. in my laptop: 1024 - 50 ~= 950
 // -- connection
 extern const Seconds connection_timeout;
 // -- cgi
