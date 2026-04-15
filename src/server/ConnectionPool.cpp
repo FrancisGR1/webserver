@@ -1,77 +1,111 @@
-#include "ConnectionPool.hpp"
-#include "EventManager.hpp"
+#include <fcntl.h>
+#include <sys/socket.h>
+
 #include "core/Logger.hpp"
+#include "core/contracts.hpp"
 #include "core/utils.hpp"
+#include "server/Connection.hpp"
+#include "server/ConnectionPool.hpp"
 
-ConnectionPool::ConnectionPool(EventManager& events)
-    : events_(events)
+// constructor
+ConnectionPool::ConnectionPool(size_t max_connections)
+    : m_pool(max_connections, NULL)
 {
+    Logger::trace("ConnectionPool: constructor");
 }
 
+// destructor
+ConnectionPool::~ConnectionPool()
+{
+    Logger::trace("ConnectionPool: destructor");
+}
+
+// api
 // make connection, store it, return a reference to it
-Connection& ConnectionPool::make(Socket& conn_socket)
+EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfig& service)
 {
-    if (utils::contains(conn_by_fd_, conn_socket.fd()))
-        throw std::logic_error("ConnectionPool: already contains this fd!\n");
+    REQUIRE(server_socket != NULL, "Socket is Null!");
 
-    // create and save connection with its socket fd
-    connection_pool_.insert(connection_pool_.end(), new Connection(conn_socket, events_));
-    events_.add(conn_socket.fd(), EPOLLOUT | EPOLLIN);
-    conn_by_fd_[conn_socket.fd()] = connection_pool_.back();
-    return *conn_by_fd_[conn_socket.fd()];
-}
-
-void ConnectionPool::associate_fd(int fd, Connection& conn)
-{
-    if (utils::contains(conn_by_fd_, fd))
-        throw std::logic_error("ConnectionPool: already contains this fd!\n");
-
-    for (std::list<Connection*>::iterator it = connection_pool_.begin(); it != connection_pool_.end(); ++it)
+    if (is_full())
+        throw std::runtime_error(utils::fmt("Connection pool limit reached: %zu", m_pool.size()));
+    // create client socket
+    int client_fd = ::accept(server_socket->fd(), NULL, NULL);
+    if (client_fd == -1)
     {
-        if (*it == &conn)
+        throw std::runtime_error("Failed to accept client connection!");
+    }
+    // fd shouldn't exist
+    INVARIANT(contains(client_fd) == NULL, "fd %d already exists", client_fd);
+
+    // set socket options
+    int opt = 0;
+    if (setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+    {
+        throw std::runtime_error("setsockopt() for client failed!");
+    }
+    if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1)
+    {
+        throw std::runtime_error("fcntl() failed to set client socket to non-blocking mode!");
+    }
+
+    // create connection
+    for (size_t i = 0; i < m_pool.size(); ++i)
+    {
+        if (m_pool[i] == NULL)
         {
-            throw std::logic_error("ConnectionPool: connection not owned by pool!");
+            m_pool[i] = new Connection(client_fd, server_socket->listener(), service);
+            return EventAction(EventAction::WantReading, client_fd, m_pool[i]);
         }
     }
-    events_.add(fd, EPOLLOUT | EPOLLIN);
-    conn_by_fd_[fd] = &conn;
+
+    INVARIANT(false, "No slot available found for new connection!");
+    return EventAction(EventAction::WantNothing, -1, NULL); // unreachable
 }
 
 void ConnectionPool::remove(Connection& conn)
 {
-    // map
-    for (std::map<int, Connection*>::iterator it = conn_by_fd_.begin(); it != conn_by_fd_.end();)
+    for (size_t i = 0; i < m_pool.size(); ++i)
     {
-        if (it->second == &conn)
+        if (m_pool[i] == &conn)
         {
-            std::map<int, Connection*>::iterator tmp = it;
-            ++it;
-            events_.remove(tmp->first);
-            conn_by_fd_.erase(tmp);
-        }
-        else
-        {
-            ++it;
+            delete m_pool[i];
+            m_pool[i] = NULL; // mark free slot
+            Logger::debug("ConnectionPool: Connection[%zu] removed from pool slot", 0);
+            return;
         }
     }
-
-    // list
-    for (std::list<Connection*>::iterator it = connection_pool_.begin(); it != connection_pool_.end();)
-    {
-        if (*it == &conn)
-        {
-            connection_pool_.erase(it);
-            break;
-        }
-    }
+    Logger::warn("ConnectionPool: Attempted to remove connection not in pool");
 }
 
-Connection& ConnectionPool::get(int fd)
+Connection* ConnectionPool::contains(const Connection* conn) const
 {
-    Logger::trace("ConnectionPool: Get connection with fd=%d", fd);
+    for (size_t i = 0; i < m_pool.size(); ++i)
+    {
+        if (m_pool[i] != NULL && conn == m_pool[i])
+            return m_pool[i];
+    }
 
-    if (!utils::contains(conn_by_fd_, fd))
-        throw std::logic_error("ConnectionPool: looking up fd that doesn't exist!\n");
+    return NULL;
+}
 
-    return *conn_by_fd_[fd];
+Connection* ConnectionPool::contains(int conn_socket_fd) const
+{
+    for (size_t i = 0; i < m_pool.size(); ++i)
+    {
+        if (m_pool[i] != NULL && conn_socket_fd == m_pool[i]->socket().fd())
+            return m_pool[i];
+    }
+
+    return NULL;
+}
+
+bool ConnectionPool::is_full() const
+{
+    for (size_t i = 0; i < m_pool.size(); ++i)
+    {
+        if (m_pool[i] == NULL)
+            return false;
+    }
+    Logger::info("ConnectionPool: is full!");
+    return true;
 }
