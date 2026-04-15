@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "core/EventAction.hpp"
 #include "http/response/Response.hpp"
+#include "server/EventAction.hpp"
 
 class IRequestHandler
 {

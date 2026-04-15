@@ -1,11 +1,11 @@
 #ifndef GETHANDLER_HPP
 #define GETHANDLER_HPP
 
-#include "core/EventAction.hpp"
 #include "core/Path.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/response/Response.hpp"
+#include "server/EventAction.hpp"
 
 class GetHandler : public IRequestHandler
 {

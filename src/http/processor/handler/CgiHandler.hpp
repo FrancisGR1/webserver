@@ -4,7 +4,6 @@
 #include <map>
 #include <string>
 
-#include "core/EventAction.hpp"
 #include "core/Path.hpp"
 #include "core/Timer.hpp"
 #include "core/constants.hpp"
@@ -13,6 +12,7 @@
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
+#include "server/EventAction.hpp"
 
 // https://datatracker.ietf.org/doc/html/rfc3875
 class CgiHandler : public IRequestHandler

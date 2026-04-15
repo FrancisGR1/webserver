@@ -1,11 +1,11 @@
 #ifndef DELETEHANDLER_HPP
 #define DELETEHANDLER_HPP
 
-#include "core/EventAction.hpp"
 #include "http/processor/RequestContext.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/response/Response.hpp"
+#include "server/EventAction.hpp"
 
 class DeleteHandler : public IRequestHandler
 {
