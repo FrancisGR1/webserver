@@ -1,12 +1,20 @@
+html, body {
+	height: 100%;
+}
+
 body {
 	font-family: Arial, Helvetica, sans-serif;
 	margin: 0;
 	padding: 0;
+	/* background-color: black; */
 	background-image: url('../img/background_site.jpg'); 
 	background-size: cover; 
 	background-repeat: no-repeat; 
 	background-position: center;
 	background-attachment: fixed;
+  
+	display: flex;
+	flex-direction: column;
 }
 
 header {
@@ -38,6 +46,7 @@ nav a:hover {
 }
 
 main {
+	flex: 1;
 	color: white;
 	text-align: center;
 }
@@ -80,4 +89,68 @@ footer {
 	height: 300px;
 	object-fit: contain;
 	border-radius: 10px;
+}
+
+.auth-box {
+	max-width: 400px;
+	margin: 50px auto;
+	padding: 30px;
+	background-color: rgba(0, 0, 0, 0.75);
+	border-radius: 12px;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+	text-align: left;
+}
+
+.auth-box h2 {
+	text-align: center;
+	margin-top: 0;
+	margin-bottom: 25px;
+	color: white;
+}
+
+.form-group {
+	margin-bottom: 20px;
+}
+
+.form-group label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: bold;
+	color: white;
+}
+
+.form-group input {
+	width: 100%;
+	padding: 10px;
+	border: none;
+	border-radius: 6px;
+	box-sizing: border-box;
+	font-size: 14px;
+}
+
+.auth-button {
+	width: 100%;
+	padding: 12px;
+	border: none;
+	border-radius: 6px;
+	background-color: #333;
+	color: white;
+	font-size: 16px;
+	cursor: pointer;
+}
+
+.auth-button:hover {
+	background-color: #555;
+}
+
+.auth-link {
+	margin-top: 20px;
+	text-align: center;
+	color: white;
+}
+
+.auth-link a {
+	color: white;
+	font-weight: bold;
+	text-decoration: underline;
 }
