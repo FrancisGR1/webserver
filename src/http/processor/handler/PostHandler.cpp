@@ -141,7 +141,7 @@ void PostHandler::process()
             m_events.push_back(EventAction(
                 EventAction::WantWriting,
                 EventAction::ClientSocket,
-                m_ctx.connection()->socket().fd(),
+                m_ctx.connection() ? m_ctx.connection()->socket().fd() : 0, //@NOTE for unit testing
                 m_ctx.connection()));
         }
     }

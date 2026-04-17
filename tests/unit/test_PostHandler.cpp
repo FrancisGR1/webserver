@@ -427,7 +427,6 @@ int main()
             break;
         try
         {
-            //@AGORA estes testes estão a falhar. Porquê?
             test_good_PostHandler(test);
         }
         catch (const std::exception& e)

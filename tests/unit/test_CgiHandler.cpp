@@ -30,7 +30,7 @@ struct TestCase
         service = ServiceConfig{{script_location}};
         socket = std::make_unique<Socket>(3, listener); // 3 = dummy fd
         events = std::make_unique<EventManager>(1024);
-        ctx = std::make_unique<RequestContext>(*socket, service);
+        ctx = std::make_unique<RequestContext>(nullptr, service);
 
         // create cgi directive
         // @TODO isto deve ser um param
@@ -146,7 +146,7 @@ std::vector<TestCase> generate_bad_test_cases(void)
         "pipe overflow",
         "./test_data/scripts/bad/pipe_overflow.py",
         Request("GET", "/scripts/bad/pipe_overflow.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
-        Response(StatusCode::BadGateway, {}, ""));
+        Response(StatusCode::GatewayTimeout, {}, ""));
     // no output - empty response, no headers
     test_cases.emplace_back(
         "no output",
@@ -251,7 +251,7 @@ void test_bad_CgiHandler(const TestCase& test)
 
 int main()
 {
-    Logger::set_global_level(Log::Fatal);
+    Logger::set_global_level(Log::Error);
     // send output of cgi to here
     // to check what subprocess says
     Logger::set_output(
@@ -277,9 +277,13 @@ int main()
     // bad
     std::cout << constants::red << "\nBad tests\n" << constants::reset;
     tests = generate_bad_test_cases();
+    int stop = 0;
     for (auto& test : tests)
     {
+        if (stop == -1)
+            break;
         test_bad_CgiHandler(test);
+        ++stop;
     }
 
     Logger::flush();

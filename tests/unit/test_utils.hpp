@@ -58,7 +58,7 @@ HandlerTestCase::HandlerTestCase(
     location = lc;
     socket = std::make_unique<Socket>(3, listener); // 3 = dummy fd
     events = std::make_unique<EventManager>(1024);
-    ctx = std::make_unique<RequestContext>(*socket, service);
+    ctx = std::make_unique<RequestContext>(nullptr, service);
 
     ctx->config().set(file_path);
     ctx->config().set(location);
