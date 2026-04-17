@@ -87,8 +87,8 @@ void CgiHandler::process()
                 dup2(m_fd[1], STDERR_FILENO);
 
                 // close pipe
-                close(m_fd[1]);
-                close(m_fd[0]);
+                ::close(m_fd[1]);
+                ::close(m_fd[0]);
 
                 // execute
                 execve(argv[0], argv, &envp[0]);
@@ -103,10 +103,15 @@ void CgiHandler::process()
                 m_subprocess_id = id;
 
                 // manage resources
-                close(m_fd[1]);
+                ::close(m_fd[1]);
                 fcntl(m_fd[0], F_SETFL, O_NONBLOCK);
-                m_events.push_back(EventAction(EventAction::WantReading, m_fd[0]));
+
+                // add events
+                m_events.push_back(
+                    EventAction(EventAction::WantReading, EventAction::LocalFile, m_fd[0], m_ctx.connection()));
+
                 m_state = ReadPipe;
+
                 break;
             }
         }
@@ -164,8 +169,9 @@ void CgiHandler::process()
             }
             else if (bytes == 0) // EOF
             {
-                ::close(m_fd[0]);
                 m_fd[0] = -1;
+                m_events.push_back(
+                    EventAction(EventAction::WantClose, EventAction::LocalFile, m_fd[0], m_ctx.connection()));
                 m_state = CookData;
             }
             else // nothing was read
@@ -259,6 +265,9 @@ std::vector<EventAction> CgiHandler::give_events()
 {
     std::vector<EventAction> result;
     result.swap(m_events);
+
+    Logger::trace("CgiHandler: give '%zu' events", result.size());
+
     return result;
 }
 

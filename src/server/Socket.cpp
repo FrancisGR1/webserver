@@ -1,7 +1,7 @@
 #include <unistd.h>
 
-#include "Socket.hpp"
 #include "core/Logger.hpp"
+#include "server/Socket.hpp"
 
 Socket::Socket(int fd, const Listener& listener)
     : m_fd(fd)
@@ -12,21 +12,12 @@ Socket::Socket(int fd, const Listener& listener)
 
 Socket::~Socket()
 {
-    close();
-    Logger::trace("Socket: destruct with fd=%d", m_fd);
+    Logger::trace("Socket: destruct");
 }
 
 int Socket::fd() const
 {
     return (m_fd);
-}
-
-int Socket::close()
-{
-    if (m_fd < 0)
-        return -1;
-
-    return ::close(m_fd);
 }
 
 const Listener& Socket::listener() const

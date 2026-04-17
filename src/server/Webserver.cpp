@@ -3,6 +3,7 @@
 #include "core/contracts.hpp"
 #include "core/utils.hpp"
 #include "server/Connection.hpp"
+#include "server/EventAction.hpp"
 #include "server/EventManager.hpp"
 #include "server/Socket.hpp"
 
@@ -42,26 +43,23 @@ void Webserver::setup()
 
             // store socket
             m_server_sockets.insert(std::pair<int, Socket*>(socket->fd(), socket));
-            if (m_events.add(socket->fd(), EPOLLIN) == -1)
+            EventAction ea(EventAction::WantReading, EventAction::ServerSocket, socket->fd(), NULL);
+            if (m_events.apply(ea) == -1)
             {
                 throw std::runtime_error("Failed to add socket to events");
             }
 
-            Logger::info("Webserver: listening on %s:%s", listener.host.c_str(), listener.port.c_str());
+            Logger::info(
+                "Webserver: listening on %s:%s", socket->listener().host.c_str(), socket->listener().port.c_str());
         }
     }
 }
 
-bool Webserver::is_server_socket(int fd)
+Socket* Webserver::get_server_socket(const EventAction& ea)
 {
-    return (m_server_sockets.find(fd) != m_server_sockets.end());
-}
+    REQUIRE(ea.type == EventAction::ServerSocket, "EventAction must be from server socket");
 
-Socket* Webserver::get_server_socket(int fd)
-{
-    REQUIRE(is_server_socket(fd) == true);
-
-    return m_server_sockets.find(fd)->second;
+    return m_server_sockets.find(ea.fd)->second;
 }
 
 const ServiceConfig& Webserver::get_service(const Socket* server_socket)
@@ -96,18 +94,19 @@ void Webserver::run()
         //@TODO colocar try catch dentro do for loop
         for (int i = 0; i < n_events; ++i)
         {
-            EventAction event = m_events.get_event(i);
+            const EventAction& event = m_events.get_event(i);
             Connection* conn = event.conn;
             switch (event.action)
             {
                 case EventAction::WantReading:
+                case EventAction::WantProcessing:
                 case EventAction::WantWriting:
                 case EventAction::WantClose:
                 {
-                    if (is_server_socket(event.fd))
+                    if (event.type == EventAction::ServerSocket)
                     {
                         Logger::trace("Webserver: Fd %d is a server socket", event.fd);
-                        const Socket* ss = get_server_socket(event.fd);
+                        const Socket* ss = get_server_socket(event);
                         const ServiceConfig& service = get_service(ss);
                         const EventAction& ec = m_connection_pool.make(ss, service);
                         m_events.apply(ec);
@@ -118,35 +117,33 @@ void Webserver::run()
 
                         Logger::trace("Webserver: Fd %d is an existing connection", event.fd);
                         event.conn->handle_event(event);
-                        m_events.apply(conn->give_events(), conn);
+                        m_events.apply(conn->give_events());
                         if (conn->done())
                         {
                             m_connection_pool.remove(*conn);
                             // fechar ligação?
                         }
                     }
-                    break;
                 }
-                // case EventAction::WantWriting:
-                //{
-                //     //@TODO connection->write
-                //     break;
-                // }
+                    // case EventAction::WantWriting:
+                    //{
+                    //     //@TODO connection->write
+                    //     break;
+                    // }
 
-                // case EventAction::WantClose:
-                //{
-                //     //@TODO
-                //     // m_connection_pool.remove()
-                //     // m_events.remove()
-                //     break;
-                // }
-                default:
-                {
-                }
+                    // case EventAction::WantClose:
+                    //{
+                    //     //@TODO
+                    //     // m_connection_pool.remove()
+                    //     // m_events.remove()
+                    //     break;
+                    // }
             }
         }
         //@TODO: fechar ligações idle durante demasiado tempo
     }
+
+    Logger::info("Webserver: stop running");
 }
 
 Socket* Webserver::make_server_socket(const Listener& listener)
@@ -163,10 +160,8 @@ Socket* Webserver::make_server_socket(const Listener& listener)
         throw std::runtime_error(
             utils::fmt("getaddrinfo() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
     }
-    /* criar socket, configurar, bind... */
+
     int socket_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    //@TODO substituir por exception de servidor
-    //@TODO recuperar antigas mensagens de erros
     if (socket_fd < 0)
     {
         throw std::runtime_error(

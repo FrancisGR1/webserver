@@ -13,7 +13,7 @@ const size_t read_pipe_chunk_size = 1048576;
 const size_t write_chunk_size = 4096;
 // - events
 const size_t max_events = 512;
-const Milliseconds epoll_timeout = 1000;
+const Milliseconds epoll_timeout = 60000;
 // - connections
 const size_t max_connections = 950; // check ulimit -n "open connections" - should be a little less than the limit
 
@@ -50,6 +50,6 @@ const char* bright_red = "\033[91m";
 const char* reset = "\033[0m";
 
 // - logging
-const Log::Level log_level = Log::Debug;
+const Log::Level log_level = Log::Trace;
 
 } // namespace constants

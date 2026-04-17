@@ -37,8 +37,7 @@ class Webserver
 
     // utils
     Socket* make_server_socket(const Listener& listener);
-    bool is_server_socket(int fd);
-    Socket* get_server_socket(int fd);
+    Socket* get_server_socket(const EventAction& ea);
     const ServiceConfig& get_service(const Socket* server_socket);
 
     // illegal

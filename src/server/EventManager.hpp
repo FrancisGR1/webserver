@@ -1,7 +1,6 @@
 #ifndef EVENT_MANAGER
 #define EVENT_MANAGER
 
-#include <set>
 #include <vector>
 
 #include "server/EventAction.hpp"
@@ -13,25 +12,26 @@ class EventManager
     EventManager(size_t max_events);
     ~EventManager();
 
-    // api
-    EventAction get_event(size_t index) const;
-    void apply(const std::vector<EventAction>& actions, Connection* ctx);
-    void apply(const EventAction& actions);
+    // manage events
     int wait();
-    int add(int fd, uint32_t events);
-    int remove(int fd);
+    const EventAction& get_event(size_t index) const;
+    int apply(const std::vector<EventAction>& event_actions);
+    int apply(const EventAction& ea);
 
   private:
     int m_epoll_fd;
-    // an event is one of the following: socket, file, pipe
     size_t m_max_events;
-    epoll_event* m_events;
-    std::set<int> m_tracked_fds;
+    // an event is one of the following: socket, file, pipe
+    epoll_event* m_epoll_events_buffer;
+    std::vector<EventAction*> m_events;
 
     // utils
-    bool is_tracked(int fd);
-    void untrack(int fd);
-    void to_epoll_event(const EventAction& ea, Connection* ctx);
+    int to_epoll_event(const EventAction& ea);
+    EventAction* add(const EventAction& ea);
+    void remove(const EventAction& ea);
+    void modify(EventAction*& ea, EventAction::Action action);
+    EventAction* find(EventAction*& ee) const;
+    EventAction* exists(int event_fd) const;
 };
 
 #endif /* EVENT_MANAGER */

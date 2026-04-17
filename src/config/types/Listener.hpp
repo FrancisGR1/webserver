@@ -6,6 +6,7 @@
 struct Listener
 {
     // construct
+    Listener();
     Listener(const char* host, const char* port);
 
     // api

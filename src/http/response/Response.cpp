@@ -79,9 +79,6 @@ Response& Response::operator=(const Response& other)
 Response::~Response()
 {
     Logger::trace("Response: destructor");
-
-    if (m_body_fd >= 0)
-        close(m_body_fd);
 }
 
 ssize_t Response::send(int fd)

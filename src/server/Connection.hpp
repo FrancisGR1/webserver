@@ -6,6 +6,7 @@
 #include "http/processor/RequestProcessor.hpp"
 #include "http/request/RequestParser.hpp"
 #include "http/response/Response.hpp"
+#include "server/EventAction.hpp"
 #include "server/Socket.hpp"
 
 //@TODO adicionar um unique id

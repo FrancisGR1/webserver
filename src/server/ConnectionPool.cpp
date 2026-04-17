@@ -6,6 +6,7 @@
 #include "core/utils.hpp"
 #include "server/Connection.hpp"
 #include "server/ConnectionPool.hpp"
+#include "server/EventAction.hpp"
 
 // constructor
 ConnectionPool::ConnectionPool(size_t max_connections)
@@ -21,7 +22,7 @@ ConnectionPool::~ConnectionPool()
 }
 
 // api
-// make connection, store it, return a reference to it
+// make connection, store it, return an event
 EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfig& service)
 {
     REQUIRE(server_socket != NULL, "Socket is Null!");
@@ -54,12 +55,13 @@ EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfi
         if (m_pool[i] == NULL)
         {
             m_pool[i] = new Connection(client_fd, server_socket->listener(), service);
-            return EventAction(EventAction::WantReading, client_fd, m_pool[i]);
+            return EventAction(
+                EventAction::WantReading, EventAction::ClientSocket, m_pool[i]->socket().fd(), m_pool[i]);
         }
     }
 
     INVARIANT(false, "No slot available found for new connection!");
-    return EventAction(EventAction::WantNothing, -1, NULL); // unreachable
+    return EventAction(EventAction::WantClose, EventAction::ServerSocket, -1, NULL); // unreachable
 }
 
 void ConnectionPool::remove(Connection& conn)

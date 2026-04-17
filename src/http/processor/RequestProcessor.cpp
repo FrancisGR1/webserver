@@ -1,5 +1,6 @@
 #include "http/processor/RequestProcessor.hpp"
 #include "core/Logger.hpp"
+#include "core/contracts.hpp"
 #include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/processor/handler/DeleteHandler.hpp"
@@ -8,9 +9,11 @@
 #include "http/processor/handler/PostHandler.hpp"
 #include "http/response/ResponseError.hpp"
 
-RequestProcessor::RequestProcessor(const Socket& conn_socket, const ServiceConfig& service)
+class Connection;
+
+RequestProcessor::RequestProcessor(Connection* connection, const ServiceConfig& service)
     : m_state(RequestProcessor::Validating)
-    , m_ctx(conn_socket, service)
+    , m_ctx(connection, service)
     , m_handler(NULL)
 {
     Logger::trace("RequestProcessor: constructor");
@@ -203,8 +206,14 @@ const Response& RequestProcessor::response() const
 
 std::vector<EventAction> RequestProcessor::give_events()
 {
+
     if (m_state >= Handling)
+    {
+        Logger::trace("RequestProcessor: return handler events");
         return m_handler->give_events();
+    }
+
+    Logger::trace("RequestProcessor: no events to give");
     return std::vector<EventAction>();
 }
 

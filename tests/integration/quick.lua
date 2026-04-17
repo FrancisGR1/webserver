@@ -3,7 +3,7 @@
 -- quick script to test the basic workflow of the server:
 -- POST -> GET -> DELETE -> GET (error)
 
-local BASE_URL = "http://127.0.0.1:8080"
+local BASE_URL = "http://127.0.0.1:8085"
 
 -- run a shell command and return its output
 local function run(cmd)

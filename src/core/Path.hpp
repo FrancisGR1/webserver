@@ -5,6 +5,7 @@
 #include <sys/types.h>
 
 //@TODO: tornar class
+// adicionar fd
 struct Path
 {
     Path(const std::string& str_path);

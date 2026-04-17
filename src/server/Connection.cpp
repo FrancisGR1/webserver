@@ -1,19 +1,19 @@
 #include <cstring>
 
-#include "Connection.hpp"
-#include "Socket.hpp"
-#include "Webserver.hpp"
 #include "core/Logger.hpp"
 #include "core/constants.hpp"
 #include "http/processor/RequestProcessor.hpp"
 #include "http/request/Request.hpp"
+#include "server/Connection.hpp"
 #include "server/EventAction.hpp"
+#include "server/Socket.hpp"
+#include "server/Webserver.hpp"
 
 Connection::Connection(int client_fd, const Listener& listener, const ServiceConfig& service)
     : m_state(Receiving)
     , m_service(service)
     , m_socket(client_fd, listener)
-    , m_processor(m_socket, service)
+    , m_processor(this, service)
 {
     Logger::trace("Connection: constructor");
 }
@@ -68,17 +68,25 @@ void Connection::handle_event(const EventAction& action)
             // parse
             m_parser.feed(buffer);
 
+            //@TODO juntar isto à fase de sending
+            // sending -> processing
+            // o evento deve ser mudado para EPOLLOUT na altura de
+            // escrever a resposta e não como está agora
+            // (na altura de GET/POST de ficheiro)
             if (m_parser.done())
             {
                 const Request& request_ = m_parser.get();
                 Logger::debug_obj(request_, "Connection: Request: ");
                 m_processor.set(request_);
+                m_events.push_back(
+                    EventAction(EventAction::WantProcessing, EventAction::ClientSocket, m_socket.fd(), this));
                 m_state = Processing;
             }
             break;
         }
         case Processing:
         {
+            Logger::trace("Connection: state - Processing");
             m_processor.process();
 
             if (m_processor.done())
@@ -86,7 +94,8 @@ void Connection::handle_event(const EventAction& action)
                 Logger::trace("Connection: RequestProcessor: Done!");
                 m_response = m_processor.response();
                 Logger::debug_obj(m_response, "Connection: Response:\n");
-                m_events.push_back(EventAction(EventAction::WantWriting, m_socket.fd()));
+                m_events.push_back(
+                    EventAction(EventAction::WantWriting, EventAction::ClientSocket, m_socket.fd(), this));
                 m_state = Sending;
             }
             break;
@@ -102,6 +111,14 @@ void Connection::handle_event(const EventAction& action)
             {
                 Logger::debug_obj(m_response, "Connection: Response:\n");
                 Logger::info("Connection: state - done!");
+
+                // close response body fd
+                if (m_response.body_fd() != -1)
+                    m_events.push_back(
+                        EventAction(EventAction::WantClose, EventAction::LocalFile, m_response.body_fd(), this));
+                // close client socket by DEFAULT (http 1.0)
+                m_events.push_back(EventAction(EventAction::WantClose, EventAction::ClientSocket, m_socket.fd(), this));
+
                 m_state = Done;
             }
             break;
@@ -122,6 +139,7 @@ int Connection::fd() const
 
 std::vector<EventAction> Connection::give_events()
 {
+
     // insert processor events before connection events
     std::vector<EventAction> pe = m_processor.give_events();
     m_events.insert(m_events.begin(), pe.begin(), pe.end());
@@ -129,6 +147,9 @@ std::vector<EventAction> Connection::give_events()
     // drain and return
     std::vector<EventAction> result;
     result.swap(m_events);
+
+    Logger::trace("Connection: give '%zu' events", result.size());
+
     return result;
 }
 

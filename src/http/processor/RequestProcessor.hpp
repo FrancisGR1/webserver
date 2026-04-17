@@ -7,11 +7,12 @@
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
 
+class Connection;
+
 class RequestProcessor : public IRequestHandler
 {
   public:
-    //@TODO adicionar informação da ligação
-    RequestProcessor(const Socket& conn_socket, const ServiceConfig& service);
+    RequestProcessor(Connection* connection, const ServiceConfig& service);
     ~RequestProcessor();
 
     void process();

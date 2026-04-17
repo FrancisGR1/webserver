@@ -13,7 +13,6 @@ FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG)
 SOURCES  = \
 	   src/main.cpp \
 	  \
-	  src/core/EventAction.cpp \
 	  src/core/Logger.cpp \
 	  src/core/MimeTypes.cpp \
 	  src/core/Path.cpp \
@@ -23,6 +22,7 @@ SOURCES  = \
 	  \
 	  src/server/Connection.cpp \
 	  src/server/ConnectionPool.cpp \
+	  src/server/EventAction.cpp \
 	  src/server/EventManager.cpp \
 	  src/server/Socket.cpp \
 	  src/server/Webserver.cpp \

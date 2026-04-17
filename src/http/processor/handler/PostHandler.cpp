@@ -1,7 +1,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "PostHandler.hpp"
 #include "core/MimeTypes.hpp"
 #include "core/constants.hpp"
 #include "core/contracts.hpp"
@@ -10,7 +9,9 @@
 #include "http/http_utils.hpp"
 #include "http/processor/RequestConfig.hpp"
 #include "http/processor/RequestContext.hpp"
+#include "http/processor/handler/PostHandler.hpp"
 #include "http/request/Request.hpp"
+#include "server/Connection.hpp"
 
 PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
     : m_request(request)
@@ -18,7 +19,7 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
     , m_done(false)
     , m_cgi(request, ctx)
     , m_upload_path("")
-    , m_fd(-1)
+    , m_post_fd(-1)
     , m_offset(0)
 {
     Logger::trace("PostHandler: constructor");
@@ -27,8 +28,6 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
 PostHandler::~PostHandler()
 {
     Logger::trace("PostHandler: destructor");
-    if (m_fd > -1)
-        close(m_fd);
 };
 
 static void expect_uploadable(
@@ -72,7 +71,7 @@ void PostHandler::process()
     }
     else if (config.allows_upload())
     {
-        if (m_fd == -1) // set upload dir
+        if (m_post_fd == -1) // set upload dir
         {
             Path upload_dir = m_ctx.config().path();
             expect_uploadable(m_request, config, upload_dir, m_ctx);
@@ -84,14 +83,16 @@ void PostHandler::process()
             // make upload real path
             m_upload_path = utils::join_paths(upload_dir.raw, m_upload_filename);
             // open fd and store in events
-            m_fd = open(m_upload_path.raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            m_events.push_back(EventAction(EventAction::WantWriting, m_fd));
-            if (m_fd <= 2)
+            m_post_fd = open(m_upload_path.raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            // add new file to events
+            m_events.push_back(
+                EventAction(EventAction::WantWriting, EventAction::LocalFile, m_post_fd, m_ctx.connection()));
+            if (m_post_fd <= 2)
             {
                 http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
             }
 
-            Logger::debug("PostHandler: write to fd=%d '%s'", m_fd, m_upload_path.raw.c_str());
+            Logger::debug("PostHandler: write to fd=%d '%s'", m_post_fd, m_upload_path.raw.c_str());
         }
 
         if (!m_done)
@@ -99,7 +100,7 @@ void PostHandler::process()
             size_t to_write = (m_request.body().size() - m_offset) > constants::write_chunk_size
                                   ? constants::write_chunk_size
                                   : m_request.body().size() - m_offset;
-            ssize_t written = ::write(m_fd, m_request.body().c_str() + m_offset, to_write);
+            ssize_t written = ::write(m_post_fd, m_request.body().c_str() + m_offset, to_write);
             if (written >= 0)
                 m_offset += written;
             //@TODO apanhar erro em caso de -1
@@ -111,7 +112,7 @@ void PostHandler::process()
 
         if (m_done)
         {
-            Logger::trace("PostHandler: finished writing fd=%d", m_fd);
+            Logger::trace("PostHandler: finished writing fd=%d", m_post_fd);
 
             // status
             m_response.set_status(StatusCode::Created);
@@ -132,6 +133,16 @@ void PostHandler::process()
             m_response.set_header("Date", utils::http_date());
             m_response.set_header("Content-Type", "application/json");
             m_response.set_header("Content-Length", utils::to_string(json.size()));
+
+            // close posted file
+            m_events.push_back(
+                EventAction(EventAction::WantClose, EventAction::LocalFile, m_post_fd, m_ctx.connection()));
+            // change socket to write
+            m_events.push_back(EventAction(
+                EventAction::WantWriting,
+                EventAction::ClientSocket,
+                m_ctx.connection()->socket().fd(),
+                m_ctx.connection()));
         }
     }
     else // can't upload

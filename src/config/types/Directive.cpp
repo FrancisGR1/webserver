@@ -1,7 +1,8 @@
 #include <string>
 #include <vector>
 
-#include "Directive.hpp"
+#include "config/parser/Token.hpp"
+#include "config/types/Directive.hpp"
 
 Directive::Directive()
     : type(Token::Unknown)

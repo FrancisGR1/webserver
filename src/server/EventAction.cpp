@@ -2,40 +2,41 @@
 #include "core/Logger.hpp"
 #include "server/Connection.hpp"
 
-#include <stdint.h>
 #include <sys/epoll.h>
+#include <unistd.h>
 
-EventAction::EventAction(EventAction::Action action, int fd, Connection* conn)
+EventAction::EventAction(EventAction::Action action, EventAction::Type type, int fd, Connection* conn)
     : action(action)
+    , type(type)
     , fd(fd)
     , conn(conn)
 {
     Logger::trace("EventAction: constructor - params");
 }
 
-EventAction::EventAction(const epoll_event& ev)
-    : action(EventAction::WantClose) // WantClose is default
-    , fd(ev.data.fd)
-    , conn(static_cast<Connection*>(ev.data.ptr))
+EventAction::EventAction(const EventAction& other)
+    : action(other.action)
+    , type(other.type)
+    , fd(other.fd)
+    , conn(other.conn)
 {
-    Logger::trace("EventAction: constructor - epoll_event");
+    Logger::trace("EventAction: copy constructor");
+}
 
-    // translate epoll_event to EventAction::Action
-    if (ev.events & EPOLLIN)
+bool operator==(const EventAction& event_action, const epoll_event& epoll_event)
+{
+    if (epoll_event.events & EPOLLIN)
     {
-        action = EventAction::WantReading;
+        return event_action.action == EventAction::WantReading;
     }
-    else if (ev.events & EPOLLOUT)
+    else if (epoll_event.events & EPOLLOUT)
     {
-        action = EventAction::WantReading;
-    }
-    else if (ev.events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
-    {
-        action = EventAction::WantClose;
+        return (
+            event_action.action == EventAction::WantWriting &&
+            (event_action.type == EventAction::ClientSocket || event_action.type == EventAction::LocalFile));
     }
     else
     {
-        Logger::warn("EventAction: unknown epoll event: '%zu'. Default to WantClose", ev.events);
-        action = EventAction::WantClose;
+        return event_action.action == EventAction::WantClose;
     }
 }

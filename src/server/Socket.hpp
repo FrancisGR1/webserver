@@ -14,9 +14,6 @@ class Socket
     int fd() const;
     const Listener& listener() const;
 
-    // close socket fd
-    int close();
-
   private:
     int m_fd;
     Listener m_listener;

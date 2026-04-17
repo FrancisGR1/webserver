@@ -40,7 +40,7 @@ class PostHandler : public IRequestHandler
     std::string m_upload_filename; // name
     std::string m_upload_uri;      // location + name
     Path m_upload_path;            // full path
-    int m_fd;                      // fd of full path
+    int m_post_fd;                 // fd of posted file
     ssize_t m_offset;              // current write position
 
     // utils

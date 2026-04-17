@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <sys/epoll.h>
 
-#include <cstddef>
-
 class Connection;
 
 struct EventAction
@@ -14,17 +12,29 @@ struct EventAction
     {
         // send to event manager
         WantReading = 0,
+        WantProcessing,
         WantWriting,
-        WantClose,
-        WantNothing
+        WantClose
     };
 
-    EventAction(EventAction::Action action, int fd, Connection* conn = NULL);
-    EventAction(const epoll_event& ev);
+    enum Type
+    {
+        ServerSocket = 0,
+        ClientSocket,
+        LocalFile,
+    };
+
+    // construct/copy
+    EventAction(EventAction::Action action, EventAction::Type type, int fd, Connection* conn);
+    EventAction(const EventAction& other);
 
     Action action;
+    Type type;
     int fd;
     Connection* conn;
 };
+
+// overload
+bool operator==(const EventAction& event_action, const epoll_event& epoll_event);
 
 #endif // EVENT_ACTION_HPP

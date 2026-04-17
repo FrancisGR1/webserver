@@ -51,8 +51,9 @@ void ErrorHandler::process()
             m_response.set_header("Content-Type", error_page.mime);
 
             // body
+            Connection* conn = m_ctx != NULL ? m_ctx->connection() : NULL;
             int fd = m_response.set_body_as_path(error_page);
-            m_events.push_back(EventAction(EventAction::WantReading, fd));
+            m_events.push_back(EventAction(EventAction::WantReading, EventAction::LocalFile, fd, conn));
 
             m_done = true;
 
@@ -86,6 +87,9 @@ std::vector<EventAction> ErrorHandler::give_events()
 {
     std::vector<EventAction> result;
     result.swap(m_events);
+
+    Logger::trace("CgiHandler: give '%zu' events", result.size());
+
     return result;
 }
 
