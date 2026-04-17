@@ -117,8 +117,17 @@ void CgiHandler::process()
         }
         case ReadPipe:
         {
-            int status;
-            waitpid(m_subprocess_id, &status, WNOHANG); // don't wait for subprocess
+            int status = 0;
+            int res = waitpid(m_subprocess_id, &status, WNOHANG); // don't wait for subprocess
+            if (res == 0)
+                break;
+            if (res == -1)
+            {
+                throw ResponseError(
+                    StatusCode::InternalServerError,
+                    utils::fmt("CgiHandler: subprocess exited with %d code. Errno says: '%s'", status, strerror(errno)),
+                    &m_ctx);
+            }
             if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
             {
                 throw ResponseError(
@@ -330,5 +339,9 @@ std::string CgiHandler::to_uppercase_and_underscore(const std::string& str)
 void CgiHandler::expect_has_time_left() const
 {
     if (m_timer.expired())
+    {
+        ::kill(m_subprocess_id, SIGKILL);
+        ::waitpid(m_subprocess_id, NULL, 0); // reap it
         http_utils::throw_gateway_timeout(m_script.raw, m_timeout, m_ctx);
+    }
 }
