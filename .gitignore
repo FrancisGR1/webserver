@@ -1,11 +1,10 @@
 tmp/*
 *.o
 *.a
-*.pdf
 webserv
 *.out
 *.data
+*.log
 .cache
 compile_commands.json
 __pycache__
-logs/

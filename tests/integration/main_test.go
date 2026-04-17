@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-const baseURL = "http://127.0.0.1:8085"
+const baseURL = "http://127.0.0.1:8084"
 
 // one connection per request — matches server's Connection: close behavior
 var httpClient = &http.Client{

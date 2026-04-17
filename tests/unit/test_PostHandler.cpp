@@ -190,14 +190,19 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
 
     // --- forbidden ---
     // @NOTE: do a chmod 000 on the directory
+    
+    const std::string no_perm_dir = "./test_data/post/forbidden";
+    mkdir(no_perm_dir.c_str(), 0777); 
     LocationConfig forbidden{
         "/forbidden",
         {{Token::DirectiveMethods, {"POST"}},
          {Token::DirectiveUpload, {"on"}},
-         {Token::DirectiveRoot, {"./test_data/post/forbidden"}},
+         {Token::DirectiveRoot, {no_perm_dir.c_str()}},
          {Token::DirectiveMaxBodySize, {max.c_str()}}}
     };
     ServiceConfig forbidden_service{forbidden};
+    // remove write and execute perms
+    chmod(no_perm_dir.c_str(), 0555); 
 
     test_cases.emplace_back(
         "forbidden",

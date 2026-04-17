@@ -3,7 +3,7 @@
 -- quick script to test the basic workflow of the server:
 -- POST -> GET -> DELETE -> GET (error)
 
-local BASE_URL = "http://127.0.0.1:8085"
+local BASE_URL = "http://127.0.0.1:8084"
 
 -- run a shell command and return its output
 local function run(cmd)
@@ -62,4 +62,4 @@ if get2_status ~= "404" then
 end
 print("OK: got 404")
 
-print("\n=== ALL TESTS PASSED ===")
+print("\n=== LUA TESTS PASSED ===\n")

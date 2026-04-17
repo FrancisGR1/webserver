@@ -1,4 +1,4 @@
-NAME     = webserv
+NAME     = webserv.out
 LIB      = libwebserv.a
 
 CC       = c++
@@ -85,8 +85,10 @@ fclean: clean
 
 re: fclean all
 
-TESTS_DIR = tests/
+TESTS_DIR = tests
 .PHONY: tests
 tests: all lib
-	cd $(TESTS_DIR) && $(MAKE) -C unit/
-	cd $(TESTS_DIR) && $(MAKE) tests -C unit/
+	@echo "\t==============="
+	@echo "\t==== TESTS ===="
+	@echo "\t==============="
+	$(MAKE) -C $(TESTS_DIR) tests
