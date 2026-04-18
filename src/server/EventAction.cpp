@@ -27,12 +27,12 @@ bool operator==(const EventAction& event_action, const epoll_event& epoll_event)
 {
     if (epoll_event.events & EPOLLIN)
     {
-        return event_action.action == EventAction::WantReading;
+        return event_action.action == EventAction::WantRead;
     }
     else if (epoll_event.events & EPOLLOUT)
     {
         return (
-            event_action.action == EventAction::WantWriting &&
+            event_action.action == EventAction::WantWrite &&
             (event_action.type == EventAction::ClientSocket || event_action.type == EventAction::LocalFile));
     }
     else

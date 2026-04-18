@@ -43,7 +43,7 @@ void Webserver::setup()
 
             // store socket
             m_server_sockets.insert(std::pair<int, Socket*>(socket->fd(), socket));
-            EventAction ea(EventAction::WantReading, EventAction::ServerSocket, socket->fd(), NULL);
+            EventAction ea(EventAction::WantRead, EventAction::ServerSocket, socket->fd(), NULL);
             if (m_events.apply(ea) == -1)
             {
                 throw std::runtime_error("Failed to add socket to events");
@@ -96,51 +96,63 @@ void Webserver::run()
         {
             const EventAction& event = m_events.get_event(i);
             Connection* conn = event.conn;
+
+            if (event.type == EventAction::ServerSocket)
+            {
+                Logger::trace("Webserver: Fd %d is a server socket", event.fd);
+                const Socket* ss = get_server_socket(event);
+                const ServiceConfig& service = get_service(ss);
+                const EventAction& ec = m_connection_pool.make(ss, service);
+                m_events.apply(ec);
+                continue;
+            }
+
+            INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
+
             switch (event.action)
             {
-                case EventAction::WantReading:
-                case EventAction::WantProcessing:
-                case EventAction::WantWriting:
+                //@TODO colocar id na connection
+                case EventAction::WantRead:
+                {
+                    Logger::trace(
+                        "Webserver: Connection wants to read to: '%s'",
+                        event.type == EventAction::LocalFile ? "local file" : "socket");
+
+                    conn->read();
+
+                    break;
+                }
+                case EventAction::WantProcessRequest:
+                {
+                    Logger::trace("Webserver: Connection wants to process request");
+
+                    conn->process_request();
+
+                    break;
+                }
+                case EventAction::WantWrite:
+                {
+                    Logger::trace(
+                        "Webserver: Connection wants to write to: '%s'",
+                        event.type == EventAction::LocalFile ? "local file" : "socket");
+
+                    conn->write();
+
+                    break;
+                }
                 case EventAction::WantClose:
                 {
-                    if (event.type == EventAction::ServerSocket)
-                    {
-                        Logger::trace("Webserver: Fd %d is a server socket", event.fd);
-                        const Socket* ss = get_server_socket(event);
-                        const ServiceConfig& service = get_service(ss);
-                        const EventAction& ec = m_connection_pool.make(ss, service);
-                        m_events.apply(ec);
-                    }
-                    else // is existing connection
-                    {
-                        REQUIRE(conn != NULL, "Connection should never be null!");
+                    Logger::trace("Webserver: Connection wants to be closed");
 
-                        Logger::trace("Webserver: Fd %d is an existing connection", event.fd);
-                        event.conn->handle_event(event);
-                        m_events.apply(conn->give_events());
-                        if (conn->done())
-                        {
-                            m_connection_pool.remove(*conn);
-                            // fechar ligação?
-                        }
-                    }
+                    m_connection_pool.remove(*conn);
+
+                    break;
                 }
-                    // case EventAction::WantWriting:
-                    //{
-                    //     //@TODO connection->write
-                    //     break;
-                    // }
-
-                    // case EventAction::WantClose:
-                    //{
-                    //     //@TODO
-                    //     // m_connection_pool.remove()
-                    //     // m_events.remove()
-                    //     break;
-                    // }
             }
+
+            m_events.apply(conn->give_events());
         }
-        //@TODO: fechar ligações idle durante demasiado tempo
+        //@TODO: m_connection_pool.close_idles();
     }
 
     Logger::info("Webserver: stop running");

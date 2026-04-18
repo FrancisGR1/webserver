@@ -55,8 +55,7 @@ EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfi
         if (m_pool[i] == NULL)
         {
             m_pool[i] = new Connection(client_fd, server_socket->listener(), service);
-            return EventAction(
-                EventAction::WantReading, EventAction::ClientSocket, m_pool[i]->socket().fd(), m_pool[i]);
+            return EventAction(EventAction::WantRead, EventAction::ClientSocket, m_pool[i]->socket().fd(), m_pool[i]);
         }
     }
 

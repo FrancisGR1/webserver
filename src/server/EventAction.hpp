@@ -11,9 +11,9 @@ struct EventAction
     enum Action
     {
         // send to event manager
-        WantReading = 0,
-        WantProcessing,
-        WantWriting,
+        WantRead = 0,
+        WantProcessRequest,
+        WantWrite,
         WantClose
     };
 

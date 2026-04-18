@@ -86,7 +86,7 @@ void PostHandler::process()
             m_post_fd = open(m_upload_path.raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
             // add new file to events
             m_events.push_back(
-                EventAction(EventAction::WantWriting, EventAction::LocalFile, m_post_fd, m_ctx.connection()));
+                EventAction(EventAction::WantWrite, EventAction::LocalFile, m_post_fd, m_ctx.connection()));
             if (m_post_fd <= 2)
             {
                 http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
@@ -139,7 +139,7 @@ void PostHandler::process()
                 EventAction(EventAction::WantClose, EventAction::LocalFile, m_post_fd, m_ctx.connection()));
             // change socket to write
             m_events.push_back(EventAction(
-                EventAction::WantWriting,
+                EventAction::WantWrite,
                 EventAction::ClientSocket,
                 m_ctx.connection() ? m_ctx.connection()->socket().fd() : 0, //@NOTE for unit testing
                 m_ctx.connection()));

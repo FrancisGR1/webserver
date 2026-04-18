@@ -26,6 +26,12 @@ class Connection
     bool is_keep_alive();
     std::time_t last_activity();
 
+    // implementing AGORA
+    void read();
+    void process_request();
+    void write();
+    void close_with(StatusCode::Code code);
+
     // getters
     const ServiceConfig& service() const;
     const Socket& socket() const;
@@ -34,9 +40,9 @@ class Connection
     // connection state machine
     enum State
     {
-        Receiving = 0,
-        Processing,
-        Sending,
+        Reading = 0,
+        ProcessingRequest,
+        Writing,
         Done
     };
 
@@ -55,10 +61,13 @@ class Connection
     RequestProcessor m_processor;
     Response m_response;
 
+    // utils
+    void next_state(State state);
+
     // illegal - copy semantics
     // every connection must be a reference/pointer
     // to a connection from <<<ConnectionPool>>>
-    // and must be constructed from there
+    // EVERY connection must be constructed in the Pool
     Connection(const Connection&);
     Connection& operator=(const Connection&);
 };

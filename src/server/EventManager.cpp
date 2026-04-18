@@ -86,10 +86,14 @@ int EventManager::apply(const std::vector<EventAction>& event_actions)
 // transform EventAction to epoll and save EventAction in m_events
 int EventManager::to_epoll_event(const EventAction& ea)
 {
-    REQUIRE(
-        (ea.type == EventAction::ServerSocket && ea.conn == NULL) ||
-            (ea.type != EventAction::ServerSocket && ea.conn != NULL),
-        "Only server socket events should have NULL connections!");
+    // REQUIRE(
+    //     (ea.type == EventAction::ServerSocket && ea.conn == NULL) ||
+    //         (ea.type != EventAction::ServerSocket && ea.conn != NULL),
+    //     "Only server socket events should have NULL connections!");
+    //
+    //     @NOTE: this contract is no longer valid
+    //     because we don't care about connections anymore,
+    //     EventManager only operates on fds
 
     epoll_event ev;
     int ret = 0;
@@ -97,11 +101,11 @@ int EventManager::to_epoll_event(const EventAction& ea)
 
     switch (ea.action)
     {
-        case EventAction::WantProcessing:
-        case EventAction::WantWriting:
-        case EventAction::WantReading:
+        case EventAction::WantProcessRequest:
+        case EventAction::WantWrite:
+        case EventAction::WantRead:
         {
-            ev.events = ea.action == EventAction::WantReading ? EPOLLIN : EPOLLOUT;
+            ev.events = ea.action == EventAction::WantRead ? EPOLLIN : EPOLLOUT;
 
             if (stored_event != NULL)
             {
@@ -120,7 +124,7 @@ int EventManager::to_epoll_event(const EventAction& ea)
             Logger::trace(
                 "EventManager: set fd='%zu' to '%s'",
                 ea.fd,
-                ea.action == EventAction::WantReading ? "EPOLLIN" : "EPOLLOUT");
+                ea.action == EventAction::WantRead ? "EPOLLIN" : "EPOLLOUT");
 
             break;
         }
@@ -153,7 +157,7 @@ void EventManager::remove(const EventAction& ea)
         {
             Logger::trace(
                 "EventManager: removing '%ld'",
-                m_events[i]->conn); //@TODO colocar print de eventaction e assinatura de connection
+                m_events[i]->conn); //@TODO colocar print de event action e assinatura de connection
 
             ::close(m_events[i]->fd);
             delete m_events[i];

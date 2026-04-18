@@ -108,7 +108,7 @@ void CgiHandler::process()
 
                 // add events
                 m_events.push_back(
-                    EventAction(EventAction::WantReading, EventAction::LocalFile, m_fd[0], m_ctx.connection()));
+                    EventAction(EventAction::WantRead, EventAction::LocalFile, m_fd[0], m_ctx.connection()));
 
                 m_state = ReadPipe;
 

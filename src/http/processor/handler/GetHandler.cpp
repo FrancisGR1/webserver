@@ -103,7 +103,7 @@ void GetHandler::handle_index(Response& response, const Path& path)
     response.set_header("Date", utils::http_date());
     // body
     int fd = response.set_body_as_path(path);
-    m_events.push_back(EventAction(EventAction::WantReading, EventAction::LocalFile, fd, m_ctx.connection()));
+    m_events.push_back(EventAction(EventAction::WantRead, EventAction::LocalFile, fd, m_ctx.connection()));
 }
 
 std::string GetHandler::make_autoindex(const Path& path)
@@ -211,7 +211,7 @@ void GetHandler::handle_file(Response& response, const Path& path)
     //@QUESTION: mais headers? Last-Modified? ETag?
     // body
     int fd = response.set_body_as_path(path);
-    m_events.push_back(EventAction(EventAction::WantReading, EventAction::LocalFile, fd, m_ctx.connection()));
+    m_events.push_back(EventAction(EventAction::WantRead, EventAction::LocalFile, fd, m_ctx.connection()));
 }
 
 bool GetHandler::done() const

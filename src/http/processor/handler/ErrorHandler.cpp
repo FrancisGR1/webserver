@@ -53,7 +53,7 @@ void ErrorHandler::process()
             // body
             Connection* conn = m_ctx != NULL ? m_ctx->connection() : NULL;
             int fd = m_response.set_body_as_path(error_page);
-            m_events.push_back(EventAction(EventAction::WantReading, EventAction::LocalFile, fd, conn));
+            m_events.push_back(EventAction(EventAction::WantRead, EventAction::LocalFile, fd, conn));
 
             m_done = true;
 
