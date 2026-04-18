@@ -21,7 +21,7 @@ struct EventAction
     {
         ServerSocket = 0,
         ClientSocket,
-        LocalFile,
+        Pipe,
     };
 
     // construct/copy

@@ -16,6 +16,11 @@ DeleteHandler::DeleteHandler(const Request& request, const RequestContext& ctx)
     Logger::trace("DeleteHandler: constructor");
 }
 
+DeleteHandler::~DeleteHandler()
+{
+    Logger::trace("DeleteHandler: destructor");
+}
+
 void DeleteHandler::process()
 {
     const RequestConfig& config = m_ctx.config();
@@ -74,18 +79,4 @@ const Response& DeleteHandler::response() const
     if (m_ctx.config().is_cgi())
         return m_cgi.response();
     return m_response;
-}
-
-std::vector<EventAction> DeleteHandler::give_events()
-{
-    if (m_ctx.config().is_cgi())
-        return m_cgi.give_events();
-    std::vector<EventAction> result;
-    result.swap(m_events);
-    return result;
-}
-
-DeleteHandler::~DeleteHandler()
-{
-    Logger::trace("DeleteHandler: destructor");
 }

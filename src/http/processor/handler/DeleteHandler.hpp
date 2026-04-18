@@ -5,7 +5,6 @@
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/response/Response.hpp"
-#include "server/EventAction.hpp"
 
 class DeleteHandler : public IRequestHandler
 {
@@ -14,7 +13,6 @@ class DeleteHandler : public IRequestHandler
     void process();
     bool done() const;
     const Response& response() const;
-    std::vector<EventAction> give_events();
     ~DeleteHandler();
 
   private:
@@ -22,7 +20,6 @@ class DeleteHandler : public IRequestHandler
     Response m_response;
     bool m_done;
     CgiHandler m_cgi;
-    std::vector<EventAction> m_events;
 };
 
 #endif // DELETEHANDLER_HPP

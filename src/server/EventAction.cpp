@@ -33,7 +33,8 @@ bool operator==(const EventAction& event_action, const epoll_event& epoll_event)
     {
         return (
             event_action.action == EventAction::WantWrite &&
-            (event_action.type == EventAction::ClientSocket || event_action.type == EventAction::LocalFile));
+            (event_action.type == EventAction::ClientSocket ||
+             event_action.type == EventAction::Pipe)); // only client sockets and pipes are writable
     }
     else
     {

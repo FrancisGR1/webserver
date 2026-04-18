@@ -72,11 +72,7 @@ int EventManager::apply(const std::vector<EventAction>& event_actions)
     int ret = 0;
     for (size_t i = 0; i < event_actions.size(); ++i)
     {
-        const EventAction& ea = event_actions[i];
-        // @QUESTION o loop devia parar se encontrar um erro?
-        ret = to_epoll_event(ea);
-        if (ret == -1)
-            continue;
+        ret = apply(event_actions[i]);
     }
     return ret;
 }
@@ -86,15 +82,6 @@ int EventManager::apply(const std::vector<EventAction>& event_actions)
 // transform EventAction to epoll and save EventAction in m_events
 int EventManager::to_epoll_event(const EventAction& ea)
 {
-    // REQUIRE(
-    //     (ea.type == EventAction::ServerSocket && ea.conn == NULL) ||
-    //         (ea.type != EventAction::ServerSocket && ea.conn != NULL),
-    //     "Only server socket events should have NULL connections!");
-    //
-    //     @NOTE: this contract is no longer valid
-    //     because we don't care about connections anymore,
-    //     EventManager only operates on fds
-
     epoll_event ev;
     int ret = 0;
     EventAction* stored_event = exists(ea.fd);

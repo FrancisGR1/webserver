@@ -27,6 +27,8 @@ EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfi
 {
     REQUIRE(server_socket != NULL, "Socket is Null!");
 
+    Logger::trace("ConnectionPool: make client socket from: %d", server_socket->fd());
+
     if (is_full())
         throw std::runtime_error(utils::fmt("Connection pool limit reached: %zu", m_pool.size()));
     // create client socket
@@ -35,8 +37,6 @@ EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfi
     {
         throw std::runtime_error("Failed to accept client connection!");
     }
-    // fd shouldn't exist
-    INVARIANT(contains(client_fd) == NULL, "fd %d already exists", client_fd);
 
     // set socket options
     int opt = 0;
@@ -94,7 +94,10 @@ Connection* ConnectionPool::contains(int conn_socket_fd) const
     for (size_t i = 0; i < m_pool.size(); ++i)
     {
         if (m_pool[i] != NULL && conn_socket_fd == m_pool[i]->socket().fd())
+        {
+            Logger::trace("ConnectionPool: contains fd %d", conn_socket_fd);
             return m_pool[i];
+        }
     }
 
     return NULL;

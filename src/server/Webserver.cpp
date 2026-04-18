@@ -116,7 +116,7 @@ void Webserver::run()
                 {
                     Logger::trace(
                         "Webserver: Connection wants to read to: '%s'",
-                        event.type == EventAction::LocalFile ? "local file" : "socket");
+                        event.type == EventAction::Pipe ? "pipe" : "socket");
 
                     conn->read();
 
@@ -134,7 +134,7 @@ void Webserver::run()
                 {
                     Logger::trace(
                         "Webserver: Connection wants to write to: '%s'",
-                        event.type == EventAction::LocalFile ? "local file" : "socket");
+                        event.type == EventAction::Pipe ? "pipe" : "socket");
 
                     conn->write();
 
@@ -144,7 +144,8 @@ void Webserver::run()
                 {
                     Logger::trace("Webserver: Connection wants to be closed");
 
-                    m_connection_pool.remove(*conn);
+                    if (event.type == EventAction::ClientSocket)
+                        m_connection_pool.remove(*conn);
 
                     break;
                 }

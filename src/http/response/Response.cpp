@@ -189,7 +189,7 @@ ssize_t Response::send(int fd)
             }
             else if (!m_body_str.empty()) // send body from string
             {
-                Logger::trace(
+                Logger::debug(
                     "Response: send body (string[%zu]): %s",
                     m_body_str.size() - m_offset,
                     (m_body_str.c_str() + m_offset));

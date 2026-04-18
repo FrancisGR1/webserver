@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "ErrorHandler.hpp"
 #include "core/Logger.hpp"
 #include "core/MimeTypes.hpp"
@@ -8,6 +10,7 @@ ErrorHandler::ErrorHandler(const ResponseError& error)
     : m_code(error.status_code())
     , m_ctx(error.has_ctx() ? &error.ctx() : NULL)
     , m_done(false)
+    , m_error_fd(-1)
 {
     Logger::trace("ErrorHandler: constructor");
 }
@@ -16,6 +19,7 @@ ErrorHandler::ErrorHandler(StatusCode::Code code)
     : m_code(code)
     , m_ctx(NULL)
     , m_done(false)
+    , m_error_fd(-1)
 {
     Logger::trace("ErrorHandler: constructor");
 }
@@ -24,8 +28,19 @@ ErrorHandler::ErrorHandler(StatusCode::Code code, const RequestContext& ctx)
     : m_code(code)
     , m_ctx(&ctx)
     , m_done(false)
+    , m_error_fd(-1)
 {
     Logger::trace("ErrorHandler: constructor");
+}
+
+ErrorHandler::~ErrorHandler()
+{
+    Logger::trace("ErrorHandler: constructor");
+    if (m_error_fd > -1)
+    {
+        Logger::trace("ErrorHandler: closing fd: %d", m_error_fd);
+        ::close(m_error_fd);
+    }
 }
 
 // all in one go
@@ -51,9 +66,7 @@ void ErrorHandler::process()
             m_response.set_header("Content-Type", error_page.mime);
 
             // body
-            Connection* conn = m_ctx != NULL ? m_ctx->connection() : NULL;
-            int fd = m_response.set_body_as_path(error_page);
-            m_events.push_back(EventAction(EventAction::WantRead, EventAction::LocalFile, fd, conn));
+            m_error_fd = m_response.set_body_as_path(error_page);
 
             m_done = true;
 
@@ -83,16 +96,6 @@ const Response& ErrorHandler::response() const
     return m_response;
 }
 
-std::vector<EventAction> ErrorHandler::give_events()
-{
-    std::vector<EventAction> result;
-    result.swap(m_events);
-
-    Logger::trace("CgiHandler: give '%zu' events", result.size());
-
-    return result;
-}
-
 std::string ErrorHandler::make_default_body(StatusCode::Code code)
 {
     // build default body
@@ -109,9 +112,4 @@ std::string ErrorHandler::make_default_body(StatusCode::Code code)
                        "</body>\n"
                        "</html>\n";
     return html;
-}
-
-ErrorHandler::~ErrorHandler()
-{
-    Logger::trace("ErrorHandler: destructor");
 }

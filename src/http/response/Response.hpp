@@ -51,9 +51,9 @@ class Response
     std::string m_headers_str;
     std::map<std::string, std::string> m_headers;
     // body is either one or both of the following
-    // @ASSUMPTION: if its both, m_body_str is a prefix
+    // if it's both, m_body_str is treated as a prefix
     std::string m_body_str;
-    int m_body_fd;
+    int m_body_fd; // borrows
 
     // transmission state
     enum SendPhase

@@ -10,19 +10,24 @@
 class GetHandler : public IRequestHandler
 {
   public:
+    // construct/destruct
     GetHandler(const Request& request, const RequestContext& ctx);
+    ~GetHandler();
+
+    // IRequestHandler interface
     void process();
     bool done() const;
     const Response& response() const;
-    std::vector<EventAction> give_events();
-    ~GetHandler();
 
   private:
+    // dependencies
     const RequestContext& m_ctx;
-    Response m_response;
+
+    // state
     bool m_done;
     CgiHandler m_cgi;
-    std::vector<EventAction> m_events;
+    int m_get_fd; // fd of file to get - owns
+    Response m_response;
 
     // utils
     void handle_index(Response& response, const Path& path);

@@ -20,7 +20,6 @@ class PostHandler : public IRequestHandler
     void process();
     bool done() const;
     const Response& response() const;
-    std::vector<EventAction> give_events();
 
     // getters
     const Path& upload_path() const;
@@ -33,14 +32,13 @@ class PostHandler : public IRequestHandler
     // state
     bool m_done;
     CgiHandler m_cgi;
-    std::vector<EventAction> m_events;
     Response m_response;
 
     // upload tracking
     std::string m_upload_filename; // name
     std::string m_upload_uri;      // location + name
     Path m_upload_path;            // full path
-    int m_post_fd;                 // fd of posted file
+    int m_post_fd;                 // fd of posted file - owns
     ssize_t m_offset;              // current write position
 
     // utils

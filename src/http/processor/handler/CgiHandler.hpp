@@ -14,6 +14,7 @@
 #include "http/response/Response.hpp"
 #include "server/EventAction.hpp"
 
+//@REFACTOR remove de dentro dos handlers
 // https://datatracker.ietf.org/doc/html/rfc3875
 class CgiHandler : public IRequestHandler
 {

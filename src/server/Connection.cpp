@@ -111,10 +111,6 @@ void Connection::handle_event(const EventAction& action)
                 Logger::debug_obj(m_response, "Connection: Response:\n");
                 Logger::info("Connection: state - done!");
 
-                // close response body fd
-                if (m_response.body_fd() != -1)
-                    m_events.push_back(
-                        EventAction(EventAction::WantClose, EventAction::LocalFile, m_response.body_fd(), this));
                 // close client socket by DEFAULT (http 1.0)
                 m_events.push_back(EventAction(EventAction::WantClose, EventAction::ClientSocket, m_socket.fd(), this));
 
@@ -128,10 +124,6 @@ void Connection::handle_event(const EventAction& action)
 
 std::vector<EventAction> Connection::give_events()
 {
-
-    // insert processor events before connection events
-    std::vector<EventAction> pe = m_processor.give_events();
-    m_events.insert(m_events.begin(), pe.begin(), pe.end());
 
     // drain and return
     std::vector<EventAction> result;
@@ -237,9 +229,6 @@ void Connection::write()
         Logger::debug_obj(m_response, "Connection: Response:\n");
         Logger::info("Connection: state - done!");
 
-        // close response body fd
-        if (m_response.body_fd() != -1)
-            m_events.push_back(EventAction(EventAction::WantClose, EventAction::LocalFile, m_response.body_fd(), this));
         // close client socket by DEFAULT (http 1.0)
         m_events.push_back(EventAction(EventAction::WantClose, EventAction::ClientSocket, m_socket.fd(), this));
 

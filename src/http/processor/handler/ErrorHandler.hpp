@@ -20,7 +20,6 @@ class ErrorHandler : public IRequestHandler
     void process();
     bool done() const;
     const Response& response() const;
-    std::vector<EventAction> give_events();
     static std::string make_default_body(StatusCode::Code code);
 
   private:
@@ -28,7 +27,7 @@ class ErrorHandler : public IRequestHandler
     StatusCode::Code m_code;
     const RequestContext* m_ctx; // not owned, is nullable
     bool m_done;
-    std::vector<EventAction> m_events;
+    int m_error_fd;
 };
 
 #endif // ERRORHANDLER_HPP

@@ -1,6 +1,5 @@
 #include "http/processor/RequestProcessor.hpp"
 #include "core/Logger.hpp"
-#include "core/contracts.hpp"
 #include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/processor/handler/DeleteHandler.hpp"
@@ -202,19 +201,6 @@ const Response& RequestProcessor::response() const
     {
         return m_handler->response();
     }
-}
-
-std::vector<EventAction> RequestProcessor::give_events()
-{
-
-    if (m_state >= Handling)
-    {
-        Logger::trace("RequestProcessor: return handler events");
-        return m_handler->give_events();
-    }
-
-    Logger::trace("RequestProcessor: no events to give");
-    return std::vector<EventAction>();
 }
 
 void RequestProcessor::set(const Request& request)

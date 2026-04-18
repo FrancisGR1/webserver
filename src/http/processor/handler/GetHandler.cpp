@@ -1,6 +1,8 @@
 #include <ctime>
+
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "GetHandler.hpp"
 #include "core/Logger.hpp"
@@ -14,8 +16,19 @@ GetHandler::GetHandler(const Request& request, const RequestContext& ctx)
     : m_ctx(ctx)
     , m_done(false)
     , m_cgi(request, ctx)
+    , m_get_fd(-1)
 {
     Logger::trace("GetHandler: constructor");
+}
+
+GetHandler::~GetHandler()
+{
+    if (m_get_fd > -1)
+    {
+        Logger::trace("GetHandler: close '%d'", m_get_fd);
+        ::close(m_get_fd);
+    }
+    Logger::trace("GetHandler: destructor");
 }
 
 //@TODO implementar If-Modified-Since e If-None-Match (ETag), Range requests
@@ -102,8 +115,7 @@ void GetHandler::handle_index(Response& response, const Path& path)
     response.set_header("Content-Type", path.mime);
     response.set_header("Date", utils::http_date());
     // body
-    int fd = response.set_body_as_path(path);
-    m_events.push_back(EventAction(EventAction::WantRead, EventAction::LocalFile, fd, m_ctx.connection()));
+    m_get_fd = response.set_body_as_path(path);
 }
 
 std::string GetHandler::make_autoindex(const Path& path)
@@ -210,8 +222,7 @@ void GetHandler::handle_file(Response& response, const Path& path)
     response.set_header("Date", utils::http_date());
     //@QUESTION: mais headers? Last-Modified? ETag?
     // body
-    int fd = response.set_body_as_path(path);
-    m_events.push_back(EventAction(EventAction::WantRead, EventAction::LocalFile, fd, m_ctx.connection()));
+    m_get_fd = response.set_body_as_path(path);
 }
 
 bool GetHandler::done() const
@@ -224,21 +235,4 @@ const Response& GetHandler::response() const
     if (m_ctx.config().is_cgi())
         return m_cgi.response();
     return m_response;
-}
-
-std::vector<EventAction> GetHandler::give_events()
-{
-    if (m_ctx.config().is_cgi())
-        return m_cgi.give_events();
-    std::vector<EventAction> result;
-    result.swap(m_events);
-
-    Logger::trace("CgiHandler: give '%zu' events", result.size());
-
-    return result;
-}
-
-GetHandler::~GetHandler()
-{
-    Logger::trace("GetHandler: destructor");
 }

@@ -107,8 +107,7 @@ void CgiHandler::process()
                 fcntl(m_fd[0], F_SETFL, O_NONBLOCK);
 
                 // add events
-                m_events.push_back(
-                    EventAction(EventAction::WantRead, EventAction::LocalFile, m_fd[0], m_ctx.connection()));
+                m_events.push_back(EventAction(EventAction::WantRead, EventAction::Pipe, m_fd[0], m_ctx.connection()));
 
                 m_state = ReadPipe;
 
@@ -179,8 +178,7 @@ void CgiHandler::process()
             else if (bytes == 0) // EOF
             {
                 m_fd[0] = -1;
-                m_events.push_back(
-                    EventAction(EventAction::WantClose, EventAction::LocalFile, m_fd[0], m_ctx.connection()));
+                m_events.push_back(EventAction(EventAction::WantClose, EventAction::Pipe, m_fd[0], m_ctx.connection()));
                 m_state = CookData;
             }
             else // nothing was read
