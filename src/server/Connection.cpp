@@ -89,15 +89,29 @@ void Connection::read()
         m_processor.set(request_);
         next_state(ProcessingRequest);
 
-	// fast path -> process immediately
-	process_request();
-	if (!m_processor.done())
-	{
-        	m_events.push_back(
-        	    EventAction(EventAction::WantProcessRequest, EventAction::ClientSocket, m_socket.fd(), this));
-	}
-
-	Logger::trace("Connection: on fast path");
+        // try fast path -> process immediately
+        process_request();
+        if (!m_processor.done())
+        // slow path -> stay in processing state
+        {
+            std::vector<EventAction> events = m_processor.give_events();
+            if (!events.empty() > 0)
+            // register cgi pipes
+            {
+                for (size_t i = 0; i < events.size(); ++i)
+                    register_event(events[i]);
+            }
+            else
+            // default to epollout
+            {
+                register_action(EventAction::WantProcessRequest);
+            }
+        }
+        else
+        // fast path successful -> bypass processing state
+        {
+            Logger::trace("Connection: on fast path");
+        }
     }
 }
 
@@ -114,7 +128,7 @@ void Connection::process_request()
         Logger::trace("Connection: RequestProcessor: Done!");
         m_response = m_processor.response();
         Logger::debug_obj(m_response, "Connection: Response:\n");
-        m_events.push_back(EventAction(EventAction::WantWrite, EventAction::ClientSocket, m_socket.fd(), this));
+        register_action(EventAction::WantWrite);
         next_state(Writing);
     }
 }
@@ -134,8 +148,7 @@ void Connection::write()
         Logger::info("Connection: state - done!");
 
         // close client socket by DEFAULT (http 1.0)
-        m_events.push_back(EventAction(EventAction::WantClose, EventAction::ClientSocket, m_socket.fd(), this));
-
+        register_action(EventAction::WantClose);
         next_state(Done);
     }
 }
@@ -144,7 +157,6 @@ void Connection::write()
 void Connection::close_with(StatusCode::Code code)
 {
     (void)code;
-    m_events.push_back(EventAction(EventAction::WantClose, EventAction::ClientSocket, m_socket.fd(), this));
 }
 
 const ServiceConfig& Connection::service() const
@@ -161,4 +173,14 @@ const Socket& Connection::socket() const
 void Connection::next_state(State state)
 {
     m_state = state;
+}
+
+void Connection::register_event(EventAction event)
+{
+    m_events.push_back(event);
+}
+
+void Connection::register_action(EventAction::Action action)
+{
+    m_events.push_back(EventAction(action, EventAction::ClientSocket, m_socket.fd(), this));
 }

@@ -63,6 +63,8 @@ class Connection
 
     // utils
     void next_state(State state);
+    void register_event(EventAction event);
+    void register_action(EventAction::Action action);
 
     // illegal - copy semantics
     // every connection must be a reference/pointer
