@@ -2,22 +2,22 @@
 #define GETHANDLER_HPP
 
 #include "core/Path.hpp"
-#include "http/processor/handler/CgiHandler.hpp"
+#include "http/processor/RequestContext.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/response/Response.hpp"
-#include "server/EventAction.hpp"
 
 class GetHandler : public IRequestHandler
 {
   public:
     // construct/destruct
-    GetHandler(const Request& request, const RequestContext& ctx);
+    GetHandler(const RequestContext& ctx);
     ~GetHandler();
 
     // IRequestHandler interface
     void process();
     bool done() const;
     const Response& response() const;
+    std::vector<EventAction> give_events();
 
   private:
     // dependencies
@@ -25,7 +25,6 @@ class GetHandler : public IRequestHandler
 
     // state
     bool m_done;
-    CgiHandler m_cgi;
     int m_get_fd; // fd of file to get - owns
     Response m_response;
 

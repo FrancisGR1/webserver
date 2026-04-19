@@ -20,14 +20,19 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Second
     : m_request(request)
     , m_ctx(ctx)
     , m_script(ctx.config().path())
+    , m_state(StartTimer)
     , m_response(StatusCode::Ok) //@NOTE: rfc says response is ok by default
     , m_timeout(timeout)
     , m_failed_reads(0)
     , m_env(init_env())
-    , m_total_read(0)
-    , m_state(StartTimer)
+    , m_total_reads(0)
 {
     Logger::trace("CgiHandler: constructor");
+}
+
+CgiHandler::~CgiHandler()
+{
+    Logger::trace("CgiHandler: destructor");
 }
 
 void CgiHandler::process()
@@ -38,6 +43,9 @@ void CgiHandler::process()
     {
         case StartTimer:
         {
+            if (!m_ctx.config().allows_method(m_request.method()))
+                http_utils::throw_method_not_allowed(m_request.method(), m_ctx);
+
             Logger::trace("CgiHandler: start timer");
             m_timer.set(m_timeout);
             m_timer.start();
@@ -144,15 +152,15 @@ void CgiHandler::process()
             {
                 buffer[bytes] = '\0';
 
-                m_total_read += bytes;
-                Logger::trace("CgiHandler: total bytes read: %zu", m_total_read);
-                if (m_total_read > constants::cgi_max_output)
+                m_total_reads += bytes;
+                Logger::trace("CgiHandler: total bytes read: %zu", m_total_reads);
+                if (m_total_reads > constants::cgi_max_output)
                 {
                     throw ResponseError(
                         StatusCode::BadGateway,
                         utils::fmt(
                             "CgiHandler: output (%zu) exceeded max capacity (%zu)",
-                            m_total_read,
+                            m_total_reads,
                             constants::cgi_max_output),
                         &m_ctx);
                 }
@@ -276,11 +284,6 @@ std::vector<EventAction> CgiHandler::give_events()
     Logger::trace("CgiHandler: give '%zu' events", result.size());
 
     return result;
-}
-
-CgiHandler::~CgiHandler()
-{
-    Logger::trace("CgiHandler: destructor");
 }
 
 std::map<std::string, std::string> CgiHandler::init_env()

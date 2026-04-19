@@ -11,13 +11,11 @@
 #include "http/processor/RequestContext.hpp"
 #include "http/processor/handler/PostHandler.hpp"
 #include "http/request/Request.hpp"
-#include "server/Connection.hpp"
 
 PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
     : m_request(request)
     , m_ctx(ctx)
     , m_done(false)
-    , m_cgi(request, ctx)
     , m_upload_path("")
     , m_post_fd(-1)
     , m_offset(0)
@@ -66,13 +64,6 @@ void PostHandler::process()
         m_response.set_header("Connection", "close");
         m_response.set_header("Date", utils::http_date());
         m_done = true;
-    }
-    else if (config.is_cgi())
-    {
-        m_cgi.process();
-        if (m_cgi.done())
-            m_done = true;
-        return;
     }
     else if (config.allows_upload())
     {
@@ -154,9 +145,12 @@ bool PostHandler::done() const
 
 const Response& PostHandler::response() const
 {
-    if (m_ctx.config().is_cgi())
-        return m_cgi.response();
     return m_response;
+}
+
+std::vector<EventAction> PostHandler::give_events()
+{
+    return std::vector<EventAction>();
 }
 
 const Path& PostHandler::upload_path() const

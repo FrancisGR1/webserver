@@ -113,3 +113,8 @@ std::string ErrorHandler::make_default_body(StatusCode::Code code)
                        "</html>\n";
     return html;
 }
+
+std::vector<EventAction> ErrorHandler::give_events()
+{
+    return std::vector<EventAction>();
+}

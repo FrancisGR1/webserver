@@ -6,20 +6,27 @@
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
+#include "server/EventAction.hpp"
 
 class Connection;
 
 class RequestProcessor : public IRequestHandler
 {
   public:
+    // construct/destruct
     RequestProcessor(Connection* connection, const ServiceConfig& service);
     ~RequestProcessor();
 
+    // IRequestHandler interface
     void process();
     bool done() const;
     const Response& response() const;
+    std::vector<EventAction> give_events();
+
+    // setters
     void set(const Request& request);
 
+    // utils
     static std::string resolve_path(
         const std::string& req_path,
         const ServiceConfig& service,

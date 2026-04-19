@@ -10,12 +10,10 @@
 #include "core/utils.hpp"
 #include "http/http_utils.hpp"
 #include "http/processor/RequestContext.hpp"
-#include "http/request/Request.hpp"
 
-GetHandler::GetHandler(const Request& request, const RequestContext& ctx)
+GetHandler::GetHandler(const RequestContext& ctx)
     : m_ctx(ctx)
     , m_done(false)
-    , m_cgi(request, ctx)
     , m_get_fd(-1)
 {
     Logger::trace("GetHandler: constructor");
@@ -45,16 +43,6 @@ void GetHandler::process()
     {
         m_response.make_redirection_response(StatusCode::MovedPermanently, config.redirection());
         m_done = true;
-        return;
-    }
-    if (config.is_cgi())
-    {
-        m_cgi.process();
-        if (m_cgi.done())
-        {
-            Logger::trace("GetHandler: CgiHandler is done!");
-            m_done = true;
-        }
         return;
     }
 
@@ -232,7 +220,10 @@ bool GetHandler::done() const
 
 const Response& GetHandler::response() const
 {
-    if (m_ctx.config().is_cgi())
-        return m_cgi.response();
     return m_response;
+}
+
+std::vector<EventAction> GetHandler::give_events()
+{
+    return std::vector<EventAction>();
 }

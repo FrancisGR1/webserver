@@ -6,12 +6,10 @@
 #include "core/utils.hpp"
 #include "http/http_utils.hpp"
 #include "http/processor/RequestContext.hpp"
-#include "http/request/Request.hpp"
 
-DeleteHandler::DeleteHandler(const Request& request, const RequestContext& ctx)
+DeleteHandler::DeleteHandler(const RequestContext& ctx)
     : m_ctx(ctx)
     , m_done(false)
-    , m_cgi(request, ctx)
 {
     Logger::trace("DeleteHandler: constructor");
 }
@@ -31,13 +29,6 @@ void DeleteHandler::process()
     {
         m_response.make_redirection_response(StatusCode::MovedPermanently, config.redirection());
         m_done = true;
-    }
-    else if (config.is_cgi())
-    {
-        m_cgi.process();
-        if (m_cgi.done())
-            m_done = true;
-        return;
     }
 
     const Path& path = config.path();
@@ -76,7 +67,10 @@ bool DeleteHandler::done() const
 
 const Response& DeleteHandler::response() const
 {
-    if (m_ctx.config().is_cgi())
-        return m_cgi.response();
     return m_response;
+}
+
+std::vector<EventAction> DeleteHandler::give_events()
+{
+    return std::vector<EventAction>();
 }

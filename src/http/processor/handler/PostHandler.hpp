@@ -3,11 +3,9 @@
 
 #include "core/Path.hpp"
 #include "http/processor/RequestContext.hpp"
-#include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
-#include "server/EventAction.hpp"
 
 class PostHandler : public IRequestHandler
 {
@@ -20,6 +18,7 @@ class PostHandler : public IRequestHandler
     void process();
     bool done() const;
     const Response& response() const;
+    std::vector<EventAction> give_events();
 
     // getters
     const Path& upload_path() const;
@@ -31,7 +30,6 @@ class PostHandler : public IRequestHandler
 
     // state
     bool m_done;
-    CgiHandler m_cgi;
     Response m_response;
 
     // upload tracking

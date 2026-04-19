@@ -16,11 +16,11 @@ class ErrorHandler : public IRequestHandler
     ErrorHandler(StatusCode::Code code, const RequestContext& ctx);
     ~ErrorHandler();
 
-    // api
+    // IRequestHandler interface
     void process();
     bool done() const;
     const Response& response() const;
-    static std::string make_default_body(StatusCode::Code code);
+    std::vector<EventAction> give_events();
 
   private:
     Response m_response;
@@ -28,6 +28,9 @@ class ErrorHandler : public IRequestHandler
     const RequestContext* m_ctx; // not owned, is nullable
     bool m_done;
     int m_error_fd;
+
+    // utils
+    static std::string make_default_body(StatusCode::Code code);
 };
 
 #endif // ERRORHANDLER_HPP

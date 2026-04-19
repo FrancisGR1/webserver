@@ -8,23 +8,24 @@
 #include "core/Timer.hpp"
 #include "core/constants.hpp"
 #include "http/processor/RequestContext.hpp"
-#include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
 #include "server/EventAction.hpp"
 
-//@REFACTOR remove de dentro dos handlers
 // https://datatracker.ietf.org/doc/html/rfc3875
 class CgiHandler : public IRequestHandler
 {
   public:
+    // construct/destruct
     CgiHandler(const Request& request, const RequestContext& ctx, Seconds timeout = constants::cgi_max_output);
+    ~CgiHandler();
+
+    // IRequestHandler interface
     void process();
     bool done() const;
     const Response& response() const;
     std::vector<EventAction> give_events();
-    ~CgiHandler();
 
   private:
     enum State
@@ -37,26 +38,32 @@ class CgiHandler : public IRequestHandler
         Done
     };
 
+    // dependencies
     const Request& m_request;
     const RequestContext& m_ctx;
     const Path& m_script;
+
+    // state
+    State m_state;
     Response m_response;
     Timer m_timer;
     Seconds m_timeout;
     size_t m_failed_reads;
-    std::map<std::string, std::string> m_env;
-    int m_fd[2];
-    std::string m_headers;
-    std::string m_body_str;
-    size_t m_total_read;
-    State m_state;
-    pid_t m_subprocess_id;
     std::vector<EventAction> m_events;
 
-    // util
-    void fork_and_exec();
-    State read_pipe_headers();
-    void parse_headers();
+    // environment
+    std::map<std::string, std::string> m_env;
+
+    // pipe files
+    int m_fd[2];
+
+    // cgi data state
+    std::string m_headers;
+    std::string m_body_str;
+    size_t m_total_reads;
+    pid_t m_subprocess_id;
+
+    // utils
     std::map<std::string, std::string> init_env();
     std::string to_uppercase_and_underscore(const std::string& str);
     void expect_has_time_left() const;

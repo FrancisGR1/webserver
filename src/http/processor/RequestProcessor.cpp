@@ -143,12 +143,15 @@ void RequestProcessor::process()
             case Dispatching:
             {
                 Logger::debug("RequestProcessor: state - Dispatching");
+                //@TODO colocar cgi handler aqui
+                if (m_ctx.config().is_cgi())
+                    m_handler = new CgiHandler(m_request, m_ctx);
                 if (m_request.method() == "GET")
-                    m_handler = new GetHandler(m_request, m_ctx);
+                    m_handler = new GetHandler(m_ctx);
                 else if (m_request.method() == "POST")
                     m_handler = new PostHandler(m_request, m_ctx);
                 else if (m_request.method() == "DELETE")
-                    m_handler = new DeleteHandler(m_request, m_ctx);
+                    m_handler = new DeleteHandler(m_ctx);
                 else
                     throw ResponseError(StatusCode::BadRequest, "Didn't find handler");
                 m_state = Handling;
@@ -201,6 +204,13 @@ const Response& RequestProcessor::response() const
     {
         return m_handler->response();
     }
+}
+
+std::vector<EventAction> RequestProcessor::give_events()
+{
+    if (m_state >= Handling)
+        return m_handler->give_events();
+    return std::vector<EventAction>();
 }
 
 void RequestProcessor::set(const Request& request)
