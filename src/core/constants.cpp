@@ -13,8 +13,7 @@ const size_t pipe_buffer_capacity = 1048576;
 const size_t write_chunk_size = 4096;
 // - events
 const size_t max_events = 512;
-const Milliseconds epoll_timeout = 60000;
-// - connections
+const Milliseconds epoll_timeout = 60000; // - connections
 const size_t max_connections = 950;
 
 // - timeouts
@@ -24,12 +23,12 @@ const size_t max_connections = 950;
 const Seconds cgi_timeout = 60.0;
 const size_t cgi_max_failed_reads = 5;
 const size_t cgi_max_output = 100000;
-//
+const std::string extensions[] = {".py", ".php", ".lua", ".js", ".sh", ".bla", ".cgi"};
+const size_t extensions_num = sizeof(extensions) / sizeof(extensions[0]);
 //  - configuration
 const char* default_conf = "config/default.conf";
 // - http response
 const char* server_http_version = "HTTP/1.0";
-const std::string py_ext = ".py";
 
 // http
 // CRLF

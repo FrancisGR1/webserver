@@ -35,10 +35,17 @@ struct TestCase
         events = std::make_unique<EventManager>(1024);
         ctx = std::make_unique<RequestContext>(nullptr, service);
 
-        // create cgi directive
-        // @TODO isto deve ser um param
+        // load cgi directives
         Directive directive{Token::DirectiveCgi, {".py", "/usr/bin/python3"}};
         script_location.set(directive);
+        directive = {Token::DirectiveCgi, {".lua", "/usr/bin/lua"}};
+        script_location.set(directive);
+        directive = {Token::DirectiveCgi, {".php", "/usr/bin/php"}};
+        script_location.set(directive);
+        directive = {Token::DirectiveCgi, {".sh", "/usr/bin/sh"}};
+        script_location.set(directive);
+
+        // load allowed method
         directive = {Token::DirectiveMethods, {"GET"}};
         script_location.set(directive);
 
@@ -123,6 +130,31 @@ std::vector<TestCase> generate_good_test_cases(void)
         "./test_data/scripts/good/echo_stdin.py",
         Request("GET", "/scripts/good/echo_stdin.py", "", "HTTP/1.1", {}, big_body, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, big_body)
+    );
+
+    // extra cgi scripts
+    // php
+    test_cases.emplace_back(
+        "php",
+        "./test_data/scripts/good/hello.php",
+        Request("GET", "/scripts/good/hello.php", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Response(StatusCode::Ok, {{"Content-type", "text/html"}}, "Hello, World.")
+    );
+
+    // lua
+    test_cases.emplace_back(
+        "lua",
+        "./test_data/scripts/good/hello.lua",
+        Request("GET", "/scripts/good/hello.lua", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Response(StatusCode::Ok, {{"Content-type", "text/html"}}, "Hello, World.")
+    );
+
+    // sh
+    test_cases.emplace_back(
+        "sh",
+        "./test_data/scripts/good/hello.sh",
+        Request("GET", "/scripts/good/hello.sh", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Response(StatusCode::Ok, {{"Content-type", "text/html"}}, "Hello, World.")
     );
 
     // clang-format on

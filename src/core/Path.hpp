@@ -11,6 +11,7 @@ struct Path
     Path(const std::string& str_path);
     Path(const char* cstr_path);
     void init(const std::string& str_path);
+    void set_cgi();
     const char* c_str() const;
 
     //@TODO:

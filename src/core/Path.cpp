@@ -52,6 +52,60 @@ Path::Path(const char* cstr_path)
     init(cstr_path);
 }
 
+void Path::set_cgi()
+{
+    // find dot
+    size_t dot = raw.find_last_of('.');
+    if (dot == std::string::npos)
+        return;
+
+    // find pattern
+    bool is_cgi = false;
+    size_t ext_end = raw.size();
+    std::string ext;
+    for (size_t i = 0; i < constants::extensions_num; ++i)
+    {
+        ext = raw.substr(dot, constants::extensions[i].size());
+        if (ext == constants::extensions[i])
+        {
+            ext_end = dot + constants::extensions[i].size();
+            if (ext_end < raw.size() && (raw[ext_end] != '/' && raw[ext_end] != '?' && raw[ext_end] != '#'))
+                continue;
+            is_cgi = true;
+            break;
+        }
+    }
+    if (!is_cgi)
+        return;
+
+    // script
+    // path
+    cgi_path = raw.substr(0, dot + ext.size());
+    cgi_extension = ext;
+    is_cgi = true;
+    mime = MimeTypes::from_path(cgi_path);
+    // info
+    if (ext_end < raw.length())
+        cgi_info = raw.substr(ext_end);
+    // name
+    size_t last_slash = cgi_path.rfind('/');
+    if (last_slash != std::string::npos)
+    {
+        cgi_name = cgi_path.substr(last_slash + 1);
+        cgi_dir = cgi_path.substr(0, last_slash);
+    }
+    else
+    {
+        cgi_name = cgi_path;
+        cgi_dir = ".";
+    }
+    // path without extra postfix info (if it has any)
+    // ex.: /scripts/script.py?info=data
+    raw = cgi_path;
+
+    Logger::trace("Path: cgi: '%s'", raw.c_str());
+}
+
 void Path::init(const std::string& str_path)
 {
     Logger::trace("Path: initialize");
@@ -63,43 +117,8 @@ void Path::init(const std::string& str_path)
     if (!raw.empty() && raw.at(raw.size() - 1) == '/')
         ends_with_slash = true;
 
-    // check cgi extension
-    size_t dot = raw.find_last_of('.');
-    if (dot != std::string::npos)
-    {
-        size_t ext_end = dot + 3; // @WARN hardcode of .py size
-        std::string ext = raw.substr(dot);
-        if (ext == constants::py_ext)
-        {
-
-            // script path
-            cgi_path = raw.substr(0, ext_end);
-            cgi_extension = ext;
-            is_cgi = true;
-            mime = MimeTypes::from_path(cgi_path);
-
-            // script info
-            if (ext_end < raw.length())
-                cgi_info = raw.substr(ext_end);
-
-            // script name
-            size_t last_slash = cgi_path.rfind('/');
-            if (last_slash != std::string::npos)
-            {
-                cgi_name = cgi_path.substr(last_slash + 1);
-                cgi_dir = cgi_path.substr(0, last_slash);
-            }
-            else
-            {
-                cgi_name = cgi_path;
-                cgi_dir = ".";
-            }
-
-            raw = cgi_path;
-
-            Logger::trace("Path: cgi: '%s'", raw.c_str());
-        }
-    }
+    // cgi
+    set_cgi();
 
     struct stat st;
     if (stat(raw.c_str(), &st) != 0)

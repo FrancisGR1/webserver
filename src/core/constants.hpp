@@ -14,7 +14,6 @@ namespace constants
 extern const char* server_name;
 extern const char* default_conf;
 extern const char* server_http_version;
-extern const std::string py_ext;
 extern const size_t read_chunk_size;      // getconf PAGE_SIZE
 extern const size_t pipe_buffer_capacity; // cat /proc/sys/fs/pipe-max-size
 extern const size_t write_chunk_size;
@@ -31,6 +30,8 @@ extern const Seconds connection_timeout;
 extern const Seconds cgi_timeout;
 extern const size_t cgi_max_failed_reads;
 extern const size_t cgi_max_output;
+extern const std::string extensions[];
+extern const size_t extensions_num;
 
 // http
 // CRLF
