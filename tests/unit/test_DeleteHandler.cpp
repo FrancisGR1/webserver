@@ -87,7 +87,7 @@ std::vector<tu::HandlerTestCase> generate_test_cases(void)
 void test_DeleteHandler(const tu::HandlerTestCase& test)
 {
     Logger::info("===============\nTest: '%s'", test.title.c_str());
-    DeleteHandler handler{test.request, *test.ctx};
+    DeleteHandler handler{*test.ctx};
     Logger::debug_obj(*test.ctx->config().location(), "Config:\n");
     Logger::debug_obj(test.request, "Request:\n");
 

@@ -9,13 +9,13 @@ namespace constants
 // server
 const char* server_name = "webserv/1.0";
 const size_t read_chunk_size = 4096;
-const size_t read_pipe_chunk_size = 1048576;
+const size_t pipe_buffer_capacity = 1048576;
 const size_t write_chunk_size = 4096;
 // - events
 const size_t max_events = 512;
 const Milliseconds epoll_timeout = 60000;
 // - connections
-const size_t max_connections = 950; // check ulimit -n "open connections" - should be a little less than the limit
+const size_t max_connections = 950;
 
 // - timeouts
 // -- connection
@@ -25,7 +25,7 @@ const Seconds cgi_timeout = 60.0;
 const size_t cgi_max_failed_reads = 5;
 const size_t cgi_max_output = 100000;
 //
-// - configuration
+//  - configuration
 const char* default_conf = "config/default.conf";
 // - http response
 const char* server_http_version = "HTTP/1.0";

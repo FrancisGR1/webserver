@@ -258,7 +258,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
 void test_good_GetHandler(const tu::HandlerTestCase& test)
 {
     Logger::info("===============\nTest: '%s'", test.title.data());
-    GetHandler handler{test.request, *test.ctx};
+    GetHandler handler{*test.ctx};
     Logger::debug_obj(*test.ctx->config().location(), "Config:\n");
     Logger::debug_obj(test.request, "Request:\n");
 
@@ -350,14 +350,14 @@ void test_good_GetHandler(const tu::HandlerTestCase& test)
 void test_bad_GetHandler(const tu::HandlerTestCase& test)
 {
     Logger::info("===============\nTest: '%s'", test.title.data());
-    GetHandler gh(test.request, *test.ctx);
+    GetHandler handler{*test.ctx};
 
     // process request
-    while (!gh.done())
+    while (!handler.done())
     {
         try
         {
-            gh.process();
+            handler.process();
         }
         catch (const ResponseError& error)
         {
@@ -379,7 +379,7 @@ void test_bad_GetHandler(const tu::HandlerTestCase& test)
     }
 
     // get response
-    Response res = gh.response();
+    Response res = handler.response();
     Logger::debug_obj(res, "GetHandler: response: ");
 
     // default case: evalute status code and compare bodies

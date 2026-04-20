@@ -20,12 +20,13 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Second
     : m_request(request)
     , m_ctx(ctx)
     , m_script(ctx.config().path())
-    , m_state(StartTimer)
+    , m_state(Init)
     , m_response(StatusCode::Ok) //@NOTE: rfc says response is ok by default
     , m_timeout(timeout)
     , m_failed_reads(0)
     , m_env(init_env())
     , m_total_reads(0)
+    , m_body_offset(0)
 {
     Logger::trace("CgiHandler: constructor");
 }
@@ -33,6 +34,8 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Second
 CgiHandler::~CgiHandler()
 {
     Logger::trace("CgiHandler: destructor");
+    ::close(m_read_from_script[0]);
+    ::close(m_write_to_script[1]);
 }
 
 void CgiHandler::process()
@@ -41,225 +44,30 @@ void CgiHandler::process()
 
     switch (m_state)
     {
-        case StartTimer:
+        case Init:
         {
             if (!m_ctx.config().allows_method(m_request.method()))
                 http_utils::throw_method_not_allowed(m_request.method(), m_ctx);
 
-            Logger::trace("CgiHandler: start timer");
-            m_timer.set(m_timeout);
-            m_timer.start();
-            m_state = ForkExec;
+            start_timer();
+            setup_pipes();
+            start_subprocess();
+
+            m_state = Pipe;
+
+            break;
         }
-            // fall through
-
-        case ForkExec:
+        case Pipe:
         {
-            Logger::trace("CgiHandler: fork and execute");
-
-            // pipe
-            if (::pipe(m_fd) == -1)
-                throw ResponseError(StatusCode::InternalServerError, "CgiHandler: pipe() call failed!", &m_ctx);
-
-            // fork
-            pid_t id = ::fork();
-            if (id == -1)
-                throw ResponseError(StatusCode::InternalServerError, "CgiHandler: fork() call failed!", &m_ctx);
-
-            if (id == 0) // subprocess
-            {
-                // build argv
-                Path interpreter = m_ctx.config().cgi_interpreter();
-                char* interpreter_raw_path = const_cast<char*>(interpreter.raw.c_str());
-                char* script_raw_path = const_cast<char*>(m_ctx.config().path().raw.c_str());
-                char* argv[] = {interpreter_raw_path, script_raw_path, NULL};
-                Logger::trace("CgiHandler: Subprocess: argv: '%s' '%s'", interpreter_raw_path, script_raw_path);
-
-                // build env
-                std::vector<std::string> env_strings;
-                std::vector<char*> envp;
-                for (std::map<std::string, std::string>::const_iterator it = m_env.begin(); it != m_env.end(); ++it)
-                {
-                    env_strings.push_back(it->first + "=" + it->second);
-                }
-                for (size_t i = 0; i < env_strings.size(); ++i)
-                    envp.push_back(const_cast<char*>(env_strings[i].c_str()));
-                envp.push_back(NULL);
-                Logger::trace("CgiHandler: Subprocess: env was built");
-
-                // flush logs before overriding stdout
-                Logger::flush();
-
-                // write to pipe
-                dup2(m_fd[1], STDOUT_FILENO);
-                dup2(m_fd[1], STDERR_FILENO);
-
-                // close pipe
-                ::close(m_fd[1]);
-                ::close(m_fd[0]);
-
-                // execute
-                execve(argv[0], argv, &envp[0]);
-                Logger::error("CgiHandler: Subprocess: execve() gone wrong! Aborting!");
-
-                // on error, exit without cleanup
-                std::abort();
-            }
-            else // main process
-            {
-                // save subprocess id
-                m_subprocess_id = id;
-
-                // manage resources
-                ::close(m_fd[1]);
-                fcntl(m_fd[0], F_SETFL, O_NONBLOCK);
-
-                // add events
-                m_events.push_back(EventAction(EventAction::WantRead, EventAction::Pipe, m_fd[0], m_ctx.connection()));
-
-                m_state = ReadPipe;
-
-                break;
-            }
-        }
-        case ReadPipe:
-        {
-            int status = 0;
-            int res = waitpid(m_subprocess_id, &status, WNOHANG); // don't wait for subprocess
-            if (res == 0)
-                break;
-            if (res == -1)
-            {
-                throw ResponseError(
-                    StatusCode::InternalServerError,
-                    utils::fmt("CgiHandler: subprocess exited with %d code. Errno says: '%s'", status, strerror(errno)),
-                    &m_ctx);
-            }
-            if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-            {
-                throw ResponseError(
-                    StatusCode::BadGateway, utils::fmt("CgiHandler: subprocess exited with %d code", status), &m_ctx);
-            }
-
-            Logger::trace("CgiHandler: read pipe");
-
-            // read pipe to buffer
-            char buffer[constants::read_pipe_chunk_size + 1];
-            ssize_t bytes = read(m_fd[0], buffer, constants::read_pipe_chunk_size);
-            Logger::trace("CgiHandler: read %ld from pipe", bytes);
-
-            if (bytes > 0) // read data
-            {
-                buffer[bytes] = '\0';
-
-                m_total_reads += bytes;
-                Logger::trace("CgiHandler: total bytes read: %zu", m_total_reads);
-                if (m_total_reads > constants::cgi_max_output)
-                {
-                    throw ResponseError(
-                        StatusCode::BadGateway,
-                        utils::fmt(
-                            "CgiHandler: output (%zu) exceeded max capacity (%zu)",
-                            m_total_reads,
-                            constants::cgi_max_output),
-                        &m_ctx);
-                }
-
-                m_headers += buffer;
-
-                size_t body_start = m_headers.find(constants::crlfcrlf);
-                if (body_start != std::string::npos)
-                {
-                    // separate body and headers
-                    m_body_str = m_headers.substr(body_start + 4); // 4 = crlfcrlf size
-                    m_headers = m_headers.substr(0, body_start);
-
-                    Logger::trace("CgiHandler:\nheaders: '%s';\nbody:    '%s';", m_headers.c_str(), m_body_str.c_str());
-
-                    // body might have not been totally read
-                    // but it's ok, Response can handle split bodies
-                    // (1st part in string and 2nd part in file)
-                    // so go to next state regardless
-                    m_state = CookData;
-                }
-            }
-            else if (bytes == 0) // EOF
-            {
-                m_fd[0] = -1;
-                m_events.push_back(EventAction(EventAction::WantClose, EventAction::Pipe, m_fd[0], m_ctx.connection()));
-                m_state = CookData;
-            }
-            else // nothing was read
-            {
-                ++m_failed_reads;
-                // if (m_failed_reads == constants::cgi_max_failed_reads)
-                //{
-                //     ::kill(m_subprocess_id, SIGKILL);
-                //     throw ResponseError(
-                //         StatusCode::BadGateway,
-                //         utils::fmt("CgiHandler: Failed to read the pipe %zu times!", m_failed_reads),
-                //         &m_ctx);
-                // };
-                Logger::warn("CgiHandler: Failed to read the pipe %zu times!", m_failed_reads);
-            }
+            write_to_pipe();
+            read_from_pipe();
             break;
         }
 
         case CookData:
         {
-            Logger::trace("CgiHandler: transform headers to a string");
+            cook_read_data();
 
-            // https://www.rfc-editor.org/rfc/rfc3875#section-6
-            // validate and set headers
-            std::vector<std::string> lines = utils::str_split(m_headers, constants::crlf);
-            for (size_t i = 0; i < lines.size(); ++i)
-            {
-                const std::string& line = lines[i];
-                size_t colon_pos = line.find(":");
-                if (colon_pos != std::string::npos)
-                {
-                    // key
-                    std::string key = line.substr(0, colon_pos);
-                    utils::str_trim_sides(key, " \t");
-
-                    // value
-                    std::string value = line.substr(colon_pos + 1);
-                    utils::str_trim_sides(value, " \t");
-
-                    // status code
-                    if (key == "Status")
-                    {
-                        StatusCode::Code code = static_cast<StatusCode::Code>(std::atoi(value.c_str()));
-                        if (StatusCode::exists(code))
-                            m_response.set_status(code);
-                        else
-                            throw ResponseError(
-                                StatusCode::BadGateway,
-                                utils::fmt("CgiHandler: Code doesn't exist: %zu", code),
-                                &m_ctx);
-                    }
-
-                    m_response.set_header(key, value);
-                }
-                else
-                {
-                    throw ResponseError(StatusCode::BadGateway, "CgiHandler: Bad Header", &m_ctx);
-                }
-            }
-
-            Logger::trace("CgiHandler: headers:'%s'", m_headers.c_str());
-            Logger::trace("CgiHandler: body string: '%s'", m_body_str.c_str());
-            Logger::trace("CgiHandler: body fd: '%d'", m_fd[0]);
-
-            m_response.set_body_as_str(m_body_str);
-            if (m_fd[0] != -1)
-            {
-                m_response.set_body_as_fd(m_fd[0]); // rest of body is read directly to socket from pipe
-            }
-
-            // finish
-            m_timer.stop();
-            m_state = Done;
             break;
         }
         default:;
@@ -284,6 +92,281 @@ std::vector<EventAction> CgiHandler::give_events()
     Logger::trace("CgiHandler: give '%zu' events", result.size());
 
     return result;
+}
+
+void CgiHandler::start_timer()
+{
+    Logger::trace("CgiHandler: start timer");
+    m_timer.set(m_timeout);
+    m_timer.start();
+}
+
+void CgiHandler::setup_pipes()
+{
+    if (::pipe(m_read_from_script) == -1)
+    {
+        throw ResponseError(
+            StatusCode::InternalServerError, "CgiHandler: pipe() call to read from script failed!", &m_ctx);
+    }
+    fcntl(m_read_from_script[0], F_SETFL, O_NONBLOCK);
+
+    if (::pipe(m_write_to_script) == -1)
+    {
+        close(m_read_from_script[0]);
+        close(m_read_from_script[1]);
+
+        throw ResponseError(
+            StatusCode::InternalServerError, "CgiHandler: pipe() call to write to script failed!", &m_ctx);
+    }
+    fcntl(m_write_to_script[1], F_SETFL, O_NONBLOCK);
+}
+
+void CgiHandler::start_subprocess()
+{
+    Logger::trace("CgiHandler: fork and execute");
+
+    // fork
+    pid_t id = ::fork();
+    if (id == -1)
+        throw ResponseError(StatusCode::InternalServerError, "CgiHandler: fork() call failed!", &m_ctx);
+
+    if (id == 0) // subprocess
+    {
+        // build argv
+        Path interpreter = m_ctx.config().cgi_interpreter();
+        Path script = m_ctx.config().path();
+        char* argv[] = {const_cast<char*>(interpreter.c_str()), const_cast<char*>(script.cgi_name.c_str()), NULL};
+        Logger::trace("CgiHandler: Subprocess: argv: '%s' '%s'", interpreter.c_str(), script.cgi_name.c_str());
+
+        if (::chdir(script.cgi_dir.c_str()) == -1)
+        {
+            Logger::error("CgiHandler: Subprocess: chdir() call failed. Errno says: '%s'", strerror(errno));
+            std::abort();
+        }
+
+        // build env
+        std::vector<std::string> env_strings;
+        std::vector<char*> envp;
+        for (std::map<std::string, std::string>::const_iterator it = m_env.begin(); it != m_env.end(); ++it)
+        {
+            env_strings.push_back(it->first + "=" + it->second);
+        }
+        for (size_t i = 0; i < env_strings.size(); ++i)
+            envp.push_back(const_cast<char*>(env_strings[i].c_str()));
+        envp.push_back(NULL);
+        Logger::trace("CgiHandler: Subprocess: env was built");
+
+        // flush logs before overriding stdout
+        Logger::flush();
+
+        // write to pipe
+        dup2(m_read_from_script[1], STDOUT_FILENO);
+        // dup2(m_read_from_script[1], STDERR_FILENO);
+        dup2(m_write_to_script[0], STDIN_FILENO);
+
+        // close pipes
+        ::close(m_read_from_script[1]);
+        ::close(m_read_from_script[0]);
+        ::close(m_write_to_script[1]);
+        ::close(m_write_to_script[0]);
+
+        // execute
+        ::execve(argv[0], argv, &envp[0]);
+        Logger::error("CgiHandler: Subprocess: execve() gone wrong! Aborting!");
+
+        // on error, exit without cleanup
+        // @TODO @QUESTION: isto chama os destrutores?
+        std::abort();
+    }
+    else // main process
+    {
+        // save subprocess id
+        m_subprocess_id = id;
+
+        // close unused pipe ends
+        ::close(m_read_from_script[1]);
+        ::close(m_write_to_script[0]);
+
+        // add events
+        register_action(EventAction::WantRead, m_read_from_script[0]);
+        register_action(EventAction::WantWrite, m_write_to_script[1]);
+    }
+}
+
+void CgiHandler::read_from_pipe()
+{
+    int status = 0;
+    int res = waitpid(m_subprocess_id, &status, WNOHANG); // don't wait for subprocess
+    if (res == 0)
+        return;
+    if (res == -1)
+    {
+        throw ResponseError(
+            StatusCode::BadGateway,
+            utils::fmt("CgiHandler: subprocess exited with %d code. Errno says: '%s'", status, strerror(errno)),
+            &m_ctx);
+    }
+    if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+    {
+
+        throw ResponseError(
+            StatusCode::BadGateway, utils::fmt("CgiHandler: subprocess exited with %d code", status), &m_ctx);
+    }
+
+    Logger::trace("CgiHandler: read pipe");
+
+    // read pipe to buffer
+    char buffer[constants::pipe_buffer_capacity + 1];
+    ssize_t bytes = read(m_read_from_script[0], buffer, constants::pipe_buffer_capacity);
+    Logger::trace("CgiHandler: read %ld from pipe", bytes);
+
+    if (bytes > 0) // read data
+    {
+        buffer[bytes] = '\0';
+
+        m_total_reads += bytes;
+        Logger::trace("CgiHandler: total bytes read: %zu", m_total_reads);
+        Logger::trace("CgiHandler: read: '%s'", buffer);
+
+        if (m_total_reads > constants::cgi_max_output)
+        {
+            throw ResponseError(
+                StatusCode::BadGateway,
+                utils::fmt(
+                    "CgiHandler: output (%zu) exceeded max capacity (%zu)", m_total_reads, constants::cgi_max_output),
+                &m_ctx);
+        }
+
+        m_headers += buffer;
+
+        size_t body_start = m_headers.find(constants::crlfcrlf);
+        if (body_start != std::string::npos)
+        {
+            // separate body and headers
+            m_body_str = m_headers.substr(body_start + 4); // 4 = crlfcrlf size
+            m_headers = m_headers.substr(0, body_start);
+
+            Logger::trace("CgiHandler:\nheaders: '%s';\nbody:    '%s';", m_headers.c_str(), m_body_str.c_str());
+
+            // body might have not been totally read
+            // but it's ok, Response can handle split bodies
+            // (1st part in string and 2nd part in file)
+            // so go to next state regardless
+            m_state = CookData;
+        }
+    }
+    else if (bytes == 0) // EOF
+    {
+        register_action(EventAction::WantClose, m_read_from_script[0]);
+        register_action(EventAction::WantClose, m_write_to_script[1]);
+
+        m_read_from_script[0] = -1;
+        m_write_to_script[1] = -1;
+
+        m_state = CookData;
+    }
+    else // nothing was read
+    {
+        Logger::warn("CgiHandler: Read nothing from the pipe! Errno says: '%s'", strerror(errno));
+    }
+}
+
+void CgiHandler::write_to_pipe()
+{
+    // is done
+    if (m_write_to_script[1] == -1)
+        return;
+
+    const std::string& body = m_request.body();
+
+    if (body.empty())
+    {
+        ::close(m_write_to_script[1]);
+        m_write_to_script[1] = -1;
+        return;
+    }
+
+    // write as much as possible in one go
+    ssize_t bytes = ::write(m_write_to_script[1], body.c_str() + m_body_offset, body.size() - m_body_offset);
+
+    if (bytes > 0)
+    {
+        m_body_offset += bytes;
+        Logger::trace("CgiHandler: wrote %ld to pipe (total %zu/%zu)", bytes, m_body_offset, body.size());
+    }
+    else
+    {
+        Logger::warn("CgiHandler: wrote nothing to pipe! Errno says: '%s'", strerror(errno));
+    }
+
+    // close
+    if (m_body_offset >= body.size())
+    {
+        ::close(m_write_to_script[1]);
+        m_write_to_script[1] = -1;
+        Logger::trace("CgiHandler: finished writing body to pipe");
+    }
+}
+
+// transform the data read from the pipe into a Http Response
+void CgiHandler::cook_read_data()
+{
+    Logger::trace("CgiHandler: transform headers to a string");
+
+    // https://www.rfc-editor.org/rfc/rfc3875#section-6
+    // validate and set headers
+    std::vector<std::string> lines = utils::str_split(m_headers, constants::crlf);
+    for (size_t i = 0; i < lines.size(); ++i)
+    {
+        const std::string& line = lines[i];
+        size_t colon_pos = line.find(":");
+        if (colon_pos != std::string::npos)
+        {
+            // key
+            std::string key = line.substr(0, colon_pos);
+            utils::str_trim_sides(key, " \t");
+
+            // value
+            std::string value = line.substr(colon_pos + 1);
+            utils::str_trim_sides(value, " \t");
+
+            // status code
+            if (key == "Status")
+            {
+                StatusCode::Code code = static_cast<StatusCode::Code>(std::atoi(value.c_str()));
+                if (StatusCode::exists(code))
+                    m_response.set_status(code);
+                else
+                    throw ResponseError(
+                        StatusCode::BadGateway, utils::fmt("CgiHandler: Code doesn't exist: %zu", code), &m_ctx);
+            }
+
+            m_response.set_header(key, value);
+        }
+        else
+        {
+            throw ResponseError(StatusCode::BadGateway, "CgiHandler: Bad Header", &m_ctx);
+        }
+    }
+
+    Logger::trace("CgiHandler: headers:'%s'", m_headers.c_str());
+    Logger::trace("CgiHandler: body string: '%s'", m_body_str.c_str());
+    Logger::trace("CgiHandler: body fd: '%d'", m_read_from_script[0]);
+
+    m_response.set_body_as_str(m_body_str);
+    if (m_read_from_script[0] != -1)
+    {
+        m_response.set_body_as_fd(m_read_from_script[0]); // rest of body is read directly to socket from pipe
+    }
+
+    // finish
+    m_timer.stop();
+    m_state = Done;
+}
+
+void CgiHandler::register_action(EventAction::Action action, int fd)
+{
+    m_events.push_back(EventAction(action, EventAction::Pipe, fd, m_ctx.connection()));
 }
 
 std::map<std::string, std::string> CgiHandler::init_env()
@@ -323,6 +406,7 @@ std::map<std::string, std::string> CgiHandler::init_env()
     return env;
 }
 
+//@TODO: prefix envs with "HTTP_"
 std::string CgiHandler::to_uppercase_and_underscore(const std::string& str)
 {
     std::string result;

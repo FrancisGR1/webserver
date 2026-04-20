@@ -2,6 +2,7 @@
 #include "core/Logger.hpp"
 #include "core/utils.hpp"
 #include "http/StatusCode.hpp"
+#include "http/processor/handler/CgiHandler.hpp"
 #include "http/processor/handler/DeleteHandler.hpp"
 #include "http/processor/handler/ErrorHandler.hpp"
 #include "http/processor/handler/GetHandler.hpp"

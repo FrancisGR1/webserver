@@ -78,4 +78,18 @@ bool file_exists(const std::string& path)
     struct stat st;
     return stat(path.c_str(), &st) == 0;
 }
+
+bool compare_bodies(const Response& result, const Response& expected)
+{
+
+    if (result.body_fd() > -1)
+    // compare only the string body
+    {
+        std::string expected_substr = expected.body().substr(0, expected.body().size());
+        return result.body() == expected_substr;
+    }
+
+    return result.body() == expected.body();
+}
+
 } // namespace tu

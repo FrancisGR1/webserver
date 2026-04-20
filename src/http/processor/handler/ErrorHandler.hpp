@@ -22,15 +22,15 @@ class ErrorHandler : public IRequestHandler
     const Response& response() const;
     std::vector<EventAction> give_events();
 
+    // utils
+    static std::string make_default_body(StatusCode::Code code);
+
   private:
     Response m_response;
     StatusCode::Code m_code;
     const RequestContext* m_ctx; // not owned, is nullable
     bool m_done;
     int m_error_fd;
-
-    // utils
-    static std::string make_default_body(StatusCode::Code code);
 };
 
 #endif // ERRORHANDLER_HPP

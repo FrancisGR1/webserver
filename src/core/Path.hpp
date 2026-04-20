@@ -11,6 +11,7 @@ struct Path
     Path(const std::string& str_path);
     Path(const char* cstr_path);
     void init(const std::string& str_path);
+    const char* c_str() const;
 
     //@TODO:
     // string raw
@@ -33,6 +34,7 @@ struct Path
     std::string cgi_info;
     std::string cgi_name;
     std::string cgi_extension;
+    std::string cgi_dir;
 
     // permissions
     bool can_read;

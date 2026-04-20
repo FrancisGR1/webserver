@@ -85,9 +85,16 @@ void Path::init(const std::string& str_path)
             // script name
             size_t last_slash = cgi_path.rfind('/');
             if (last_slash != std::string::npos)
+            {
                 cgi_name = cgi_path.substr(last_slash + 1);
+                cgi_dir = cgi_path.substr(0, last_slash);
+            }
             else
+            {
                 cgi_name = cgi_path;
+                cgi_dir = ".";
+            }
+
             raw = cgi_path;
 
             Logger::trace("Path: cgi: '%s'", raw.c_str());
@@ -122,6 +129,11 @@ void Path::init(const std::string& str_path)
     // data
     size = st.st_size;
     mtime = st.st_mtime;
+}
+
+const char* Path::c_str() const
+{
+    return raw.c_str();
 }
 
 std::ostream& operator<<(std::ostream& os, const Path& path)

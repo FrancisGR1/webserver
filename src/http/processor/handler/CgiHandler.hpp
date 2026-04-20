@@ -31,9 +31,8 @@ class CgiHandler : public IRequestHandler
     enum State
     {
         Error = -1,
-        StartTimer,
-        ForkExec,
-        ReadPipe,
+        Init,
+        Pipe,
         CookData,
         Done
     };
@@ -55,15 +54,24 @@ class CgiHandler : public IRequestHandler
     std::map<std::string, std::string> m_env;
 
     // pipe files
-    int m_fd[2];
+    int m_read_from_script[2];
+    int m_write_to_script[2];
 
     // cgi data state
     std::string m_headers;
     std::string m_body_str;
     size_t m_total_reads;
     pid_t m_subprocess_id;
+    size_t m_body_offset;
 
     // utils
+    void start_timer();
+    void start_subprocess();
+    void setup_pipes();
+    void read_from_pipe();
+    void write_to_pipe();
+    void cook_read_data();
+    void register_action(EventAction::Action action, int fd);
     std::map<std::string, std::string> init_env();
     std::string to_uppercase_and_underscore(const std::string& str);
     void expect_has_time_left() const;

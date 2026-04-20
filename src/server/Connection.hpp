@@ -18,7 +18,6 @@ class Connection
     ~Connection();
 
     // api
-    void handle_event(const EventAction& action);
     std::vector<EventAction> give_events();
     int fd() const;
     bool done() const;
@@ -26,7 +25,7 @@ class Connection
     bool is_keep_alive();
     std::time_t last_activity();
 
-    // implementing AGORA
+    // states
     void read();
     void process_request();
     void write();

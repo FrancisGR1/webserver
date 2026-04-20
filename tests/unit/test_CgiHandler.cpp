@@ -7,10 +7,13 @@
 #include "config/types/ServiceConfig.hpp"
 #include "core/Logger.hpp"
 #include "core/Path.hpp"
+#include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/response/ResponseError.hpp"
 #include "server/EventManager.hpp"
+
+#include "test_utils.hpp"
 
 // how much time we should wait for idle subprocesses
 // if the subprocess doesn't do anything for TEST_TIMEOUT time
@@ -35,6 +38,8 @@ struct TestCase
         // create cgi directive
         // @TODO isto deve ser um param
         Directive directive{Token::DirectiveCgi, {".py", "/usr/bin/python3"}};
+        script_location.set(directive);
+        directive = {Token::DirectiveMethods, {"GET"}};
         script_location.set(directive);
 
         ctx->config().set(script_path);
@@ -101,6 +106,24 @@ std::vector<TestCase> generate_good_test_cases(void)
         Request("GET", "/scripts/good/large.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, std::string(8192, 'A'))
     );
+    
+    // echo small body
+    std::string small_body = "Hello World!";
+    test_cases.emplace_back(
+        "echo small body",
+        "./test_data/scripts/good/echo_stdin.py",
+        Request("GET", "/scripts/good/echo_stdin.py", "", "HTTP/1.1", {}, small_body, StatusCode::Ok),
+        Response(StatusCode::Ok, {{"Content-type", "text/html"}}, small_body)
+    );
+
+    // echo big body
+    std::string big_body(8192, 'A');
+    test_cases.emplace_back(
+        "echo big body",
+        "./test_data/scripts/good/echo_stdin.py",
+        Request("GET", "/scripts/good/echo_stdin.py", "", "HTTP/1.1", {}, big_body, StatusCode::Ok),
+        Response(StatusCode::Ok, {{"Content-type", "text/html"}}, big_body)
+    );
 
     // clang-format on
     return test_cases;
@@ -112,6 +135,7 @@ std::vector<TestCase> generate_bad_test_cases(void)
     test_cases.reserve(100);
     //clang-format off
     // segfault - process killed by SIGSEGV
+    //@TODO verificar segfault test isoladamente
     test_cases.emplace_back(
         "segfault",
         "./test_data/scripts/bad/segfault.py",
@@ -146,7 +170,7 @@ std::vector<TestCase> generate_bad_test_cases(void)
         "pipe overflow",
         "./test_data/scripts/bad/pipe_overflow.py",
         Request("GET", "/scripts/bad/pipe_overflow.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
-        Response(StatusCode::GatewayTimeout, {}, ""));
+        Response(StatusCode::GatewayTimeout, {}, "")); //@NOTE might be 502 alternatively
     // no output - empty response, no headers
     test_cases.emplace_back(
         "no output",
@@ -178,14 +202,14 @@ std::vector<TestCase> generate_bad_test_cases(void)
 void test_good_CgiHandler(const TestCase& test)
 {
     Logger::info("===============\nTest: '%s'", test.title.c_str());
-    CgiHandler ch(test.request, *test.ctx, TEST_TIMEOUT);
+    CgiHandler handler(test.request, *test.ctx, TEST_TIMEOUT);
 
-    while (!ch.done())
+    while (!handler.done())
     {
         try
         {
-            ch.process();
-            sleep(1); // give initial time to os to setup the pipe/subprocess //@OPTIMIZE: substituir por epoll wait
+            handler.process();
+            usleep(100); // give initial time to os to setup the pipe/subprocess //@OPTIMIZE: substituir por epoll wait
         }
         catch (const ResponseError& error)
         {
@@ -193,20 +217,25 @@ void test_good_CgiHandler(const TestCase& test)
 
             // these are not supposed to give an error
             std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
-            break;
+            return;
         }
     }
 
-    Logger::debug_obj(ch.response(), "CgiHandler: response: ");
+    Logger::debug_obj(handler.response(), "CgiHandler: response: ");
 
-    if (ch.response() == test.expected)
+    // compare status codes and bodies
+    // @ASSUMPTIO body output of cgi is equal to request body - it just mirrors
+    if (handler.response() == test.expected && tu::compare_bodies(handler.response(), test.expected))
     {
         std::cout << constants::green << "[OK] " << constants::reset << test.title << "\n";
     }
     else
     {
         std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
-        std::cerr << "=====\nExpected:\n" << test.expected << "=====\nGot:\n" << ch.response();
+        // std::cerr << "=====\nExpected:\n" << test.expected << "=====\nGot:\n" << handler.response();
+        //  std::cerr << "(If the code is not different than there is a difference in the body)";
+        //  std::cerr << "Expected: " << test.expected.body() << "\n";
+        //  std::cerr << "Got: " << handler.response().body() << "\n";
     }
 }
 
@@ -220,7 +249,7 @@ void test_bad_CgiHandler(const TestCase& test)
         try
         {
             ch.process();
-            sleep(1); // give initial time to os to setup the pipe/subprocess //@OPTIMIZE substituir por epoll wait
+            usleep(100); // give initial time to os to setup the pipe/subprocess
         }
         catch (const ResponseError& error)
         {
@@ -252,12 +281,13 @@ void test_bad_CgiHandler(const TestCase& test)
 int main()
 {
     Logger::set_global_level(Log::Error);
+
     // send output of cgi to here
     // to check what subprocess says
-    Logger::set_output(
-        "/home/francisco/Documents/42_School/05/Webserv/tests/"
-        "unit/logs/subprocess_logs.log",
-        std::ios::out | std::ios::trunc);
+    // Logger::set_output(
+    //    "/home/francisco/Documents/42_School/05/Webserv/tests/"
+    //    "unit/logs/subprocess_logs.log",
+    //    std::ios::out | std::ios::trunc);
 
     std::cout << "==============================\n";
     std::cout << "========== CgiHandler ========\n";
@@ -269,9 +299,13 @@ int main()
     // good
     std::cout << constants::green << "\nGood tests\n" << constants::reset;
     tests = generate_good_test_cases();
+    int idx = 0;
     for (auto& test : tests)
     {
+        if (idx == -1)
+            break;
         test_good_CgiHandler(test);
+        ++idx;
     }
 
     // bad

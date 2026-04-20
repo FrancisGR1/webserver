@@ -10,6 +10,8 @@ OPTIMIZE = -O3
 INC      = -Isrc
 FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG)
 
+TESTS_DIR = tests
+
 SOURCES  = \
 	   src/main.cpp \
 	  \
@@ -81,11 +83,10 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 	rm -f $(LIB)
-	cd $(TESTS_DIR) && $(MAKE) -C unit/ fclean
+	$(MAKE) -C $(TESTS_DIR) fclean
 
 re: fclean all
 
-TESTS_DIR = tests
 .PHONY: tests
 tests: all lib
 	@echo "\t==============="

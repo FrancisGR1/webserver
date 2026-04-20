@@ -16,14 +16,15 @@ extern const char* default_conf;
 extern const char* server_http_version;
 extern const std::string py_ext;
 extern const size_t read_chunk_size;      // getconf PAGE_SIZE
-extern const size_t read_pipe_chunk_size; // cat /proc/sys/fs/pipe-max-size
+extern const size_t pipe_buffer_capacity; // cat /proc/sys/fs/pipe-max-size
 extern const size_t write_chunk_size;
 // - events
 extern const size_t max_events;
 extern const Milliseconds epoll_timeout;
 // - connections
-extern const size_t max_connections;
-// - timeouts                         // e.g. in my laptop: 1024 - 50 ~= 950
+extern const size_t max_connections; // check ulimit -n "open connections" - should be a little less than the limit.
+                                     // e.g.: 1024 - 50 ~= 950
+// - timeouts
 // -- connection
 extern const Seconds connection_timeout;
 // -- cgi
