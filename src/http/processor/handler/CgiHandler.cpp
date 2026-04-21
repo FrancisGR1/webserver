@@ -66,7 +66,7 @@ void CgiHandler::process()
 
         case CookData:
         {
-            cook_read_data();
+            make_response();
 
             break;
         }
@@ -309,7 +309,7 @@ void CgiHandler::write_to_pipe()
 }
 
 // transform the data read from the pipe into a Http Response
-void CgiHandler::cook_read_data()
+void CgiHandler::make_response()
 {
     Logger::trace("CgiHandler: transform headers to a string");
 

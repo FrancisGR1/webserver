@@ -70,7 +70,7 @@ class CgiHandler : public IRequestHandler
     void setup_pipes();
     void read_from_pipe();
     void write_to_pipe();
-    void cook_read_data();
+    void make_response();
     void register_action(EventAction::Action action, int fd);
     std::map<std::string, std::string> init_env();
     std::string to_uppercase_and_underscore(const std::string& str);
