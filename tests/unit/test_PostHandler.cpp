@@ -56,7 +56,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/post/upload/",
         service,
         post,
-        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
+        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), {}, StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
         Response( StatusCode::Created, {}, hello_md) //@NOTE: response body contains file path to expected body
 	);
 
@@ -65,7 +65,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "binary png - integrity check",
         "./test_data/post/upload/",
         service, post,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(small_jpg), StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(small_jpg), {}, StatusCode::Ok),
         Response(StatusCode::Created, {}, small_jpg));
 
     const std::string empty_txt = TEST_FILES + "empty.txt";
@@ -73,7 +73,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "empty file",
         "./test_data/post/upload/",
         service, post,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(empty_txt), StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(empty_txt), {}, StatusCode::Ok),
         Response(StatusCode::Created, {}, empty_txt));
 
     const std::string utf8_txt  = TEST_FILES + "utf8.txt";
@@ -81,7 +81,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "utf8 content",
         "./test_data/post/upload/",
         service, post,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(utf8_txt), StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(utf8_txt), {}, StatusCode::Ok),
         Response(StatusCode::Created, {}, utf8_txt));
 
     const std::string large_txt = TEST_FILES + "large.txt";
@@ -89,7 +89,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "large text file",
         "./test_data/post/upload/",
         service, post,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(large_txt), StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(large_txt), {}, StatusCode::Ok),
         Response(StatusCode::Created, {}, large_txt));
 
     const std::string pdf_file_pdf = TEST_FILES + "pdf_file.pdf";
@@ -97,7 +97,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "pdf file",
         "./test_data/post/upload/",
         service, post,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(pdf_file_pdf), StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(pdf_file_pdf), {}, StatusCode::Ok),
         Response(StatusCode::Created, {}, pdf_file_pdf));
 
     // --- overwrite: upload same file twice, result must still match ---
@@ -105,7 +105,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "overwrite same file",
         "./test_data/post/upload/",
         service, post,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), {}, StatusCode::Ok),
         Response(StatusCode::Created, {}, hello_md));
 
     // --- different root ---
@@ -120,7 +120,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "different root dir",
         "./test_data/post/upload_alt/",
         service_alt_root, post_alt_root,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), {}, StatusCode::Ok),
         Response(StatusCode::Created, {}, hello_md));
 
     // clang-format on
@@ -169,7 +169,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
         "./test_data/post/upload/",
         service_no_post,
         no_post,
-        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
+        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), {}, StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
         Response( StatusCode::MethodNotAllowed, {}, hello_md ) //@NOTE: response body contains file path to expected body //@QUESTION: que erro é que o deve ser dado? neste momento o server está a dar InternalServerError
 	);
 
@@ -184,7 +184,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
         "./test_data/post/upload/",
         no_upload,
         no_upload_allowed,
-        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
+        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), {}, StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
         Response( StatusCode::Forbidden, {}, hello_md ) //@NOTE: response body contains file path to expected body //@QUESTION: que erro é que o deve ser dado? neste momento o server está a dar InternalServerError
 	);
 
@@ -209,7 +209,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
         "./test_data/post/forbidden/",
         forbidden_service,
         forbidden,
-        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
+        Request( "POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), {}, StatusCode::Ok), // @NOTE: insert content of hello_md in request, @TODO: this is why we can only make small tests! Change this.
         Response( StatusCode::Forbidden, {}, hello_md ) //@NOTE: response body contains file path to expected body //@QUESTION: que erro é que o deve ser dado? neste momento o server está a dar InternalServerError
 	);
 
@@ -227,7 +227,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
         "./test_data/post/upload/",
         no_content_service,
         no_content,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, "this body is way too long", StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, "this body is way too long", {}, StatusCode::Ok),
         Response(StatusCode::ContentTooLarge, {}, hello_md)
     );
 
@@ -245,7 +245,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
         "./test_data/post/nonexistent_dir/",
         nonexistent_dir_service,
         nonexistent_dir,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), {}, StatusCode::Ok),
         Response(StatusCode::NotFound, {}, hello_md)
     );
 
@@ -267,7 +267,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
         "./test_data/post/upload/hello.md",
         file_as_dir_service,
         file_as_dir,
-        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), StatusCode::Ok),
+        Request("POST", "/upload/", "", "HTTP/1.1", {}, utils::file_to_str(hello_md), {}, StatusCode::Ok),
         Response(StatusCode::Conflict, {}, hello_md)
     );
 

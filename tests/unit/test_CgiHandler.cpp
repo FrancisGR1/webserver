@@ -7,7 +7,6 @@
 #include "config/types/ServiceConfig.hpp"
 #include "core/Logger.hpp"
 #include "core/Path.hpp"
-#include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/response/ResponseError.hpp"
@@ -78,7 +77,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "simple script",
         "./test_data/scripts/good/hello.py",
-        Request("GET", "/scripts/good/hello.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/good/hello.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, "Hello, World.")
     );
 
@@ -86,7 +85,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "empty body",
         "./test_data/scripts/good/empty.py",
-        Request("GET", "/scripts/good/empty.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/good/empty.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, "")
     );
 
@@ -94,7 +93,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "custom status code",
         "./test_data/scripts/good/created.py",
-        Request("GET", "/scripts/good/created.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/good/created.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Created, {{"Status", "201"}, {"Content-type", "text/html"}}, "Created.")
     );
 
@@ -102,7 +101,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "multiple headers",
         "./test_data/scripts/good/multi_headers.py",
-        Request("GET", "/scripts/good/multi_headers.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/good/multi_headers.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}, {"X-Custom", "value"}}, "Multi.")
     );
 
@@ -110,7 +109,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "large body",
         "./test_data/scripts/good/large.py",
-        Request("GET", "/scripts/good/large.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/good/large.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, std::string(8192, 'A'))
     );
     
@@ -119,7 +118,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "echo small body",
         "./test_data/scripts/good/echo_stdin.py",
-        Request("GET", "/scripts/good/echo_stdin.py", "", "HTTP/1.1", {}, small_body, StatusCode::Ok),
+        Request("GET", "/scripts/good/echo_stdin.py", "", "HTTP/1.1", {}, small_body, {}, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, small_body)
     );
 
@@ -128,7 +127,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "echo big body",
         "./test_data/scripts/good/echo_stdin.py",
-        Request("GET", "/scripts/good/echo_stdin.py", "", "HTTP/1.1", {}, big_body, StatusCode::Ok),
+        Request("GET", "/scripts/good/echo_stdin.py", "", "HTTP/1.1", {}, big_body, {}, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, big_body)
     );
 
@@ -137,7 +136,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "php",
         "./test_data/scripts/good/hello.php",
-        Request("GET", "/scripts/good/hello.php", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/good/hello.php", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, "Hello, World.")
     );
 
@@ -145,7 +144,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "lua",
         "./test_data/scripts/good/hello.lua",
-        Request("GET", "/scripts/good/hello.lua", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/good/hello.lua", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, "Hello, World.")
     );
 
@@ -153,7 +152,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     test_cases.emplace_back(
         "sh",
         "./test_data/scripts/good/hello.sh",
-        Request("GET", "/scripts/good/hello.sh", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/good/hello.sh", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok, {{"Content-type", "text/html"}}, "Hello, World.")
     );
 
@@ -171,61 +170,61 @@ std::vector<TestCase> generate_bad_test_cases(void)
     test_cases.emplace_back(
         "segfault",
         "./test_data/scripts/bad/segfault.py",
-        Request("GET", "/scripts/bad/segfault.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/segfault.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::BadGateway, {}, ""));
     // abort - process killed by SIGABRT
     test_cases.emplace_back(
         "abort",
         "./test_data/scripts/bad/abort.py",
-        Request("GET", "/scripts/bad/abort.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/abort.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::BadGateway, {}, ""));
     // crash - unhandled exception, exit code 1
     test_cases.emplace_back(
         "crash",
         "./test_data/scripts/bad/crash.py",
-        Request("GET", "/scripts/bad/crash.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/crash.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::BadGateway, {}, ""));
     // non-zero exit code
     test_cases.emplace_back(
         "non zero exit code",
         "./test_data/scripts/bad/non_0_exit_code.py",
-        Request("GET", "/scripts/bad/non_0_exit_code.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/non_0_exit_code.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::BadGateway, {}, ""));
     // infinite loop - timeout
     test_cases.emplace_back(
         "infinite loop",
         "./test_data/scripts/bad/infinite.py",
-        Request("GET", "/scripts/bad/infinite.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/infinite.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::GatewayTimeout, {}, ""));
     // pipe overflow - writes more than handler can buffer
     test_cases.emplace_back(
         "pipe overflow",
         "./test_data/scripts/bad/pipe_overflow.py",
-        Request("GET", "/scripts/bad/pipe_overflow.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/pipe_overflow.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::GatewayTimeout, {}, "")); //@NOTE might be 502 alternatively
     // no output - empty response, no headers
     test_cases.emplace_back(
         "no output",
         "./test_data/scripts/bad/no_output.py",
-        Request("GET", "/scripts/bad/no_output.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/no_output.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::BadGateway, {}, ""));
     // bad header format - missing colon
     test_cases.emplace_back(
         "bad header format",
         "./test_data/scripts/bad/bad_format_header.py",
-        Request("GET", "/scripts/bad/bad_format_header.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/bad_format_header.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::BadGateway, {}, ""));
     // wrong status code - valid format but invalid status
     test_cases.emplace_back(
         "wrong status code",
         "./test_data/scripts/bad/wrong_status_code.py",
-        Request("GET", "/scripts/bad/wrong_status_code.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/wrong_status_code.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::BadGateway, {}, ""));
     // random output - unpredictable behavior
     test_cases.emplace_back(
         "random output",
         "./test_data/scripts/bad/random.py",
-        Request("GET", "/scripts/bad/random.py", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/scripts/bad/random.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::BadGateway, {}, ""));
     // clang-format on
     return test_cases;

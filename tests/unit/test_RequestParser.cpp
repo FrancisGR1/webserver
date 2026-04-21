@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,39 @@ struct TestCase
 void test_RequestParser(const TestCase& test);
 void test_RequestParser_with_random_sized_chunks(const TestCase& test);
 
+static std::string make_multipart_request(
+    const std::string& path,
+    const std::string& boundary,
+    const std::string& mp_body)
+{
+    std::ostringstream req;
+    req << "POST " << path << " HTTP/1.1\r\n";
+    req << "Host: localhost\r\n";
+    req << "Content-Type: multipart/form-data; boundary=" << boundary << "\r\n";
+    req << "Content-Length: " << mp_body.size() << "\r\n";
+    req << "\r\n";
+    req << mp_body;
+    return req.str();
+}
+
+static std::string make_mp_body(const std::string& boundary, const std::vector<MultiPartBody>& parts)
+{
+    std::ostringstream body;
+    for (size_t i = 0; i < parts.size(); i++)
+    {
+        body << "--" << boundary << "\r\n";
+        body << "Content-Disposition: form-data; name=\"" << parts[i].name << "\"";
+        if (!parts[i].filename.empty())
+            body << "; filename=\"" << parts[i].filename << "\"";
+        body << "\r\n";
+        if (!parts[i].content_type.empty())
+            body << "Content-Type: " << parts[i].content_type << "\r\n";
+        body << "\r\n";
+        body << parts[i].body << "\r\n";
+    }
+    body << "--" << boundary << "--";
+    return body.str();
+}
 std::vector<TestCase> generate_good_test_cases(void)
 {
     //@NOTE: headers have to be lowercase because of normalization
@@ -24,7 +58,7 @@ std::vector<TestCase> generate_good_test_cases(void)
         // Basic Methods
         {"Simple GET request",
          "GET /index.html HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("GET", "/index.html", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("GET", "/index.html", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
         {"Simple POST with body",
          "POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Length: 11\r\n\r\nhello world",
          Request(
@@ -34,20 +68,23 @@ std::vector<TestCase> generate_good_test_cases(void)
              "HTTP/1.1",
              {{"host", "localhost"}, {"content-length", "11"}},
              "hello world",
+             {},
              StatusCode::Ok)},
         {"DELETE request",
          "DELETE /resource/42 HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("DELETE", "/resource/42", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("DELETE", "/resource/42", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
+
         // ─── Query Strings ───────────────────────────────────────────────
         {"GET with query string",
          "GET /search?q=hello HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("GET", "/search", "q=hello", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("GET", "/search", "q=hello", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
         {"GET with multi-param query string",
          "GET /search?q=hello&page=2&sort=asc HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("GET", "/search", "q=hello&page=2&sort=asc", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request(
+             "GET", "/search", "q=hello&page=2&sort=asc", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
         {"GET with empty query string",
          "GET /index.html? HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("GET", "/index.html", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("GET", "/index.html", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
 
         // ─── Headers ─────────────────────────────────────────────────────
         {"Multiple headers",
@@ -59,31 +96,40 @@ std::vector<TestCase> generate_good_test_cases(void)
              "HTTP/1.1",
              {{"host", "localhost"}, {"accept", "text/html"}, {"connection", "keep-alive"}},
              "",
+             {},
              StatusCode::Ok)},
         {"Header with leading whitespace in value",
          "GET / HTTP/1.1\r\nHost:   localhost\r\n\r\n",
-         Request("GET", "/", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("GET", "/", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
 
         // ─── Paths ───────────────────────────────────────────────────────
         {"Root path",
          "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("GET", "/", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("GET", "/", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
         {"Nested path",
          "GET /a/b/c/d HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("GET", "/a/b/c/d", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("GET", "/a/b/c/d", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
         {"Path with file extension",
          "GET /static/style.css HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("GET", "/static/style.css", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("GET", "/static/style.css", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
+
         // ─── HTTP Versions ───────────────────────────────────────────────
         {"HTTP/1.0 request",
          "GET /index.html HTTP/1.0\r\nHost: localhost\r\n\r\n",
-         Request("GET", "/index.html", "", "HTTP/1.0", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("GET", "/index.html", "", "HTTP/1.0", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
 
         // ─── POST edge cases ─────────────────────────────────────────────
         {"POST with Content-Length 0",
          "POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n",
          Request(
-             "POST", "/submit", "", "HTTP/1.1", {{"host", "localhost"}, {"content-length", "0"}}, "", StatusCode::Ok)},
+             "POST",
+             "/submit",
+             "",
+             "HTTP/1.1",
+             {{"host", "localhost"}, {"content-length", "0"}},
+             "",
+             {},
+             StatusCode::Ok)},
 
         // ─── Headers edge cases ──────────────────────────────────────────
         {"Header value with internal whitespace",
@@ -95,10 +141,11 @@ std::vector<TestCase> generate_good_test_cases(void)
              "HTTP/1.1",
              {{"host", "localhost"}, {"accept", "text/html, application/json"}},
              "",
+             {},
              StatusCode::Ok)},
         {"Header with tab as OWS",
          "GET / HTTP/1.1\r\nHost:\tlocalhost\r\n\r\n",
-         Request("GET", "/", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
+         Request("GET", "/", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
 
         // ─── Chunked body ────────────────────────────────────────────────
         {"Chunked transfer encoding single chunk",
@@ -110,6 +157,7 @@ std::vector<TestCase> generate_good_test_cases(void)
              "HTTP/1.1",
              {{"host", "localhost"}, {"transfer-encoding", "chunked"}},
              "hello",
+             {},
              StatusCode::Ok)},
         {"Chunked transfer encoding multiple chunks",
          "POST /upload HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n "
@@ -121,6 +169,7 @@ std::vector<TestCase> generate_good_test_cases(void)
              "HTTP/1.1",
              {{"host", "localhost"}, {"transfer-encoding", "chunked"}},
              "hello world",
+             {},
              StatusCode::Ok)},
         {"Chunked with chunk extension",
          "POST /upload HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: "
@@ -132,6 +181,7 @@ std::vector<TestCase> generate_good_test_cases(void)
              "HTTP/1.1",
              {{"host", "localhost"}, {"transfer-encoding", "chunked"}},
              "hello",
+             {},
              StatusCode::Ok)},
         {"Chunked with trailer header",
          "POST /upload HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nX-Checksum: "
@@ -143,14 +193,131 @@ std::vector<TestCase> generate_good_test_cases(void)
              "HTTP/1.1",
              {{"host", "localhost"}, {"transfer-encoding", "chunked"}, {"x-checksum", "abc123"}},
              "hello",
+             {},
              StatusCode::Ok)},
 
         // ─── Path edge cases ─────────────────────────────────────────────
         {"Path with percent-encoding",
          "GET /path%20with%20spaces HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("GET", "/path%20with%20spaces", "", "HTTP/1.1", {{"host", "localhost"}}, "", StatusCode::Ok)},
-
+         Request("GET", "/path%20with%20spaces", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
     };
+
+    // ─── Multipart body ──────────────────────────────────────────────
+    // multipart single text file
+    {
+        std::vector<MultiPartBody> parts = {{"john", "", "username", ""}};
+        std::string mp_body = make_mp_body("boundary123", parts);
+        test_cases.push_back(
+            {"Multipart single text field",
+             make_multipart_request("/upload", "boundary123", mp_body),
+             Request(
+                 "POST",
+                 "/upload",
+                 "",
+                 "HTTP/1.1",
+                 {{"host", "localhost"},
+                  {"content-type", "multipart/form-data; boundary=boundary123"},
+                  {"content-length", std::to_string(mp_body.size())}},
+                 "",
+                 parts,
+                 StatusCode::Ok)});
+    }
+    // multipart single file upload
+    {
+        std::vector<MultiPartBody> parts = {{"RAWDATA", "image/jpeg", "avatar", "pic.jpg"}};
+        std::string mp_body = make_mp_body("boundary123", parts);
+        test_cases.push_back(
+            {"Multipart single file upload",
+             make_multipart_request("/upload", "boundary123", mp_body),
+             Request(
+                 "POST",
+                 "/upload",
+                 "",
+                 "HTTP/1.1",
+                 {{"host", "localhost"},
+                  {"content-type", "multipart/form-data; boundary=boundary123"},
+                  {"content-length", std::to_string(mp_body.size())}},
+                 "",
+                 parts,
+                 StatusCode::Ok)});
+    }
+    // multipart multiple text fields
+    {
+        std::vector<MultiPartBody> parts = {{"john", "", "username", ""}, {"hello world", "", "bio", ""}};
+        std::string mp_body = make_mp_body("boundary123", parts);
+        test_cases.push_back(
+            {"Multipart multiple text fields",
+             make_multipart_request("/upload", "boundary123", mp_body),
+             Request(
+                 "POST",
+                 "/upload",
+                 "",
+                 "HTTP/1.1",
+                 {{"host", "localhost"},
+                  {"content-type", "multipart/form-data; boundary=boundary123"},
+                  {"content-length", std::to_string(mp_body.size())}},
+                 "",
+                 parts,
+                 StatusCode::Ok)});
+    }
+    // multipart text field and file upload
+    {
+        std::vector<MultiPartBody> parts = {
+            {"john", "", "username", ""}, {"RAWDATA", "image/jpeg", "avatar", "pic.jpg"}};
+        std::string mp_body = make_mp_body("boundary123", parts);
+        test_cases.push_back(
+            {"Multipart text field and file upload",
+             make_multipart_request("/upload", "boundary123", mp_body),
+             Request(
+                 "POST",
+                 "/upload",
+                 "",
+                 "HTTP/1.1",
+                 {{"host", "localhost"},
+                  {"content-type", "multipart/form-data; boundary=boundary123"},
+                  {"content-length", std::to_string(mp_body.size())}},
+                 "",
+                 parts,
+                 StatusCode::Ok)});
+    }
+    // multipart file with plain text content type
+    {
+        std::vector<MultiPartBody> parts = {{"hello world", "text/plain", "file", "hello.txt"}};
+        std::string mp_body = make_mp_body("boundary123", parts);
+        test_cases.push_back(
+            {"Multipart file with plain text content type",
+             make_multipart_request("/upload", "boundary123", mp_body),
+             Request(
+                 "POST",
+                 "/upload",
+                 "",
+                 "HTTP/1.1",
+                 {{"host", "localhost"},
+                  {"content-type", "multipart/form-data; boundary=boundary123"},
+                  {"content-length", std::to_string(mp_body.size())}},
+                 "",
+                 parts,
+                 StatusCode::Ok)});
+    }
+    // multipart empty field value
+    {
+        std::vector<MultiPartBody> parts = {{"", "", "optional", ""}};
+        std::string mp_body = make_mp_body("boundary123", parts);
+        test_cases.push_back(
+            {"Multipart empty field value",
+             make_multipart_request("/upload", "boundary123", mp_body),
+             Request(
+                 "POST",
+                 "/upload",
+                 "",
+                 "HTTP/1.1",
+                 {{"host", "localhost"},
+                  {"content-type", "multipart/form-data; boundary=boundary123"},
+                  {"content-length", std::to_string(mp_body.size())}},
+                 "",
+                 parts,
+                 StatusCode::Ok)});
+    }
     return test_cases;
 }
 
@@ -160,20 +327,20 @@ std::vector<TestCase> generate_bad_test_cases(void)
         // ─── Bad Requests ─────────────────────────────────────────────────
         {"Missing HTTP version",
          "GET /index.html\r\nHost: localhost\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Wrong HTTP version",
          "GET /index.html HTTP/2\r\nHost: localhost\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::HttpVersionNotSupported)},
-        {"Empty request", "", Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::HttpVersionNotSupported)},
+        {"Empty request", "", Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Invalid method",
          "FOOBAR / HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Unsupported HTTP version",
          "GET / HTTP/2.0\r\nHost: localhost\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Missing CRLF terminator",
          "GET / HTTP/1.1\r\nHost: localhost\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"PUT request with body",
          "PUT /resource/42 HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4\r\n\r\ndata",
          Request(
@@ -183,47 +350,48 @@ std::vector<TestCase> generate_bad_test_cases(void)
              "HTTP/1.1",
              {{"host", "localhost"}, {"content-length", "4"}},
              "data",
+             {},
              StatusCode::NotImplemented)},
         // ─── Body errors ─────────────────────────────────────────────────
         {"Content-Length and Transfer-Encoding together",
          "POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Length: 5\r\nTransfer-Encoding: chunked\r\n\r\nhello",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Negative Content-Length",
          "POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Length: -1\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Non-digit Content-Length",
          "POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Length: abc\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Content-Length exceeds max body size",
          "POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Length: 99999999999\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::ContentTooLarge)},
+         Request("", "", "", "", {}, "", {}, StatusCode::ContentTooLarge)},
         {"Transfer-Encoding not chunked",
          "POST /submit HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: gzip\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::NotImplemented)},
+         Request("", "", "", "", {}, "", {}, StatusCode::NotImplemented)},
 
         // ─── Header errors ───────────────────────────────────────────────
         {"Duplicate headers",
          "GET / HTTP/1.1\r\nHost: localhost\r\nHost: other\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Header key with invalid char",
          "GET / HTTP/1.1\r\nHo@st: localhost\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Header value with control character",
          "GET / HTTP/1.1\r\nHost: local\x01host\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
 
         // ─── Path errors ─────────────────────────────────────────────────
         {"Path not starting with slash",
          "GET relative/path HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
         {"Whitespace before method",
          " GET / HTTP/1.1\r\nHost: localhost\r\n\r\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)},
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)},
 
         // ─── Line ending errors ──────────────────────────────────────────
         {"LF only line endings instead of CRLF",
          "GET / HTTP/1.1\nHost: localhost\n\n",
-         Request("", "", "", "", {}, "", StatusCode::BadRequest)}
+         Request("", "", "", "", {}, "", {}, StatusCode::BadRequest)}
 
     };
     return test_cases;

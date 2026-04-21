@@ -44,7 +44,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/hello.md",
 	service,
 	get,
-        Request("GET", "/get/hello.md", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/hello.md", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
     
@@ -54,7 +54,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/empty.txt",
 	service,
 	get,
-        Request("GET", "/get/empty.txt", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/empty.txt", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
 
@@ -64,7 +64,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/default.md",
 	service,
 	get,
-        Request("GET", "/get/", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
 
@@ -74,7 +74,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/large.txt",
 	service,
 	get,
-        Request("GET", "/get/large.txt", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/large.txt", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
     
@@ -85,7 +85,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/index.html",
 	service,
 	get,
-        Request("GET", "/get/index.html", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/index.html", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
 
@@ -95,7 +95,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/giant_cat.jpeg",
 	service,
 	get,
-        Request("GET", "/get/giant_cat.jpeg", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/giant_cat.jpeg", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
 
@@ -105,7 +105,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/large.json",
 	service,
 	get,
-        Request("GET", "/get/large.json", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/large.json", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
 
@@ -115,7 +115,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/xml_file.xml",
 	service,
 	get,
-        Request("GET", "/get/xml_file.xml", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/xml_file.xml", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
 
@@ -125,7 +125,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/pdf_file.pdf",
 	service,
 	get,
-        Request("GET", "/get/pdf_file.pdf", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/pdf_file.pdf", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
 
@@ -135,7 +135,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/test.mp4",
 	service,
 	get,
-        Request("GET", "/get/test.mp4", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/test.mp4", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
 
@@ -150,7 +150,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/get/",
 	service,
 	get,
-        Request("GET", "/get/", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::Ok)
     );
 
@@ -171,7 +171,7 @@ std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
         "./test_data/redirect/default.md",
 	rsv,
 	redirect,
-        Request("GET", "/redirect/", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/redirect/", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::MovedPermanently)
     );
 
@@ -198,7 +198,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
         "./test_data/get/error/nonexistent.md",
         service,
         error,
-        Request("GET", "/get/error/nonexistent.md", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+        Request("GET", "/get/error/nonexistent.md", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::NotFound, {}, "")
     );
 
@@ -208,7 +208,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
          "./test_data/get/error/",
          service,
          error,
-         Request("GET", "/get/error", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+         Request("GET", "/get/error", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
          Response(StatusCode::Forbidden, {}, "")
      );
 
@@ -220,7 +220,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
          "./test_data/get/error/",
          service,
          error,
-         Request("GET", "/get/error", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+         Request("GET", "/get/error", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
          Response(StatusCode::NotFound, {}, "")
      );
 
@@ -237,7 +237,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
          "./test_data/get/error/",
          service,
          error,
-         Request("GET", "/get/error", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+         Request("GET", "/get/error", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
          Response(StatusCode::Forbidden, {}, "")
      );
 
@@ -247,7 +247,7 @@ std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
          "./test_data/get/error/no_perms.md",
          service,
          error,
-         Request("GET", "/get/error/no_perms.md", "", "HTTP/1.1", {}, "", StatusCode::Ok),
+         Request("GET", "/get/error/no_perms.md", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
          Response(StatusCode::Forbidden, {}, "")
      );
 

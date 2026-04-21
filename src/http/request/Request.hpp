@@ -4,13 +4,14 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "http/StatusCode.hpp"
+#include "http/request/RequestParser.hpp"
 
 class Request
 {
   public:
-    //@TODO copy assignment
     Request();
     Request(
         const std::string& method,
@@ -19,6 +20,7 @@ class Request
         const std::string& protocol_version,
         const std::map<std::string, std::string>& headers,
         const std::string& body,
+        const std::vector<MultiPartBody> multi_part_body,
         StatusCode::Code c);
 
     // getters
@@ -40,6 +42,7 @@ class Request
     std::string m_protocol_version;
     std::map<std::string, std::string> m_headers;
     std::string m_body;
+    std::vector<MultiPartBody> m_multipart_body;
     StatusCode::Code m_status_code;
 };
 

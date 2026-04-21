@@ -36,7 +36,7 @@ std::vector<tu::HandlerTestCase> generate_test_cases(void)
         delete_me_md,
         service,
         del,
-        Request( "POST", "/delete/", "", "HTTP/1.1", {}, {}, StatusCode::Ok),
+        Request( "POST", "/delete/", "", "HTTP/1.1", {}, {}, {}, StatusCode::Ok),
         Response( StatusCode::NoContent, {}, {})
 	);
 
@@ -47,7 +47,7 @@ std::vector<tu::HandlerTestCase> generate_test_cases(void)
         DELETE_FILES + "does_not_exist.md",
         service,
         del,
-        Request("POST", "/delete/", "", "HTTP/1.1", {}, {}, StatusCode::Ok),
+        Request("POST", "/delete/", "", "HTTP/1.1", {}, {}, {}, StatusCode::Ok),
         Response(StatusCode::NotFound, {}, {})
     );
 
@@ -66,7 +66,7 @@ std::vector<tu::HandlerTestCase> generate_test_cases(void)
         no_perm_file,
         service,
         del,
-        Request("POST", "/delete/", "", "HTTP/1.1", {}, {}, StatusCode::Ok),
+        Request("POST", "/delete/", "", "HTTP/1.1", {}, {}, {}, StatusCode::Ok),
         Response(StatusCode::Forbidden, {}, {})
     );
 
@@ -76,7 +76,7 @@ std::vector<tu::HandlerTestCase> generate_test_cases(void)
         DELETE_FILES,
         service,
         del,
-        Request("POST", "/delete/", "", "HTTP/1.1", {}, {}, StatusCode::Ok),
+        Request("POST", "/delete/", "", "HTTP/1.1", {}, {}, {}, StatusCode::Ok),
         Response(StatusCode::Conflict, {}, {})
     );
     // clang-format on

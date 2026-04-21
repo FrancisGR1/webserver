@@ -56,6 +56,7 @@ Request RequestParser::get() const
 		    m_protocol_version, 
 		    m_headers, 
 		    m_body, 
+		    m_multipart_body,
 		    m_status_code
 		    );
     // clang-format on
@@ -651,6 +652,18 @@ void RequestParser::parse()
             }
         }
     }
+
+    if (m_state == S::Done)
+    // post parse work
+    {
+        // multipart body
+        if (utils::contains(m_headers, "content-type"))
+        {
+            std::string type = m_headers["content-type"];
+            if (type.find("multipart/form-data") != std::string::npos)
+                m_multipart_body = parse_multipart(type, m_body);
+        }
+    }
 }
 
 // https://www.rfc-editor.org/rfc/rfc9110.html#name-field-names
@@ -707,5 +720,111 @@ bool RequestParser::is_valid_method(const std::string& m)
 	 m == "TRACE" || 
 	 m == "HEAD"
 	);
+    // clang-format on
+}
+
+std::vector<MultiPartBody> RequestParser::parse_multipart(
+    const std::string& content_type_header,
+    const std::string& body)
+{
+    std::vector<MultiPartBody> parts;
+
+    // extract boundary
+    std::string boundary;
+    size_t pos = content_type_header.find("boundary=");
+    if (pos == std::string::npos)
+        return parts; //@NOTE if we don't find a boundary, we treat the multipart body as a raw body
+    boundary = "--" + content_type_header.substr(pos + 9);
+
+    // strip whitespaces/quotes
+    boundary = boundary.substr(0, boundary.find_first_of(" \t\r\n\""));
+
+    // find first boundary
+    pos = body.find(boundary);
+    if (pos == std::string::npos)
+        return parts;
+    pos += boundary.size() + 2; // skip past boundary + \r\n
+
+    // iterate over parts
+    while (pos < body.size())
+    {
+        // check for final boundary "--boundary--"
+        if (body.substr(pos, 2) == "--")
+            break;
+
+        // split headers and body on first \r\n\r\n
+        size_t header_end = body.find("\r\n\r\n", pos);
+        if (header_end == std::string::npos)
+            break;
+
+        std::string raw_headers = body.substr(pos, header_end - pos);
+        pos = header_end + 4; // skip \r\n\r\n
+
+        // find next boundary to know where body ends
+        size_t next_boundary = body.find("\r\n" + boundary, pos);
+        if (next_boundary == std::string::npos)
+            break;
+
+        std::string part_body = body.substr(pos, next_boundary - pos);
+        pos = next_boundary + 2 + boundary.size(); // skip \r\n + boundary
+
+        // skip \r\n after boundary (or -- for final boundary)
+        if (pos + 2 <= body.size())
+            pos += 2;
+
+        // parse part headers
+        MultiPartBody part;
+        part.body = part_body;
+        parse_part_headers(raw_headers, part);
+        parts.push_back(part);
+    }
+
+    return parts;
+}
+
+void RequestParser::parse_part_headers(const std::string& raw_headers, MultiPartBody& part)
+{
+    std::istringstream stream(raw_headers);
+    std::string line;
+
+    while (std::getline(stream, line))
+    {
+        if (!line.empty() && line[line.size() - 1] == '\r')
+            line.erase(line.size() - 1);
+
+        if (line.find("Content-Disposition:") == 0)
+        {
+            // extract subfields
+            // name
+            size_t pos = line.find("name=\"");
+            if (pos != std::string::npos)
+            {
+                pos += 6;
+                part.name = line.substr(pos, line.find("\"", pos) - pos);
+            }
+            // filename
+            pos = line.find("filename=\"");
+            if (pos != std::string::npos)
+            {
+                pos += 10;
+                part.filename = line.substr(pos, line.find("\"", pos) - pos);
+            }
+        }
+        else if (line.find("Content-Type:") == 0)
+        {
+            part.content_type = line.substr(14);
+        }
+    }
+}
+
+bool MultiPartBody::operator==(const MultiPartBody& other) const
+{
+    // clang-format off
+        return (
+		body == other.body &&
+		content_type == other.content_type &&
+		name == other.name &&
+		filename == other.filename
+	       );
     // clang-format on
 }

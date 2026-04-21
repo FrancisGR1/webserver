@@ -6,10 +6,8 @@
 #include "http/StatusCode.hpp"
 #include "http/request/Request.hpp"
 
-//@TODO: impl
-Request::Request()
-{
-}
+// @TODO implementar
+Request::Request() {};
 
 Request::Request(
     const std::string& method,
@@ -18,6 +16,7 @@ Request::Request(
     const std::string& protocol_version,
     const std::map<std::string, std::string>& headers,
     const std::string& body,
+    const std::vector<MultiPartBody> multi_part_body,
     StatusCode::Code c)
     : m_method(method)
     , m_target_path(target_path)
@@ -25,6 +24,7 @@ Request::Request(
     , m_protocol_version(protocol_version)
     , m_headers(headers)
     , m_body(body)
+    , m_multipart_body(multi_part_body)
     , m_status_code(c)
 {
 }
@@ -78,7 +78,7 @@ bool Request::operator==(const Request& other)
 		m_target_query == other.m_target_query &&
 		m_protocol_version == other.m_protocol_version &&
 		m_headers == other.m_headers &&
-		m_body == other.m_body &&
+		(!m_multipart_body.empty() ? (m_multipart_body == other.m_multipart_body) : (m_body == other.m_body)) &&
 		m_status_code == other.m_status_code
 	       );
     // clang-format on
