@@ -1,6 +1,7 @@
 #include <cstring>
 
 #include "core/Logger.hpp"
+#include "core/Timer.hpp"
 #include "core/constants.hpp"
 #include "core/contracts.hpp"
 #include "http/processor/RequestProcessor.hpp"
@@ -45,6 +46,11 @@ bool Connection::done() const
     return m_state == Done;
 }
 
+std::time_t Connection::last_activity()
+{
+    return m_last_activity;
+}
+
 void Connection::read()
 {
     REQUIRE(m_state == Reading);
@@ -63,16 +69,20 @@ void Connection::read()
     if (bytes == -1)
     {
         Logger::warn("Connnection: recv() returned -1: errno says: '%s'", strerror(errno));
-        // @TODO substituir por timeout, se timeout = yes, então done, caso contrário não
-        // REMOVER!
+
         if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
             // Trace instead of Warn: this is a normal part of non-blocking I/O
-            Logger::trace("Connection: recv() EAGAIN on fd %d (waiting for data)", m_socket.fd());
-            return;
+            Logger::trace(
+                "Connection: recv() error on fd %d (waiting for data): error says: '%s'",
+                m_socket.fd(),
+                strerror(errno));
         }
-        Logger::error("Connection: fatal recv() error on fd %d: %s", m_socket.fd(), strerror(errno));
-        next_state(Done); // Only set Done on ACTUAL errors
+        else
+        {
+            Logger::error("Connection: recv() error on fd %d: '%s'", m_socket.fd(), strerror(errno));
+        }
+
         return;
     }
 
@@ -113,6 +123,7 @@ void Connection::read()
             Logger::trace("Connection: on fast path");
         }
     }
+    update_activity();
 }
 
 void Connection::process_request()
@@ -131,6 +142,7 @@ void Connection::process_request()
         register_action(EventAction::WantWrite);
         next_state(Writing);
     }
+    update_activity();
 }
 
 void Connection::write()
@@ -151,12 +163,19 @@ void Connection::write()
         register_action(EventAction::WantClose);
         next_state(Done);
     }
+    update_activity();
 }
 
-//@TODO implementar
-void Connection::close_with(StatusCode::Code code)
+void Connection::send_error(StatusCode::Code code)
 {
-    (void)code;
+    Response res(code);
+    res.send(m_socket.fd());
+    next_state(Done);
+}
+
+ConnectionState Connection::state() const
+{
+    return m_state;
 }
 
 const ServiceConfig& Connection::service() const
@@ -170,7 +189,7 @@ const Socket& Connection::socket() const
 }
 
 // utils
-void Connection::next_state(State state)
+void Connection::next_state(ConnectionState state)
 {
     m_state = state;
 }
@@ -183,4 +202,9 @@ void Connection::register_event(EventAction event)
 void Connection::register_action(EventAction::Action action)
 {
     m_events.push_back(EventAction(action, EventAction::ClientSocket, m_socket.fd(), this));
+}
+
+void Connection::update_activity(void)
+{
+    m_last_activity = Timer::now();
 }

@@ -18,7 +18,7 @@ const size_t max_connections = 950;
 
 // - timeouts
 // -- connection
-// const Seconds idle_connection_timeout = 30; @TODO: implementar Timer na ligacao
+const Seconds idle_connection_timeout = 30;
 // -- cgi
 const Seconds cgi_timeout = 60.0;
 const size_t cgi_max_failed_reads = 5;

@@ -3,11 +3,24 @@
 
 #include <ctime>
 
+#include "core/Timer.hpp"
 #include "http/processor/RequestProcessor.hpp"
 #include "http/request/RequestParser.hpp"
 #include "http/response/Response.hpp"
 #include "server/EventAction.hpp"
 #include "server/Socket.hpp"
+
+// connection state machine
+struct ConnectionState
+{
+    enum Enum
+    {
+        Reading = 0,
+        ProcessingRequest,
+        Writing,
+        Done
+    };
+};
 
 //@TODO adicionar um unique id
 class Connection
@@ -21,32 +34,23 @@ class Connection
     std::vector<EventAction> give_events();
     int fd() const;
     bool done() const;
-    //@TODO implementar
-    bool is_keep_alive();
     std::time_t last_activity();
+    void send_error(StatusCode::Code code);
 
     // states
     void read();
     void process_request();
     void write();
-    void close_with(StatusCode::Code code);
 
     // getters
+    ConnectionState::Enum state() const;
     const ServiceConfig& service() const;
     const Socket& socket() const;
 
   private:
-    // connection state machine
-    enum State
-    {
-        Reading = 0,
-        ProcessingRequest,
-        Writing,
-        Done
-    };
-
     // saves current work state
-    State m_state;
+    ConnectionState m_state;
+    Seconds m_last_activity;
 
     // context
     const ServiceConfig& m_service;
@@ -61,9 +65,10 @@ class Connection
     Response m_response;
 
     // utils
-    void next_state(State state);
+    void next_state(ConnectionState state);
     void register_event(EventAction event);
     void register_action(EventAction::Action action);
+    void update_activity(void);
 
     // illegal - copy semantics
     // every connection must be a reference/pointer

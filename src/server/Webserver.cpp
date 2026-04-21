@@ -153,7 +153,7 @@ void Webserver::run()
 
             m_events.apply(conn->give_events());
         }
-        //@TODO: m_connection_pool.close_idles();
+        m_connection_pool.remove_idles(); //@TODO isto não vai remover os fds
     }
 
     Logger::info("Webserver: stop running");

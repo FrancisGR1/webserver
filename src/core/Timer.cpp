@@ -2,6 +2,11 @@
 
 #include "Timer.hpp"
 
+std::time_t Timer::now(void)
+{
+    return std::time(NULL);
+}
+
 Timer::Timer()
     : m_limit(0)
     , m_start(0)
@@ -12,7 +17,7 @@ Timer::Timer()
 void Timer::start()
 {
     m_counting_down = true;
-    m_start = std::time(NULL);
+    m_start = now();
 }
 
 void Timer::stop()
@@ -27,8 +32,7 @@ void Timer::set(Seconds sec)
 
 std::time_t Timer::passed() const
 {
-    std::time_t now = std::time(NULL);
-    return std::difftime(now, m_start) >= m_limit;
+    return std::difftime(now(), m_start) >= m_limit;
 }
 
 bool Timer::expired() const
@@ -36,8 +40,7 @@ bool Timer::expired() const
     if (m_counting_down == false)
         return false;
 
-    std::time_t now = std::time(NULL);
-    return std::difftime(now, m_start) >= m_limit;
+    return std::difftime(now(), m_start) >= m_limit;
 }
 
 void Timer::reset()

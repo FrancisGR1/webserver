@@ -25,7 +25,7 @@ extern const size_t max_connections; // check ulimit -n "open connections" - sho
                                      // e.g.: 1024 - 50 ~= 950
 // - timeouts
 // -- connection
-extern const Seconds connection_timeout;
+extern const Seconds idle_connection_timeout;
 // -- cgi
 extern const Seconds cgi_timeout;
 extern const size_t cgi_max_failed_reads;

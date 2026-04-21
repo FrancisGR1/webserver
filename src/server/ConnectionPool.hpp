@@ -12,6 +12,7 @@ class ConnectionPool
 
     // api
     EventAction make(const Socket* server_socket, const ServiceConfig& service);
+    void remove_idles(void);
     void remove(Connection& conn);
     Connection* contains(const Connection* conn) const;
     Connection* contains(int conn_socket_fd) const;

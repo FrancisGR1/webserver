@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 
 #include "core/Logger.hpp"
+#include "core/constants.hpp"
 #include "core/contracts.hpp"
 #include "core/utils.hpp"
 #include "server/Connection.hpp"
@@ -61,6 +62,31 @@ EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfi
 
     INVARIANT(false, "No slot available found for new connection!");
     return EventAction(EventAction::WantClose, EventAction::ServerSocket, -1, NULL); // unreachable
+}
+
+void ConnectionPool::remove_idles(void)
+{
+    std::time_t now = Timer::now();
+
+    for (size_t i = 0; i < m_pool.size(); ++i)
+    {
+        if (!m_pool[i])
+            continue;
+        if ((now - m_pool[i]->last_activity()) > constants::idle_connection_timeout)
+        {
+            if (m_pool[i]->state() == ConnectionState::Reading)
+                m_pool[i]->send_error(StatusCode::RequestTimeout);
+            else if (m_pool[i]->state() == ConnectionState::ProcessingRequest)
+                m_pool[i]->send_error(StatusCode::ServiceUnavailable);
+            else
+            {
+                // send nothing
+            };
+
+            delete m_pool[i];
+            m_pool[i] = NULL;
+        }
+    }
 }
 
 void ConnectionPool::remove(Connection& conn)

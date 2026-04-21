@@ -9,6 +9,8 @@ typedef int Milliseconds;
 class Timer
 {
   public:
+    static std::time_t now(void);
+
     Timer();
     void start();
     void stop();
