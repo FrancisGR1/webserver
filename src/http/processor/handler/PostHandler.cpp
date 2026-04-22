@@ -16,9 +16,9 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
     : m_request(request)
     , m_ctx(ctx)
     , m_done(false)
-    , m_upload_path("")
     , m_post_fd(-1)
     , m_offset(0)
+    , m_current_part(0)
 {
     Logger::trace("PostHandler: constructor");
 }
@@ -67,70 +67,10 @@ void PostHandler::process()
     }
     else if (config.allows_upload())
     {
-        if (m_post_fd == -1) // set upload dir
-        {
-            Path upload_dir = m_ctx.config().path();
-            expect_uploadable(m_request, config, upload_dir, m_ctx);
-
-            // create a name for the new file to be uploaded
-            m_upload_filename = make_file_name();
-            // make upload location
-            m_upload_uri = make_uri();
-            // make upload real path
-            m_upload_path = utils::join_paths(upload_dir.raw, m_upload_filename);
-            // open fd and store in events
-            m_post_fd = open(m_upload_path.raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            if (m_post_fd <= 2)
-            {
-                http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
-            }
-
-            Logger::debug("PostHandler: write to fd=%d '%s'", m_post_fd, m_upload_path.raw.c_str());
-        }
-
-        if (!m_done)
-        {
-            size_t to_write = (m_request.body().size() - m_offset) > constants::write_chunk_size
-                                  ? constants::write_chunk_size
-                                  : m_request.body().size() - m_offset;
-            ssize_t written = ::write(m_post_fd, m_request.body().c_str() + m_offset, to_write);
-            if (written >= 0)
-                m_offset += written;
-            //@TODO apanhar erro em caso de -1
-            if (m_offset == static_cast<ssize_t>(m_request.body().size()))
-                m_done = true;
-
-            Logger::trace("PostHandler: write %zu(%zu)", written, m_offset);
-        }
-
-        if (m_done)
-        {
-            Logger::trace("PostHandler: finished writing fd=%d", m_post_fd);
-
-            // status
-            m_response.set_status(StatusCode::Created);
-
-            // body
-            std::string json = "{"
-                               "\"status\": \"success\","
-                               "\"filename\": \"" +
-                               m_upload_uri +
-                               "\","
-                               "\"size\": " +
-                               utils::to_string(m_offset) + "}";
-            m_response.set_body_as_str(json);
-
-            // headers
-            m_response.set_header("Location", m_upload_uri);
-            m_response.set_header("Connection", "close"); // @NOTE: HTTP1.0 closes by default;
-            m_response.set_header("Date", utils::http_date());
-            m_response.set_header("Content-Type", "application/json");
-            m_response.set_header("Content-Length", utils::to_string(json.size()));
-
-            // close posted file
-            ::close(m_post_fd);
-            m_post_fd = -1;
-        }
+        if (m_request.multipart_body().empty())
+            upload_request_body();
+        else
+            upload_multipart_body();
     }
     else // can't upload
     {
@@ -153,9 +93,9 @@ std::vector<EventAction> PostHandler::give_events()
     return std::vector<EventAction>();
 }
 
-const Path& PostHandler::upload_path() const
+const std::vector<Path>& PostHandler::upload_paths() const
 {
-    return m_upload_path;
+    return m_upload_paths;
 }
 
 std::string PostHandler::make_uri() const
@@ -224,4 +164,136 @@ std::string PostHandler::make_file_name() const
 
     Logger::debug("PostHandler: file name: '%s'", file_name.c_str());
     return file_name;
+}
+
+void PostHandler::upload_request_body()
+{
+    if (m_post_fd == -1) // set upload dir
+    {
+        Path upload_dir = m_ctx.config().path();
+        expect_uploadable(m_request, m_ctx.config(), upload_dir, m_ctx);
+
+        // create a name for the new file to be uploaded
+        m_upload_filename = make_file_name();
+        // make upload location
+        m_upload_uri = make_uri();
+        // make upload real path
+        m_upload_paths.push_back(utils::join_paths(upload_dir.raw, m_upload_filename));
+        // open fd and store in events
+        m_post_fd = open(m_upload_paths[0].c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (m_post_fd <= 2)
+        {
+            http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
+        }
+
+        Logger::debug("PostHandler: write to fd=%d '%s'", m_post_fd, m_upload_paths.back().c_str());
+    }
+
+    if (!m_done)
+    {
+        size_t to_write = (m_request.body().size() - m_offset) > constants::write_chunk_size
+                              ? constants::write_chunk_size
+                              : m_request.body().size() - m_offset;
+        ssize_t written = ::write(m_post_fd, m_request.body().c_str() + m_offset, to_write);
+        if (written >= 0)
+            m_offset += written;
+        //@TODO apanhar erro em caso de -1
+        if (m_offset == static_cast<ssize_t>(m_request.body().size()))
+            m_done = true;
+
+        Logger::trace("PostHandler: write %zu(%zu)", written, m_offset);
+    }
+
+    if (m_done)
+    {
+        Logger::trace("PostHandler: finished writing fd=%d", m_post_fd);
+
+        // status
+        m_response.set_status(StatusCode::Created);
+
+        // body
+        std::string json = "{"
+                           "\"status\": \"success\","
+                           "\"filename\": \"" +
+                           m_upload_uri +
+                           "\","
+                           "\"size\": " +
+                           utils::to_string(m_offset) + "}";
+        m_response.set_body_as_str(json);
+
+        // headers
+        m_response.set_header("Location", m_upload_uri);
+        m_response.set_header("Connection", "close"); // @NOTE: HTTP1.0 closes by default;
+        m_response.set_header("Date", utils::http_date());
+        m_response.set_header("Content-Type", "application/json");
+        m_response.set_header("Content-Length", utils::to_string(json.size()));
+
+        // close posted file
+        ::close(m_post_fd);
+        m_post_fd = -1;
+    }
+}
+
+void PostHandler::upload_multipart_body()
+{
+    const std::vector<MultiPartBody>& parts = m_request.multipart_body();
+
+    while (m_current_part < parts.size())
+    {
+        const MultiPartBody& part = parts[m_current_part];
+
+        if (m_post_fd == -1)
+        {
+            Path upload_dir = m_ctx.config().path();
+            expect_uploadable(m_request, m_ctx.config(), upload_dir, m_ctx);
+
+            // use part filename if available, else generate one
+            if (!part.filename.empty())
+                m_upload_filename = part.filename;
+            else
+                m_upload_filename = part.name + ".data";
+
+            m_upload_uri = make_uri();
+            m_upload_paths.push_back(utils::join_paths(upload_dir.raw, m_upload_filename));
+            m_post_fd = open(m_upload_paths.back().raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            if (m_post_fd <= 2)
+                http_utils::throw_internal_server_error_failed_upload(m_upload_paths[m_current_part], m_ctx);
+
+            m_offset = 0;
+            Logger::debug("PostHandler: multipart write to fd=%d '%s'", m_post_fd, m_upload_paths.back().raw.c_str());
+        }
+
+        // write chunk
+        size_t to_write = (part.body.size() - m_offset) > constants::write_chunk_size ? constants::write_chunk_size
+                                                                                      : part.body.size() - m_offset;
+        ssize_t written = ::write(m_post_fd, part.body.c_str() + m_offset, to_write);
+        if (written >= 0)
+            m_offset += written;
+
+        if (m_offset == static_cast<ssize_t>(part.body.size()))
+        {
+            // this part is overr
+            ::close(m_post_fd);
+            m_post_fd = -1;
+            m_offset = 0;
+            m_current_part++;
+        }
+        else
+        {
+            // not done yet, come back next process() call
+            return;
+        }
+    }
+
+    // all parts written
+    m_done = true;
+
+    m_response.set_status(StatusCode::Created);
+    m_response.set_header("Connection", "close");
+    m_response.set_header("Date", utils::http_date());
+
+    std::string json = "{\"status\": \"success\", \"uploaded\": " + utils::to_string(parts.size()) + "}";
+    m_response.set_body_as_str(json);
+    m_response.set_header("Content-Type", "application/json");
+    m_response.set_header("Content-Length", utils::to_string(json.size()));
 }

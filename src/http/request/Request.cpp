@@ -59,6 +59,11 @@ const std::string& Request::body() const
     return m_body;
 }
 
+const std::vector<MultiPartBody>& Request::multipart_body() const
+{
+    return m_multipart_body;
+}
+
 bool Request::bad_request() const
 {
     return m_status_code != StatusCode::Ok;

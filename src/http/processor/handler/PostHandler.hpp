@@ -21,7 +21,7 @@ class PostHandler : public IRequestHandler
     std::vector<EventAction> give_events();
 
     // getters
-    const Path& upload_path() const;
+    const std::vector<Path>& upload_paths() const;
 
   private:
     // dependencies
@@ -33,15 +33,18 @@ class PostHandler : public IRequestHandler
     Response m_response;
 
     // upload tracking
-    std::string m_upload_filename; // name
-    std::string m_upload_uri;      // location + name
-    Path m_upload_path;            // full path
-    int m_post_fd;                 // fd of posted file - owns
-    ssize_t m_offset;              // current write position
+    std::string m_upload_filename;    // name
+    std::string m_upload_uri;         // location + name
+    std::vector<Path> m_upload_paths; // full path
+    int m_post_fd;                    // fd of posted file - owns
+    ssize_t m_offset;                 // current write position
+    size_t m_current_part;            // current multipart part
 
     // utils
     std::string make_uri() const;
     std::string make_file_name() const;
+    void upload_request_body();
+    void upload_multipart_body();
 };
 
 #endif // POSTHANDLER_HPP

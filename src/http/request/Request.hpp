@@ -30,6 +30,7 @@ class Request
     const std::string& protocol_version() const;
     const std::map<std::string, std::string>& headers() const;
     const std::string& body() const;
+    const std::vector<MultiPartBody>& multipart_body() const;
     bool bad_request() const;
     StatusCode::Code status_code() const;
 
