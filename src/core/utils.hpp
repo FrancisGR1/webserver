@@ -16,6 +16,7 @@ long long str_tohexadecimal(const std::string& str);
 std::string file_to_str(int fd);
 std::string file_to_str(const std::string file_path);
 std::string file_to_str(const char* file_path);
+void str_to_file(const char* file_path, const std::string& content);
 std::string join_paths(const std::string& left, const std::string& right);
 std::string fmt(const char* fmt, ...);
 std::string map_to_str(std::map<std::string, std::string> headers);

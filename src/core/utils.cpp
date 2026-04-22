@@ -121,6 +121,15 @@ std::string file_to_str(const char* file_path)
     return buffer.str();
 }
 
+void str_to_file(const char* file_path, const std::string& content)
+{
+    std::ofstream file(file_path, std::ios::binary);
+    if (!file)
+        throw std::runtime_error("Cannot open: " + std::string(file_path));
+    file.write(content.c_str(), content.size());
+    file.close();
+}
+
 std::string join_paths(const std::string& left, const std::string& right)
 {
     if (left.empty())
