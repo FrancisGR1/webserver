@@ -11,7 +11,7 @@
 #include "server/Webserver.hpp"
 
 Connection::Connection(int client_fd, const Listener& listener, const ServiceConfig& service)
-    : m_state(Reading)
+    : m_state(ConnectionState::Reading)
     , m_service(service)
     , m_socket(client_fd, listener)
     , m_processor(this, service)
@@ -43,7 +43,7 @@ int Connection::fd() const
 
 bool Connection::done() const
 {
-    return m_state == Done;
+    return m_state == ConnectionState::Done;
 }
 
 std::time_t Connection::last_activity()
@@ -53,7 +53,7 @@ std::time_t Connection::last_activity()
 
 void Connection::read()
 {
-    REQUIRE(m_state == Reading);
+    REQUIRE(m_state == ConnectionState::Reading);
 
     Logger::trace("Connection: state - Reading");
 
@@ -63,7 +63,7 @@ void Connection::read()
     if (bytes == 0)
     {
         Logger::info("Connection: Client closed connection on fd %d", m_socket.fd());
-        next_state(Done);
+        next_state(ConnectionState::Done);
         return;
     }
     if (bytes == -1)
@@ -97,7 +97,7 @@ void Connection::read()
         const Request& request_ = m_parser.get();
         Logger::debug_obj(request_, "Connection: Request: ");
         m_processor.set(request_);
-        next_state(ProcessingRequest);
+        next_state(ConnectionState::ProcessingRequest);
 
         // try fast path -> process immediately
         process_request();
@@ -128,7 +128,7 @@ void Connection::read()
 
 void Connection::process_request()
 {
-    REQUIRE(m_state == ProcessingRequest);
+    REQUIRE(m_state == ConnectionState::ProcessingRequest);
 
     Logger::trace("Connection: state - Processing Request");
 
@@ -140,14 +140,14 @@ void Connection::process_request()
         m_response = m_processor.response();
         Logger::debug_obj(m_response, "Connection: Response:\n");
         register_action(EventAction::WantWrite);
-        next_state(Writing);
+        next_state(ConnectionState::Writing);
     }
     update_activity();
 }
 
 void Connection::write()
 {
-    REQUIRE(m_state == Writing);
+    REQUIRE(m_state == ConnectionState::Writing);
 
     Logger::trace("Connection: state - Writing");
 
@@ -161,7 +161,7 @@ void Connection::write()
 
         // close client socket by DEFAULT (http 1.0)
         register_action(EventAction::WantClose);
-        next_state(Done);
+        next_state(ConnectionState::Done);
     }
     update_activity();
 }
@@ -170,10 +170,10 @@ void Connection::send_error(StatusCode::Code code)
 {
     Response res(code);
     res.send(m_socket.fd());
-    next_state(Done);
+    next_state(ConnectionState::Done);
 }
 
-ConnectionState Connection::state() const
+ConnectionState::Enum Connection::state() const
 {
     return m_state;
 }
@@ -189,7 +189,7 @@ const Socket& Connection::socket() const
 }
 
 // utils
-void Connection::next_state(ConnectionState state)
+void Connection::next_state(ConnectionState::Enum state)
 {
     m_state = state;
 }

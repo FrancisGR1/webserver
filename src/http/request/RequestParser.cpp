@@ -9,7 +9,7 @@
 
 RequestParser::RequestParser()
     : m_status_code(StatusCode::BadRequest)
-    , m_state(Parser::StartLineMethod)
+    , m_state(ParserState::StartLineMethod)
     , m_idx(0)
     , m_ch('\0')
     , m_content_length(0)
@@ -38,10 +38,10 @@ void RequestParser::feed(char c)
 
 bool RequestParser::done() const
 {
-    return m_state == Parser::Done;
+    return m_state == ParserState::Done;
 }
 
-Parser::State RequestParser::state() const
+ParserState::Enum RequestParser::state() const
 {
     return m_state;
 }
@@ -64,7 +64,7 @@ Request RequestParser::get() const
 
 bool RequestParser::error() const
 {
-    return (m_state == Parser::Error);
+    return (m_state == ParserState::Error);
 }
 
 void RequestParser::clear()
@@ -77,7 +77,7 @@ void RequestParser::clear()
     m_body.clear();
     m_status_code = StatusCode::BadRequest;
 
-    m_state = Parser::StartLineMethod;
+    m_state = ParserState::StartLineMethod;
     m_idx = 0;
     m_ch = '\0';
 
@@ -95,7 +95,7 @@ void RequestParser::clear()
 // private
 void RequestParser::parse()
 {
-    typedef Parser S; // S = state
+    typedef ParserState S; // S = state
     for (; m_state != S::Error && m_state != S::Done && m_idx < m_buffer.size(); m_idx++)
     {
         m_ch = m_buffer.at(m_idx);

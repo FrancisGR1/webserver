@@ -9,9 +9,9 @@
 
 class Request;
 
-struct Parser
+struct ParserState
 {
-    enum State
+    enum Enum
     {
         // === Start line ===
         StartLineMethod,
@@ -58,7 +58,7 @@ class RequestParser
     void feed(const std::string& raw);
     void feed(char c);
     bool done() const;
-    Parser::State state() const;
+    ParserState::Enum state() const;
     Request get() const;
     bool error() const;
     void clear();
@@ -78,7 +78,7 @@ class RequestParser
     std::vector<MultiPartBody> m_multipart_body;
 
     // parsing state
-    Parser::State m_state;
+    ParserState::Enum m_state;
     size_t m_idx;
     unsigned char m_ch;
 

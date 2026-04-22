@@ -49,7 +49,7 @@ class Connection
 
   private:
     // saves current work state
-    ConnectionState m_state;
+    ConnectionState::Enum m_state;
     Seconds m_last_activity;
 
     // context
@@ -65,7 +65,7 @@ class Connection
     Response m_response;
 
     // utils
-    void next_state(ConnectionState state);
+    void next_state(ConnectionState::Enum state);
     void register_event(EventAction event);
     void register_action(EventAction::Action action);
     void update_activity(void);
