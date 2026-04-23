@@ -38,6 +38,8 @@ struct EventAction
     std::string str() const;
 };
 
+typedef EventAction EA;
+
 // overload
 bool operator==(const EventAction& event_action, const epoll_event& epoll_event);
 

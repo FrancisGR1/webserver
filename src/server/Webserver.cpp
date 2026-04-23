@@ -140,7 +140,7 @@ void Webserver::run()
 
                     break;
                 }
-                case EventAction::WantClose:
+                case EventAction::WantClose: //@NOTE rare path, only happens if something went wrong with the fds
                 {
                     Logger::trace("Webserver: Connection wants to be closed");
 
@@ -151,12 +151,13 @@ void Webserver::run()
                 }
             }
 
-            std::vector<EventAction> pending = conn->give_events();
-            m_events.apply(pending);
-            m_connection_pool.remove(pending);
+            m_events.apply(conn->give_events());
+
+            if (conn->done())
+                m_connection_pool.remove(*conn);
         }
-        //@TODO @WARN tem de remover os fds dos eventos associados
-        m_connection_pool.remove_idles();
+
+        m_connection_pool.remove_idles(m_events);
     }
 
     Logger::info("Webserver: stop running");

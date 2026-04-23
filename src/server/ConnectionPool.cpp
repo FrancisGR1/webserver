@@ -8,6 +8,7 @@
 #include "server/Connection.hpp"
 #include "server/ConnectionPool.hpp"
 #include "server/EventAction.hpp"
+#include "server/EventManager.hpp"
 
 // constructor
 ConnectionPool::ConnectionPool(size_t max_connections)
@@ -65,7 +66,7 @@ EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfi
     return EventAction(EventAction::WantClose, EventAction::ServerSocket, -1, NULL); // unreachable
 }
 
-void ConnectionPool::remove_idles(void)
+void ConnectionPool::remove_idles(EventManager& event_manager)
 {
     std::time_t now = Timer::now();
 
@@ -86,6 +87,8 @@ void ConnectionPool::remove_idles(void)
                 // send nothing
             };
 
+            EventAction ea(EA::WantClose, EA::ClientSocket, m_pool[i]->fd(), m_pool[i]);
+            event_manager.apply(ea);
             delete m_pool[i];
             m_pool[i] = NULL;
         }
