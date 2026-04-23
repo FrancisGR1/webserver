@@ -75,7 +75,7 @@ void ConnectionPool::remove_idles(void)
             continue;
         if ((now - m_pool[i]->last_activity()) > constants::idle_connection_timeout)
         {
-            Logger::debug("ConnectionPool: removing idle connection: '%lld'", m_pool[i]);
+            Logger::debug("ConnectionPool: removing idle connection: '%p'", (void*)m_pool[i]);
 
             if (m_pool[i]->state() == ConnectionState::Reading)
                 m_pool[i]->send_error(StatusCode::RequestTimeout);
@@ -105,6 +105,19 @@ void ConnectionPool::remove(Connection& conn)
         }
     }
     Logger::warn("ConnectionPool: Attempted to remove connection not in pool");
+}
+
+void ConnectionPool::remove(std::vector<EventAction>& conns_to_remove)
+{
+    for (size_t i = 0; i < conns_to_remove.size(); ++i)
+    {
+        EventAction& event = conns_to_remove[i];
+        if (event.action == EventAction::WantClose)
+        {
+            INVARIANT(event.conn != NULL, "Connection must always be non null");
+            remove(*event.conn);
+        }
+    }
 }
 
 Connection* ConnectionPool::contains(const Connection* conn) const

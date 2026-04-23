@@ -151,7 +151,9 @@ void Webserver::run()
                 }
             }
 
-            m_events.apply(conn->give_events());
+            std::vector<EventAction> pending = conn->give_events();
+            m_events.apply(pending);
+            m_connection_pool.remove(pending);
         }
         //@TODO @WARN tem de remover os fds dos eventos associados
         m_connection_pool.remove_idles();

@@ -14,6 +14,7 @@ class ConnectionPool
     EventAction make(const Socket* server_socket, const ServiceConfig& service);
     void remove_idles(void);
     void remove(Connection& conn);
+    void remove(std::vector<EventAction>& conns_to_remove);
     Connection* contains(const Connection* conn) const;
     Connection* contains(int conn_socket_fd) const;
     bool is_full() const;

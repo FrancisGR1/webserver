@@ -160,7 +160,7 @@ void Connection::write()
         Logger::debug_obj(m_response, "Connection: Response:\n");
         Logger::info("Connection: state - done!");
 
-        // close client socket by DEFAULT (http 1.0)
+        // close client socket by DEFAULT (HTTP 1.0)
         register_action(EventAction::WantClose);
         next_state(ConnectionState::Done);
     }
@@ -197,12 +197,14 @@ void Connection::next_state(ConnectionState::Enum state)
 
 void Connection::register_event(EventAction event)
 {
+    Logger::trace("Connection: register event: '%s'", event.str().c_str());
     m_events.push_back(event);
 }
 
 void Connection::register_action(EventAction::Action action)
 {
-    m_events.push_back(EventAction(action, EventAction::ClientSocket, m_socket.fd(), this));
+    EventAction event(action, EventAction::ClientSocket, m_socket.fd(), this);
+    register_event(event);
 }
 
 void Connection::update_activity(void)

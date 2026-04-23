@@ -1,6 +1,8 @@
 #ifndef EVENT_ACTION_HPP
 #define EVENT_ACTION_HPP
 
+#include <string>
+
 #include <stdint.h>
 #include <sys/epoll.h>
 
@@ -32,6 +34,8 @@ struct EventAction
     Type type;
     int fd;
     Connection* conn;
+
+    std::string str() const;
 };
 
 // overload

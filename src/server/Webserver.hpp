@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "config/Config.hpp"
+#include "core/ResourceLocker.hpp"
 #include "server/ConnectionPool.hpp"
 #include "server/EventManager.hpp"
 #include "server/Socket.hpp"

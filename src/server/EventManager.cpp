@@ -143,8 +143,8 @@ void EventManager::remove(const EventAction& ea)
         if (ea.fd == m_events[i]->fd)
         {
             Logger::trace(
-                "EventManager: removing '%ld'",
-                m_events[i]->conn); //@TODO colocar print de event action e assinatura de connection
+                "EventManager: removing connection fd: '%p'",
+                (void*)m_events[i]->conn); //@TODO colocar print de event action e assinatura de connection
 
             ::close(m_events[i]->fd);
             delete m_events[i];
@@ -155,6 +155,7 @@ void EventManager::remove(const EventAction& ea)
     }
 
     Logger::warn("EventManager: didn't find fd='%d' to remove", ea.fd);
+    return;
 }
 
 EventAction* EventManager::add(const EventAction& ea)
@@ -186,8 +187,8 @@ EventAction* EventManager::find(EventAction*& ee) const
         {
             INVARIANT(ee == m_events[i], "EventAction must always be equal to epoll_event!");
             Logger::trace(
-                "EventManager: found connection: '%ld'",
-                m_events[i]); //@TODO assinatura de connection e print event action
+                "EventManager: found connection: '%p'",
+                (void*)m_events[i]); //@TODO assinatura de connection e print event action
             return m_events[i];
         }
     }
@@ -204,8 +205,8 @@ EventAction* EventManager::exists(int event_fd) const
         if (event_fd == m_events[i]->fd)
         {
             Logger::trace(
-                "EventManager: found connection: '%ld'",
-                m_events[i]); //@TODO assinatura de connection e print event action
+                "EventManager: found connection: '%p'",
+                (void*)m_events[i]); //@TODO assinatura de connection e print event action
             return m_events[i];
         }
     }
