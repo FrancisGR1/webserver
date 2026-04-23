@@ -3,7 +3,7 @@
 
 #include <fcntl.h>
 #include <netdb.h>
-#include <netinet/in.h> /* sockaddr_in */
+#include <netinet/in.h>
 #include <poll.h>
 #include <sys/epoll.h>
 #include <unistd.h>

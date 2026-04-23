@@ -28,7 +28,7 @@ EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfi
 {
     REQUIRE(server_socket != NULL, "Socket is Null!");
 
-    Logger::trace("ConnectionPool: make client socket from: %d", server_socket->fd());
+    Logger::trace("ConnectionPool: make client socket from: fd='%d'", server_socket->fd());
 
     if (is_full())
         throw std::runtime_error(utils::fmt("Connection pool limit reached: %zu", m_pool.size()));
@@ -55,6 +55,7 @@ EventAction ConnectionPool::make(const Socket* server_socket, const ServiceConfi
     {
         if (m_pool[i] == NULL)
         {
+            //@NOTE server_socket listener goes into client socket listener to preserve the info for the cgi later
             m_pool[i] = new Connection(client_fd, server_socket->listener(), service);
             return EventAction(EventAction::WantRead, EventAction::ClientSocket, m_pool[i]->socket().fd(), m_pool[i]);
         }
@@ -74,6 +75,8 @@ void ConnectionPool::remove_idles(void)
             continue;
         if ((now - m_pool[i]->last_activity()) > constants::idle_connection_timeout)
         {
+            Logger::debug("ConnectionPool: removing idle connection: '%lld'", m_pool[i]);
+
             if (m_pool[i]->state() == ConnectionState::Reading)
                 m_pool[i]->send_error(StatusCode::RequestTimeout);
             else if (m_pool[i]->state() == ConnectionState::ProcessingRequest)

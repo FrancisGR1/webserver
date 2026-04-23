@@ -12,6 +12,7 @@
 
 Connection::Connection(int client_fd, const Listener& listener, const ServiceConfig& service)
     : m_state(ConnectionState::Reading)
+    , m_last_activity(Timer::now())
     , m_service(service)
     , m_socket(client_fd, listener)
     , m_processor(this, service)
