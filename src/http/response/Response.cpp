@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "config/types/Route.hpp"
+#include "core/ResourceLocker.hpp"
 #include "core/constants.hpp"
 #include "core/contracts.hpp"
 #include "core/utils.hpp"
@@ -79,6 +80,9 @@ Response& Response::operator=(const Response& other)
 Response::~Response()
 {
     Logger::trace("Response: destructor");
+
+    if (m_body_path.exists)
+        ResourceLocker::unlock(m_body_path);
 }
 
 ssize_t Response::send(int fd)
@@ -255,13 +259,14 @@ void Response::set_body_as_fd(int fd)
     m_body_fd = fd;
 }
 
-int Response::set_body_as_path(const Path& path)
+int Response::set_body_as_path(Path& path)
 {
     REQUIRE(path.exists == true);
 
     Logger::trace("Response: set body path: '%s'", path.raw.c_str());
-    m_body_fd = open(path.raw.c_str(), O_RDONLY);
+    m_body_fd = path.open(O_RDONLY);
     fcntl(m_body_fd, F_SETFL, O_NONBLOCK);
+    m_body_path = path;
 
     return m_body_fd;
 }

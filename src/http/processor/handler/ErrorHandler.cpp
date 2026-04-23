@@ -54,11 +54,13 @@ void ErrorHandler::process()
     // default headers
     m_response.set_header("Connection", "close");
     m_response.set_header("Date", utils::http_date());
+    if (m_code == StatusCode::ServiceUnavailable)
+        m_response.set_header("Retry-After", "3");
 
     if (m_ctx != NULL)
     {
         const RequestConfig& config = m_ctx->config();
-        const Path& error_page = config.get_error_page_or_nonexistent_path(m_code);
+        Path error_page = config.get_error_page_or_nonexistent_path(m_code);
         if (error_page.exists)
         {
             // headers

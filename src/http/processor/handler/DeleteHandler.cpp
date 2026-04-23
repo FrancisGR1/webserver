@@ -1,11 +1,12 @@
 #include <cstdio>
 #include <cstring>
 
-#include "DeleteHandler.hpp"
 #include "core/Logger.hpp"
+#include "core/ResourceLocker.hpp"
 #include "core/utils.hpp"
 #include "http/http_utils.hpp"
 #include "http/processor/RequestContext.hpp"
+#include "http/processor/handler/DeleteHandler.hpp"
 
 DeleteHandler::DeleteHandler(const RequestContext& ctx)
     : m_ctx(ctx)
@@ -35,6 +36,9 @@ void DeleteHandler::process()
 
     if (path.is_directory)
         http_utils::throw_conflict_delete(path, m_ctx);
+
+    if (!ResourceLocker::lock(path))
+        http_utils::throw_service_unavailable(path, m_ctx);
 
     // delete file
     if (std::remove(path.raw.c_str()) != 0)

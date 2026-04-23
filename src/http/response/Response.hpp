@@ -32,7 +32,7 @@ class Response
     void set_header(const std::string& key, const std::string& value);
     void set_body_as_str(const std::string& str);
     void set_body_as_fd(int fd);
-    int set_body_as_path(const Path& path);
+    int set_body_as_path(Path& path);
 
     // getters
     StatusCode::Code status_code() const;
@@ -54,6 +54,7 @@ class Response
     // if it's both, m_body_str is treated as a prefix
     std::string m_body_str;
     int m_body_fd; // borrows
+    Path m_body_path;
 
     // transmission state
     enum SendPhase

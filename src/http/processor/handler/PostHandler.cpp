@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include "core/MimeTypes.hpp"
+#include "core/ResourceLocker.hpp"
 #include "core/constants.hpp"
 #include "core/contracts.hpp"
 #include "core/utils.hpp"
@@ -178,11 +179,16 @@ void PostHandler::upload_request_body()
         // make upload location
         m_upload_uri = make_uri();
         // make upload real path
-        m_upload_paths.push_back(utils::join_paths(upload_dir.raw, m_upload_filename));
-        // open fd and store in events
-        m_post_fd = open(m_upload_paths[0].c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        Path p = utils::join_paths(upload_dir.raw, m_upload_filename);
+        //  open fd and store in events
+        m_post_fd = p.open(O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        // occupy
+        ResourceLocker::lock(p);
+        // push
+        m_upload_paths.push_back(p);
         if (m_post_fd <= 2)
         {
+            ResourceLocker::unlock(m_upload_paths.back());
             http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
         }
 
@@ -195,9 +201,16 @@ void PostHandler::upload_request_body()
                               ? constants::write_chunk_size
                               : m_request.body().size() - m_offset;
         ssize_t written = ::write(m_post_fd, m_request.body().c_str() + m_offset, to_write);
+        if (written == -1)
+        {
+            ResourceLocker::unlock(m_upload_paths.back());
+            ::close(m_post_fd);
+            m_post_fd = -1;
+            http_utils::throw_internal_server_error_failed_upload(m_upload_paths.back(), m_ctx);
+        }
+
         if (written >= 0)
             m_offset += written;
-        //@TODO apanhar erro em caso de -1
         if (m_offset == static_cast<ssize_t>(m_request.body().size()))
             m_done = true;
 
@@ -231,6 +244,9 @@ void PostHandler::upload_request_body()
         // close posted file
         ::close(m_post_fd);
         m_post_fd = -1;
+
+        // unoccupy
+        ResourceLocker::unlock(m_upload_paths.back());
     }
 }
 
@@ -253,9 +269,14 @@ void PostHandler::upload_multipart_body()
             else
                 m_upload_filename = part.name + ".data";
 
+            // uri
             m_upload_uri = make_uri();
+            // save
             m_upload_paths.push_back(utils::join_paths(upload_dir.raw, m_upload_filename));
+            // open
             m_post_fd = open(m_upload_paths.back().raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            // lock
+            ResourceLocker::lock(m_upload_paths.back());
             if (m_post_fd <= 2)
                 http_utils::throw_internal_server_error_failed_upload(m_upload_paths[m_current_part], m_ctx);
 
@@ -277,10 +298,11 @@ void PostHandler::upload_multipart_body()
             m_post_fd = -1;
             m_offset = 0;
             m_current_part++;
+            // unoccupy
+            ResourceLocker::unlock(m_upload_paths.back());
         }
-        else
+        else // not done yet, come back next process() call
         {
-            // not done yet, come back next process() call
             return;
         }
     }

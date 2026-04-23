@@ -26,13 +26,14 @@ class GetHandler : public IRequestHandler
     // state
     bool m_done;
     int m_get_fd; // fd of file to get - owns
+    Path m_get;
     Response m_response;
 
     // utils
-    void handle_index(Response& response, const Path& path);
+    void handle_index(Response& response, Path& path);
     void handle_autoindex(Response& response, const Path& path);
     std::string make_autoindex(const Path& path);
-    void handle_file(Response& response, const Path& path);
+    void handle_file(Response& response, Path& path);
 };
 
 #endif // GETHANDLER_HPP
