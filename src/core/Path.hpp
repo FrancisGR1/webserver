@@ -14,6 +14,7 @@ struct Path
     void set_cgi();
     const char* c_str() const;
 
+    int open(int flags, int permissions = 0644);
     bool operator<(const Path& other) const;
 
     // signature

@@ -1,5 +1,6 @@
 #include <cerrno>
 #include <ctime>
+#include <fcntl.h>
 #include <iostream>
 #include <string>
 #include <sys/stat.h>
@@ -134,6 +135,11 @@ void Path::set_cgi()
     Logger::trace("Path: cgi: '%s'", raw.c_str());
 }
 
+const char* Path::c_str() const
+{
+    return raw.c_str();
+}
+
 void Path::init(const std::string& str_path)
 {
     Logger::trace("Path: initialize");
@@ -181,9 +187,12 @@ void Path::init(const std::string& str_path)
     mtime = st.st_mtime;
 }
 
-const char* Path::c_str() const
+int Path::open(int flags, int permissions)
 {
-    return raw.c_str();
+    int fd = ::open(c_str(), flags, permissions);
+    if (fd > -1) // reinit
+        init(c_str());
+    return fd;
 }
 
 std::ostream& operator<<(std::ostream& os, const Path& path)
