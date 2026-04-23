@@ -361,7 +361,7 @@ void test_bad_GetHandler(const tu::HandlerTestCase& test)
         }
         catch (const ResponseError& error)
         {
-            Logger::error("ResponseError: '%s'", error.msg().data());
+            Logger::debug("ResponseError: '%s'", error.msg().data());
             Logger::debug_obj(error, "GetHandler: error response: ");
             // should error
             if (error.status_code() == test.expected.status_code())
@@ -416,7 +416,7 @@ void test_bad_GetHandler(const tu::HandlerTestCase& test)
 
 int main(void)
 {
-    Logger::set_global_level(Log::Fatal);
+    Logger::set_global_level(Log::Error);
 
     std::cout << "==============================\n";
     std::cout << "========= GetHandler ========\n";

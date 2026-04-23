@@ -311,14 +311,11 @@ void test_bad_CgiHandler(const TestCase& test)
 
 int main()
 {
-    Logger::set_global_level(Log::Error);
+    Logger::set_global_level(Log::Trace);
 
     // send output of cgi to here
     // to check what subprocess says
-    // Logger::set_output(
-    //    "/home/francisco/Documents/42_School/05/Webserv/tests/"
-    //    "unit/logs/subprocess_logs.log",
-    //    std::ios::out | std::ios::trunc);
+    Logger::set_output("./logs/subprocess.log", std::ios::out | std::ios::trunc);
 
     std::cout << "==============================\n";
     std::cout << "========== CgiHandler ========\n";

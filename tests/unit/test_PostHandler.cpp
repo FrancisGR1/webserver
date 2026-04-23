@@ -428,7 +428,7 @@ void test_bad_PostHandler(const tu::HandlerTestCase& test)
         }
         catch (const ResponseError& error)
         {
-            Logger::trace("ResponseError: '%s'", error.msg().c_str());
+            Logger::debug("ResponseError: '%s'", error.msg().c_str());
             // these are supposed to give an error
             if (error.status_code() == test.expected.status_code())
                 std::cerr << constants::green << "[OK] " << constants::reset << test.title << "\n";
