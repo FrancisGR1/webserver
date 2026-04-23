@@ -5,13 +5,38 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "MimeTypes.hpp"
-#include "Path.hpp"
-#include "constants.hpp"
+#include "core/MimeTypes.hpp"
+#include "core/Path.hpp"
+#include "core/constants.hpp"
+#include "core/contracts.hpp"
 
-// Path
+Path::Path()
+    : exists(false)
+    , dev(0)
+    , ino(0)
+    , fd(-1)
+    , ends_with_slash(false)
+    , is_directory(false)
+    , is_regular_file(false)
+    , is_cgi(false)
+    , is_absolute(false)
+    , is_relative(false)
+    , can_read(false)
+    , can_write(false)
+    , can_execute(false)
+    , size(0)
+    , mtime(0)
+    , stat_errno(0)
+    , raw("")
+{
+    Logger::trace("Path: default constructor");
+}
+
 Path::Path(const std::string& str_path)
     : exists(false)
+    , dev(0)
+    , ino(0)
+    , fd(-1)
     , ends_with_slash(false)
     , mime(MimeTypes::from_path(str_path))
     , is_directory(false)
@@ -33,6 +58,9 @@ Path::Path(const std::string& str_path)
 
 Path::Path(const char* cstr_path)
     : exists(false)
+    , dev(0)
+    , ino(0)
+    , fd(-1)
     , ends_with_slash(false)
     , mime(MimeTypes::from_path(cstr_path))
     , is_directory(false)
@@ -117,9 +145,7 @@ void Path::init(const std::string& str_path)
     if (!raw.empty() && raw.at(raw.size() - 1) == '/')
         ends_with_slash = true;
 
-    // cgi
-    set_cgi();
-
+    // stat
     struct stat st;
     if (stat(raw.c_str(), &st) != 0)
     {
@@ -129,7 +155,12 @@ void Path::init(const std::string& str_path)
     else
     {
         exists = true;
+        dev = st.st_dev;
+        ino = st.st_ino;
     }
+
+    // cgi
+    set_cgi();
 
     //  file type
     if (S_ISDIR(st.st_mode))
@@ -176,4 +207,17 @@ std::ostream& operator<<(std::ostream& os, const Path& path)
        << "\tSize:            " << path.size << "\n"
        << "\tTime:            " << path.mtime << "\n";
     return os;
+}
+
+bool Path::operator<(const Path& other) const
+{
+    if (exists && other.exists)
+    {
+        if (dev != other.dev)
+            return dev < other.dev;
+        return ino < other.ino;
+    }
+
+    INVARIANT(false, "Path should exist if it's going to be compared");
+    return false; // unreachable
 }

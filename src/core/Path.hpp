@@ -5,24 +5,25 @@
 #include <sys/types.h>
 
 //@TODO: tornar class
-// adicionar fd
 struct Path
 {
+    Path();
     Path(const std::string& str_path);
     Path(const char* cstr_path);
     void init(const std::string& str_path);
     void set_cgi();
     const char* c_str() const;
 
-    //@TODO:
-    // string raw
-    // string str
-    // resolve(Location)?
+    bool operator<(const Path& other) const;
 
+    // signature
     bool exists;
-    bool ends_with_slash;
+    dev_t dev;
+    ino_t ino;
+    int fd;
 
     // type
+    bool ends_with_slash;
     std::string mime;
     bool is_directory;
     bool is_regular_file;
