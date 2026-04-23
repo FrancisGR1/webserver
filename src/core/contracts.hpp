@@ -2,6 +2,8 @@
 #define CONTRACT_HPP
 #include <cstdlib>
 
+#include "core/Logger.hpp"
+
 #ifdef NDEBUG
 #define CONTRACT_ABORT()
 #else

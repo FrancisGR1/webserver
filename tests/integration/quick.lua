@@ -3,7 +3,7 @@
 -- quick script to test the basic workflow of the server:
 -- POST -> GET -> DELETE -> GET (error)
 
-local BASE_URL = "http://127.0.0.1:8084"
+local BASE_URL = "http://127.0.0.1:8091"
 
 -- run a shell command and return its output
 local function run(cmd)
@@ -40,7 +40,8 @@ if get_status ~= "200" then
 end
 print("OK: got 200")
 
--- DELETE
+-- DELETE (wait a moment to avoid race conditions)
+os.execute("sleep 1")
 print("=== DELETE ===")
 local del_out = run(string.format('curl -si -X DELETE %s%s', BASE_URL, location))
 print(del_out)

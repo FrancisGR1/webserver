@@ -96,7 +96,7 @@ namespace http_utils
 	    throw ResponseError(StatusCode::Conflict, 
 			    utils::fmt("Trying to upload to a non-directory: '%s", path.raw.c_str()), &ctx);
 	}
-	
+
 	void throw_content_too_large(const RequestContext& ctx)
 	{
 	    throw ResponseError(StatusCode::ContentTooLarge, 
@@ -151,6 +151,12 @@ namespace http_utils
 			    utils::fmt("%s method is not implemented by the server", method.c_str()), &ctx);
 	}
 	
+	void throw_service_unavailable(const Path& path, const RequestContext& ctx)
+	{
+	    throw ResponseError(StatusCode::ServiceUnavailable, 
+			    utils::fmt("Resource is occupied, cannot be used: '%s", path.raw.c_str()), &ctx);
+	}
+
 	void throw_gateway_timeout(const std::string& cgi_raw_path, Seconds timeout, const RequestContext& ctx)
 	{
 	    throw ResponseError(StatusCode::GatewayTimeout, 

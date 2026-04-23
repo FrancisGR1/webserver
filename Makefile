@@ -4,7 +4,7 @@ LIB      = libwebserv.a
 CC       = c++
 OBJ_DIR  = obj
 VERSION  = -std=c++98
-CFLAGS   = -Werror -Wall -Wextra
+CFLAGS   = -Werror -Wall -Wextra #-Weffc++
 DEBUG    = -g
 OPTIMIZE = -O3
 INC      = -Isrc
@@ -17,6 +17,7 @@ SOURCES  = \
 	  \
 	  src/core/Logger.cpp \
 	  src/core/MimeTypes.cpp \
+	  src/core/ResourceLocker.cpp \
 	  src/core/Path.cpp \
 	  src/core/Timer.cpp \
 	  src/core/constants.cpp \

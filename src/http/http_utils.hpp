@@ -45,6 +45,8 @@ void throw_internal_server_error_failed_upload(const Path& path, const RequestCo
 void throw_internal_server_error_unknown_file_type(const Path& path, const RequestContext& ctx);
 // NotImplemented 501
 void throw_not_implemented(const std::string& method, const RequestContext& ctx);
+// ServiceUnavailable 503
+void throw_service_unavailable(const Path& path, const RequestContext& ctx);
 // GatewayTimeout 504
 void throw_gateway_timeout(const std::string& cgi_raw_path, Seconds timeout, const RequestContext& ctx);
 } // namespace http_utils
