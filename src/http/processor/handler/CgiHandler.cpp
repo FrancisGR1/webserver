@@ -15,6 +15,7 @@
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
 #include "http/response/ResponseError.hpp"
+#include "server/Connection.hpp"
 
 CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Seconds timeout)
     : m_request(request)
@@ -381,17 +382,16 @@ std::map<std::string, std::string> CgiHandler::init_env()
     env["PATH_INFO"] = m_script.cgi_info;
     env["PATH_TRANSLATED"] = "";
     env["QUERY_STRING"] = m_request.target_query();
-    //@TODO: o construtor tem de receber a informação da ligação para fazer isto
-    //@QUESTION: podemos receber esta informacao ou nao? de onde vem?
-    env["REMOTE_ADDR"] = ""; //@TODO: ip do cliente
+    env["REMOTE_ADDR"] = "";
     env["REMOTE_HOST"] = "";
     env["REMOTE_IDENT"] = "";
     env["REMOTE_USER"] = "";
     env["REQUEST_METHOD"] = m_request.method();
     env["SCRIPT_NAME"] = m_script.cgi_name;
     env["SERVER_NAME"] = m_ctx.config().service().server_name;
-    env["SERVER_PORT"] = ""; //@TODO: porta do socket
-    env["SERVER_ADDR"] = ""; //@TODO: ip do socket
+    //@NOTE connection is never null, except in the tests
+    env["SERVER_ADDR"] = m_ctx.connection() ? m_ctx.connection()->socket().listener().host : "";
+    env["SERVER_PORT"] = m_ctx.connection() ? m_ctx.connection()->socket().listener().port : "";
     env["SERVER_PROTOCOL"] = constants::server_http_version;
     env["SERVER_SOFTWARE"] = constants::server_name;
 
@@ -400,13 +400,12 @@ std::map<std::string, std::string> CgiHandler::init_env()
          it != m_request.headers().end();
          ++it)
     {
-        std::string key = to_uppercase_and_underscore(it->first);
+        std::string key = "HTTP_" + to_uppercase_and_underscore(it->first);
         env[key] = it->second;
     }
     return env;
 }
 
-//@TODO: prefix envs with "HTTP_"
 std::string CgiHandler::to_uppercase_and_underscore(const std::string& str)
 {
     std::string result;
