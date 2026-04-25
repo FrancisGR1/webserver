@@ -19,7 +19,10 @@ struct ConnectionState
         ProcessingRequest,
         Writing,
         Done
-    };
+    } state;
+
+    ConnectionState(ConnectionState::Enum state);
+    std::string str() const;
 };
 
 //@TODO adicionar um unique id
@@ -46,13 +49,18 @@ class Connection
     ConnectionState::Enum state() const;
     const ServiceConfig& service() const;
     const Socket& socket() const;
+    long long id() const;
+
+    // signature
+    static long long s_conn_counter;
 
   private:
     // saves current work state
-    ConnectionState::Enum m_state;
+    ConnectionState m_state;
     Seconds m_last_activity;
 
     // context
+    const long long m_id;
     const ServiceConfig& m_service;
     Socket m_socket; // owns
 
