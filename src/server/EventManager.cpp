@@ -132,7 +132,7 @@ int EventManager::to_epoll_event(const EventAction& ea)
 
     if (ret == -1)
     {
-        Logger::error("EventManager: epoll_ctl() error: errno says: '%s'", strerror(errno));
+        Logger::error("EventManager: epoll_ctl() error: says: '%s'", strerror(errno));
     }
 
     return ret;

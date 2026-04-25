@@ -99,7 +99,7 @@ void Connection::read()
     }
     if (bytes == -1)
     {
-        Logger::warn("Connnection: recv() returned -1: errno says: '%s'", strerror(errno));
+        Logger::warn("Connnection: recv() returned -1: errno: '%s'", ::strerror(errno));
 
         if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
@@ -109,12 +109,12 @@ void Connection::read()
                 constants::conn,
                 m_id,
                 m_socket.fd(),
-                strerror(errno));
+                ::strerror(errno));
         }
         else
         {
             Logger::error(
-                "%s[id=%lld]: recv() error on fd %d: '%s'", constants::conn, m_id, m_socket.fd(), strerror(errno));
+                "%s[id=%lld]: recv() error on fd %d: '%s'", constants::conn, m_id, m_socket.fd(), ::strerror(errno));
         }
 
         return;

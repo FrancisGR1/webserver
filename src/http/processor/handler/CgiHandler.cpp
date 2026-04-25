@@ -154,7 +154,7 @@ void CgiHandler::start_subprocess()
 
         if (::chdir(script.cgi_dir.c_str()) == -1)
         {
-            Logger::error("%s: Subprocess: chdir() call failed. Errno says: '%s'", constants::cgi, strerror(errno));
+            Logger::error("%s: Subprocess: chdir() call failed. errno: '%s'", constants::cgi, ::strerror(errno));
             std::abort();
         }
 
@@ -270,7 +270,7 @@ void CgiHandler::read_from_pipe()
         {
             throw ResponseError(
                 StatusCode::BadGateway,
-                utils::fmt("%s: waitpid failed. Errno says: '%s'", constants::cgi, strerror(errno)),
+                utils::fmt("%s: waitpid failed. errno: '%s'", constants::cgi, ::strerror(errno)),
                 &m_ctx);
         }
         if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
@@ -294,9 +294,9 @@ void CgiHandler::read_from_pipe()
     {
         int err = errno;
         if (errno != EAGAIN && errno != EWOULDBLOCK)
-            Logger::warn("%s: read error: '%s'", constants::cgi, strerror(err));
+            Logger::warn("%s: read error: '%s'", constants::cgi, ::strerror(err));
         else
-            Logger::debug("%s: pipe: '%s'", constants::cgi, strerror(err));
+            Logger::debug("%s: pipe: '%s'", constants::cgi, ::strerror(err));
     }
 }
 
@@ -326,7 +326,7 @@ void CgiHandler::write_to_pipe()
     }
     else
     {
-        Logger::warn("%s: wrote nothing to pipe! Errno says: '%s'", constants::cgi, strerror(errno));
+        Logger::warn("%s: wrote nothing to pipe! errno: '%s'", constants::cgi, ::strerror(errno));
     }
 
     // close

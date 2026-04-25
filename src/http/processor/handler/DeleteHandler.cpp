@@ -44,7 +44,7 @@ void DeleteHandler::process()
     if (std::remove(path.raw.c_str()) != 0)
     {
         int err = errno;
-        Logger::error("Remove failed: errno says: '%s'", strerror(errno));
+        Logger::error("Remove failed: errno says: '%s'", ::strerror(errno));
         switch (err)
         {
             case EACCES:

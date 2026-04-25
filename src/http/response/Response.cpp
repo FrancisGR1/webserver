@@ -1,5 +1,8 @@
+#include <cerrno>
+#include <cstring>
 #include <fcntl.h>
 #include <sstream>
+
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -169,10 +172,12 @@ ssize_t Response::send(int fd)
                 Logger::trace("Response: read %ld bytes: '%s'", read_bytes, buffer);
                 if (read_bytes < 0)
                 {
+                    Logger::warn("Response: errno: '%s'", read_bytes, ::strerror(errno));
                     return -1;
                 }
                 if (read_bytes == 0)
                 {
+                Logger:
                     m_send_phase = Done;
                     return 0;
                 }
