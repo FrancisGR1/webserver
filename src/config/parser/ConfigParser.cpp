@@ -364,7 +364,7 @@ void ConfigParser::parse_cgi(Token& t, Directive& directive)
     expect(t, Token::DirectiveCgi);
 
     const Token cgi_extension_tok = m_lexer.advance();
-    if (!ConfigKeywords::cgi_extensions.count(cgi_extension_tok.value))
+    if (!utils::is_valid_cgi_extension(cgi_extension_tok.value))
         throw std::runtime_error("Invalid16\n");
 
     const Token cgi_file_tok = m_lexer.advance();

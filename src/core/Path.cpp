@@ -89,12 +89,11 @@ void Path::set_cgi()
         return;
 
     // find pattern
-    bool is_cgi = false;
     size_t ext_end = raw.size();
     std::string ext;
     for (size_t i = 0; i < constants::extensions_num; ++i)
     {
-        ext = raw.substr(dot, constants::extensions[i].size());
+        ext = raw.substr(dot, constants::extensions[i].size() + 1);
         if (ext == constants::extensions[i])
         {
             ext_end = dot + constants::extensions[i].size();
@@ -111,7 +110,6 @@ void Path::set_cgi()
     // path
     cgi_path = raw.substr(0, dot + ext.size());
     cgi_extension = ext;
-    is_cgi = true;
     mime = MimeTypes::from_path(cgi_path);
     // info
     if (ext_end < raw.length())

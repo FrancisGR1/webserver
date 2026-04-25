@@ -144,10 +144,10 @@ void RequestProcessor::process()
             case Dispatching:
             {
                 Logger::debug("RequestProcessor: state - Dispatching");
-                //@TODO colocar cgi handler aqui
+
                 if (m_ctx.config().is_cgi())
                     m_handler = new CgiHandler(m_request, m_ctx);
-                if (m_request.method() == "GET")
+                else if (m_request.method() == "GET")
                     m_handler = new GetHandler(m_ctx);
                 else if (m_request.method() == "POST")
                     m_handler = new PostHandler(m_request, m_ctx);

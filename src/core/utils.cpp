@@ -186,4 +186,14 @@ std::string http_date()
     return std::string(buf);
 }
 
+bool is_valid_cgi_extension(const std::string& str)
+{
+    for (size_t i = 0; i < constants::extensions_num; ++i)
+    {
+        if (str == constants::extensions[i])
+            return true;
+    }
+    return false;
+}
+
 } // namespace utils

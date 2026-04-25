@@ -22,6 +22,7 @@ std::string fmt(const char* fmt, ...);
 std::string map_to_str(std::map<std::string, std::string> headers);
 std::string timestamp();
 std::string http_date();
+bool is_valid_cgi_extension(const std::string& str);
 
 // find element in container
 template <typename Container>

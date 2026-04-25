@@ -141,6 +141,7 @@ Path RequestConfig::cgi_interpreter() const
 {
     const std::string& extension = m_resolved_path.cgi_extension;
 
+    Logger::debug("RequestConfig: cgi_extension='%s'", extension.c_str());
     if (m_location && utils::contains(m_location->cgis, extension))
     {
         Logger::trace("RequestConfig: cgi interpreter: %s", m_location->cgis.at(extension).c_str());
