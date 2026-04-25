@@ -43,6 +43,8 @@ EventManager::~EventManager()
 
 int EventManager::wait()
 {
+    Logger::info("EventManager: waiting...");
+
     int n = epoll_wait(m_epoll_fd, m_epoll_events_buffer, constants::max_events, constants::epoll_timeout);
     if (n == -1)
         Logger::warn("EventManager: epoll_wait() interrupted!");
@@ -140,15 +142,16 @@ void EventManager::remove(const EventAction& ea)
 {
     for (size_t i = 0; i < m_events.size(); ++i)
     {
-        INVARIANT(m_events[i] != NULL, "EventAction* in events must never be null!");
-        if (ea.fd == m_events[i]->fd)
-        {
-            Logger::trace(
-                "EventManager: removing connection fd: '%p'",
-                (void*)m_events[i]->conn); //@TODO colocar print de event action e assinatura de connection
+        EventAction* e = m_events[i];
 
-            ::close(m_events[i]->fd);
-            delete m_events[i];
+        INVARIANT(e != NULL, "EventAction* in events must never be null!");
+
+        if (ea.fd == e->fd)
+        {
+            Logger::trace("EventManager: removing connection[id=%lld] fd: '%d'", (e->conn ? e->conn->id() : -1), e->fd);
+
+            ::close(e->fd);
+            delete e;
             m_events.erase(m_events.begin() + i);
 
             return;
