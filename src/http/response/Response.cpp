@@ -83,6 +83,8 @@ Response::~Response()
 
     if (m_body_path.exists)
         ResourceLocker::unlock(m_body_path);
+    if (m_body_fd != -1)
+        ::close(m_body_fd);
 }
 
 ssize_t Response::send(int fd)
