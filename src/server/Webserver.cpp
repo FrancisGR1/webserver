@@ -97,57 +97,75 @@ void Webserver::run()
             const EventAction& event = m_events.get_event(i);
             Connection* conn = event.conn;
 
-            if (event.type == EventAction::ServerSocket)
+            switch (event.type)
             {
-                Logger::trace("Webserver: Fd %d is a server socket", event.fd);
-                const Socket* ss = get_server_socket(event);
-                const ServiceConfig& service = get_service(ss);
-                const EventAction& ec = m_connection_pool.make(ss, service);
-                m_events.apply(ec);
-                continue;
-            }
-
-            INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
-
-            switch (event.action)
-            {
-                //@TODO colocar id na connection
-                case EventAction::WantRead:
+                case EventAction::ServerSocket:
                 {
-                    Logger::trace(
-                        "Webserver: Connection wants to read to: '%s'",
-                        event.type == EventAction::Pipe ? "pipe" : "socket");
-
-                    conn->read();
-
-                    break;
+                    Logger::trace("Webserver: Fd %d is a server socket", event.fd);
+                    const Socket* ss = get_server_socket(event);
+                    const ServiceConfig& service = get_service(ss);
+                    const EventAction& ec = m_connection_pool.make(ss, service);
+                    m_events.apply(ec);
+                    continue;
                 }
-                case EventAction::WantProcessRequest:
+                case EventAction::Pipe:
                 {
-                    Logger::trace("Webserver: Connection wants to process request");
+                    INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
+                    Logger::trace(
+                        "Webserver: Connection wants to '%s': fd='%d'",
+                        event.action == EventAction::WantRead ? "read from" : "write to",
+                        event.fd);
 
                     conn->process_request();
 
                     break;
                 }
-                case EventAction::WantWrite:
+                case EventAction::ClientSocket:
                 {
-                    Logger::trace(
-                        "Webserver: Connection wants to write to: '%s'",
-                        event.type == EventAction::Pipe ? "pipe" : "socket");
+                    INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
 
-                    conn->write();
+                    switch (event.action)
+                    {
+                        //@TODO colocar id na connection
+                        case EventAction::WantRead:
+                        {
+                            Logger::trace(
+                                "Webserver: Connection wants to read to: '%s'",
+                                event.type == EventAction::Pipe ? "pipe" : "socket");
 
-                    break;
-                }
-                case EventAction::WantClose: //@NOTE rare path, only happens if something went wrong with the fds
-                {
-                    Logger::trace("Webserver: Connection wants to be closed");
+                            conn->read();
 
-                    if (event.type == EventAction::ClientSocket)
-                        m_connection_pool.remove(*conn);
+                            break;
+                        }
+                        case EventAction::WantProcessRequest:
+                        {
+                            Logger::trace("Webserver: Connection wants to process request");
 
-                    break;
+                            conn->process_request();
+
+                            break;
+                        }
+                        case EventAction::WantWrite:
+                        {
+                            Logger::trace(
+                                "Webserver: Connection wants to write to: '%s'",
+                                event.type == EventAction::Pipe ? "pipe" : "socket");
+
+                            conn->write();
+
+                            break;
+                        }
+                        case EventAction::WantClose: //@NOTE rare path, only happens if something went wrong with the
+                                                     // fds
+                        {
+                            Logger::trace("Webserver: Connection wants to be closed");
+
+                            if (event.type == EventAction::ClientSocket)
+                                m_connection_pool.remove(*conn);
+
+                            break;
+                        }
+                    }
                 }
             }
 

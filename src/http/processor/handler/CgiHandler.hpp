@@ -66,8 +66,8 @@ class CgiHandler : public IRequestHandler
 
     // utils
     void start_timer();
-    void start_subprocess();
     void setup_pipes();
+    void start_subprocess();
     void read_from_pipe();
     void write_to_pipe();
     void make_response();

@@ -1,6 +1,7 @@
 #include "EventManager.hpp"
 #include "core/Logger.hpp"
 #include "core/contracts.hpp"
+#include "server/Connection.hpp"
 #include "server/EventAction.hpp"
 
 #include <sys/epoll.h>
@@ -186,9 +187,10 @@ EventAction* EventManager::find(EventAction*& ee) const
         if (ee == m_events[i])
         {
             INVARIANT(ee == m_events[i], "EventAction must always be equal to epoll_event!");
-            Logger::trace(
-                "EventManager: found connection: '%p'",
-                (void*)m_events[i]); //@TODO assinatura de connection e print event action
+            if (m_events[i]->conn)
+                Logger::trace("EventManager: found connection: '%lld'", m_events[i]->conn->id());
+            else
+                Logger::trace("EventManager: server socket: '%d'", m_events[i]->fd);
             return m_events[i];
         }
     }
@@ -204,9 +206,10 @@ EventAction* EventManager::exists(int event_fd) const
     {
         if (event_fd == m_events[i]->fd)
         {
-            Logger::trace(
-                "EventManager: found connection: '%p'",
-                (void*)m_events[i]); //@TODO assinatura de connection e print event action
+            if (m_events[i]->conn)
+                Logger::trace("EventManager: found connection: '%lld'", m_events[i]->conn->id());
+            else
+                Logger::trace("EventManager: server socket: '%d'", m_events[i]->fd);
             return m_events[i];
         }
     }
