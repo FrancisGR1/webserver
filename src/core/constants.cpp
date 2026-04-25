@@ -18,7 +18,7 @@ const size_t max_connections = 950;
 
 // - timeouts
 // -- connection
-const Seconds idle_connection_timeout = 30;
+const Seconds idle_connection_timeout = 100000000000; //@TODO change to 30
 // -- cgi
 const Seconds cgi_timeout = 60.0;
 const size_t cgi_max_failed_reads = 5;
@@ -50,5 +50,9 @@ const char* reset = "\033[0m";
 
 // - logging
 const Log::Level log_level = Log::Trace;
+
+// - name codes
+const char* conn = "\033[37;41mConnection\033[0m";
+const char* cgi = "\033[37;44mCgiHandler\033[0m";
 
 } // namespace constants

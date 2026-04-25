@@ -54,6 +54,10 @@ extern const char* reset;
 // logging
 extern const Log::Level log_level;
 
+// - name codes
+extern const char* conn;
+extern const char* cgi;
+
 } // namespace constants
 
 #endif // CONSTANTS_HPP
