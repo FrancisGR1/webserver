@@ -52,7 +52,7 @@ void CgiHandler::process()
 
     switch (m_state)
     {
-        //@TODO code in hot/fast path
+        //@TODO code in fast path for short cgi scripts
         case Init:
         {
             if (!m_ctx.config().allows_method(m_request.method()))
@@ -66,6 +66,7 @@ void CgiHandler::process()
 
             break;
         }
+        //@TODO get current event to decide if you should write or read
         case Pipe:
         {
             write_to_pipe();
@@ -73,7 +74,7 @@ void CgiHandler::process()
             break;
         }
 
-        case CookData:
+        case Res:
         {
             make_response();
 
@@ -257,7 +258,7 @@ void CgiHandler::read_from_pipe()
             // but it's ok, Response can handle split bodies
             // (1st part in string and 2nd part in file)
             // so go to next state regardless
-            m_state = CookData;
+            make_response();
         }
     }
     else if (bytes == 0) // EOF
@@ -287,7 +288,7 @@ void CgiHandler::read_from_pipe()
         m_read_from_script[0] = -1;
         m_write_to_script[1] = -1;
 
-        m_state = CookData;
+        m_state = Res;
     }
     else // nothing was read
     {

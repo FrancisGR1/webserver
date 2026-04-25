@@ -26,6 +26,9 @@ class RequestProcessor : public IRequestHandler
     // setters
     void set(const Request& request);
 
+    // getters
+    bool is_cgi() const;
+
     // utils
     static std::string resolve_path(
         const std::string& req_path,

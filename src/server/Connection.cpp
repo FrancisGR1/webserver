@@ -133,26 +133,22 @@ void Connection::read()
         m_processor.set(request_);
         next_state(ConnectionState::ProcessingRequest);
 
-        // try fast path -> process immediately
-        process_request();
-        if (!m_processor.done())
-        // slow path -> stay in processing state
+        process_request(); // try fast path -> process immediately
+
+        if (!m_processor.done()) // slow path -> stay in processing state
         {
             std::vector<EventAction> events = m_processor.give_events();
-            if (!events.empty())
-            // register cgi pipes
+            if (m_processor.is_cgi()) // register cgi pipes
             {
                 for (size_t i = 0; i < events.size(); ++i)
                     register_event(events[i]);
             }
-            else
-            // default to epollout
+            else // default to epollout
             {
                 register_action(EventAction::WantProcessRequest);
             }
         }
-        else
-        // fast path successful -> bypass processing state
+        else // fast path successful -> bypass processing state
         {
             Logger::trace("%s[id=%lld]: on fast path", constants::conn, m_id);
         }

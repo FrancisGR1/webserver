@@ -33,7 +33,7 @@ class CgiHandler : public IRequestHandler
         Error = -1,
         Init,
         Pipe,
-        CookData,
+        Res,
         Done
     };
 

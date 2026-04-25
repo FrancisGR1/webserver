@@ -218,3 +218,8 @@ void RequestProcessor::set(const Request& request)
 {
     m_request = request;
 }
+
+bool RequestProcessor::is_cgi() const
+{
+    return m_state >= Handling && m_ctx.config().is_cgi();
+}
