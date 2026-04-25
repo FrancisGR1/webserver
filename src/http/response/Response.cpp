@@ -17,7 +17,7 @@
 Response::Response()
     : m_status(StatusCode::None)
     , m_body_fd(-1)
-    , m_send_phase(Response::StatusPhase)
+    , m_state(Response::Status)
     , m_offset(0)
     , m_total_sent(0)
 {
@@ -27,7 +27,7 @@ Response::Response()
 Response::Response(StatusCode::Code status)
     : m_status(status)
     , m_body_fd(-1)
-    , m_send_phase(Response::StatusPhase)
+    , m_state(Response::Status)
     , m_offset(0)
     , m_total_sent(0)
 {
@@ -39,7 +39,7 @@ Response::Response(StatusCode::Code status, std::map<std::string, std::string> h
     , m_headers(headers)
     , m_body_str(body)
     , m_body_fd(-1)
-    , m_send_phase(Response::StatusPhase)
+    , m_state(Response::Status)
     , m_offset(0)
     , m_total_sent(0)
 {
@@ -53,7 +53,7 @@ Response::Response(const Response& other)
     , m_headers(other.m_headers)
     , m_body_str(other.m_body_str)
     , m_body_fd(other.m_body_fd)
-    , m_send_phase(other.m_send_phase)
+    , m_state(other.m_state)
     , m_offset(other.m_offset)
     , m_total_sent(other.m_total_sent)
 {
@@ -72,7 +72,7 @@ Response& Response::operator=(const Response& other)
         m_headers = other.m_headers;
         m_body_str = other.m_body_str;
         m_body_fd = other.m_body_fd;
-        m_send_phase = other.m_send_phase;
+        m_state = other.m_state;
         m_offset = other.m_offset;
         m_total_sent = other.m_total_sent;
     }
@@ -90,140 +90,17 @@ Response::~Response()
         ::close(m_body_fd);
 }
 
-ssize_t Response::send(int fd)
+ssize_t Response::send(int socket_fd)
 {
-    switch (m_send_phase)
+    switch (m_state)
     {
-        case StatusPhase:
-        {
-            Logger::trace("Response: send status");
+        case Status: return send_status_line(socket_fd);
+        case Headers: return send_headers(socket_fd);
+        case Body: return send_body(socket_fd);
 
-            if (m_status == StatusCode::None)
-                throw std::logic_error("Response: status wasn't set"); // @ASSUMPTION: status should always be set
-
-            m_status_line = make_status_line();
-            ssize_t sent = ::send(fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
-            if (sent < 0)
-                ;
-            else if (sent + m_offset == m_status_line.size())
-            {
-                m_send_phase = HeadersPhase;
-                m_offset = 0;
-                m_headers_str = utils::map_to_str(m_headers);
-                m_headers_str += constants::crlf;
-            }
-            else
-            {
-                m_offset += sent;
-            }
-
-            m_total_sent += sent;
-
-            return sent;
-        }
-        case HeadersPhase:
-        {
-            Logger::trace("Response: send headers");
-
-            ssize_t sent = ::send(fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, 0);
-            if (sent < 0)
-                ;
-            else if (sent + m_offset == m_headers_str.size())
-            {
-                m_send_phase = BodyPhase;
-                m_offset = 0;
-            }
-            else
-            {
-                m_offset += sent;
-            }
-
-            m_total_sent += sent;
-
-            return sent;
-        }
-        case BodyPhase:
-        {
-            ssize_t sent_bytes = 0;
-            if (m_body_fd > -1) // send body from file/pipe
-            {
-                Logger::debug("Response: send body from fd=%d", m_body_fd);
-
-                // m_body_str is used as a leftover for the next call
-                if (!m_body_str.empty())
-                {
-                    Logger::trace("Response: send body (headers leftover): %s", m_body_str.c_str());
-                    sent_bytes = ::send(fd, m_body_str.c_str(), m_body_str.size(), 0);
-                    if (sent_bytes <= 0)
-                        return sent_bytes; // nothing to send, or error or EAGAIN, which shouldn't happen (@QUESTION:
-                                           // you sure?)
-
-                    m_total_sent += sent_bytes;
-
-                    m_body_str.erase(0, sent_bytes);
-                    if (!m_body_str.empty())
-                        return sent_bytes; // socket is full
-                }
-
-                // read and send to socket
-                // @TODO: substitude read() -> send() with sendfile()
-                char buffer[constants::read_chunk_size + 1] = {};
-                ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
-                Logger::trace("Response: read %ld bytes: '%s'", read_bytes, buffer);
-                if (read_bytes < 0)
-                {
-                    Logger::warn("Response: errno: '%s'", read_bytes, ::strerror(errno));
-                    return -1;
-                }
-                if (read_bytes == 0)
-                {
-                Logger:
-                    m_send_phase = Done;
-                    return 0;
-                }
-                buffer[read_bytes] = '\0';
-
-                sent_bytes = ::send(fd, buffer, read_bytes, 0);
-                Logger::trace("Response: sent %ld(%ld) bytes", sent_bytes, m_total_sent);
-                if (sent_bytes < read_bytes)
-                {
-                    // store leftover for next call
-                    if (sent_bytes > 0)
-                        m_body_str.assign(buffer + sent_bytes, read_bytes - sent_bytes);
-                    else // buffer is full, save everything
-                        m_body_str.assign(buffer, read_bytes);
-                }
-                if (sent_bytes <= 0)
-                    return sent_bytes;
-
-                m_total_sent += sent_bytes;
-            }
-            else if (!m_body_str.empty()) // send body from string
-            {
-                Logger::debug(
-                    "Response: send body (string[%zu]): %s",
-                    m_body_str.size() - m_offset,
-                    (m_body_str.c_str() + m_offset));
-                sent_bytes = ::send(fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
-                if (sent_bytes < 0)
-                    return sent_bytes;
-
-                m_total_sent += sent_bytes;
-
-                m_offset += sent_bytes;
-                if (m_offset == m_body_str.size())
-                    m_send_phase = Done;
-            }
-            else // no body
-            {
-                Logger::trace("Response: done!");
-                m_send_phase = Done;
-            }
-
-            return sent_bytes;
-        }
         default:
         {
+            INVARIANT(false, "Should never reach here. Weird");
             return 0;
         }
     }
@@ -231,7 +108,7 @@ ssize_t Response::send(int fd)
 
 bool Response::done() const
 {
-    return m_send_phase == Done;
+    return m_state == Done;
 }
 
 void Response::make_redirection_response(StatusCode::Code status, const Route& redirection)
@@ -298,6 +175,38 @@ const std::map<std::string, std::string>& Response::headers() const
     return m_headers;
 }
 
+//@REFACTOR enviar status_line + headers
+ssize_t Response::send_status_line(int socket_fd)
+{
+    ENSURE(m_state == Response::Status);
+
+    Logger::trace("Response: send status");
+
+    m_status_line = make_status_line();
+
+    ssize_t sent = ::send(socket_fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
+    if (sent == -1)
+    {
+        Logger::warn("Response: sent %ld bytes: errno says: '%s'", sent, ::strerror(errno));
+        next_state(Done);
+    }
+    else if (sent + m_offset == m_status_line.size())
+    {
+        next_state(Done);
+        m_offset = 0;
+        m_headers_str = utils::map_to_str(m_headers);
+        m_headers_str += constants::crlf;
+    }
+    else
+    {
+        m_offset += sent;
+    }
+
+    m_total_sent += sent;
+
+    return sent;
+}
+
 std::string Response::make_status_line()
 {
     std::string status_line;
@@ -315,6 +224,133 @@ std::string Response::make_status_line()
     status_line += StatusCode::to_reason(m_status) + constants::crlf;
 
     return status_line;
+}
+
+ssize_t Response::send_headers(int socket_fd)
+{
+    ENSURE(m_state == Response::Headers);
+    Logger::trace("Response: send headers");
+
+    ssize_t sent = ::send(socket_fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, 0);
+    if (sent == -1)
+    {
+        Logger::warn("Response: sent %ld bytes: errno says: '%s'", sent, ::strerror(errno));
+        next_state(Done);
+    }
+    else if (sent + m_offset == m_headers_str.size())
+    {
+        next_state(Body);
+        m_offset = 0;
+    }
+    else
+    {
+        m_offset += sent;
+    }
+
+    m_total_sent += sent;
+
+    return sent;
+}
+
+ssize_t Response::send_body(int socket_fd)
+{
+    ENSURE(m_state == Response::Body);
+    Logger::trace("Response: send body");
+
+    if (m_body_fd > -1)
+    {
+        return send_body_from_fd(socket_fd);
+    }
+    else if (!m_body_str.empty())
+    {
+        return send_body_from_str(socket_fd);
+    }
+    else // no body
+    {
+        Logger::trace("Response: done!");
+        next_state(Done);
+        return 0;
+    }
+}
+
+ssize_t Response::send_body_from_fd(int socket_fd)
+{
+    Logger::debug("Response: send body from fd=%d", m_body_fd);
+
+    ssize_t sent_bytes = 0;
+    // m_body_str is used as a leftover for the next call
+    if (!m_body_str.empty())
+    {
+        return send_body_from_str(socket_fd);
+    }
+
+    // @TODO: substitute read() -> send() with sendfile()
+    // read
+    char buffer[constants::read_chunk_size + 1] = {};
+    ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
+    Logger::trace("Response: read %ld bytes: '%s'", read_bytes, buffer);
+    if (read_bytes < 0)
+    {
+        Logger::warn("Response: errno: '%s'", ::strerror(errno));
+        return -1;
+    }
+    if (read_bytes == 0)
+    {
+        next_state(Done);
+        return 0;
+    }
+    buffer[read_bytes] = '\0';
+
+    // send
+    sent_bytes = ::send(socket_fd, buffer, read_bytes, 0);
+    Logger::trace("Response: sent %ld(%ld) bytes", sent_bytes, m_total_sent);
+    if (sent_bytes < read_bytes)
+    {
+        // store leftover for next call
+        if (sent_bytes > 0)
+            m_body_str.assign(buffer + sent_bytes, read_bytes - sent_bytes);
+        else // buffer is full, save everything
+            m_body_str.assign(buffer, read_bytes);
+    }
+    if (sent_bytes == -1)
+    {
+        Logger::warn("Response: send() error: errno says: '%s'", strerror(errno));
+        next_state(Done);
+        return -1;
+    }
+    if (sent_bytes == 0)
+    {
+        Logger::warn("Response: sent 0 bytes");
+        return 0;
+    }
+
+    // add to total
+    m_total_sent += sent_bytes;
+
+    return sent_bytes;
+}
+
+ssize_t Response::send_body_from_str(int socket_fd)
+{
+    Logger::debug(
+        "Response: send body (string[%zu]): %s", m_body_str.size() - m_offset, (m_body_str.c_str() + m_offset));
+
+    ssize_t sent_bytes = ::send(socket_fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
+    if (sent_bytes < 0)
+        return sent_bytes;
+
+    m_total_sent += sent_bytes;
+
+    m_offset += sent_bytes;
+    if (m_offset == m_body_str.size())
+        next_state(Done);
+
+    return sent_bytes;
+}
+
+void Response::next_state(Response::State state)
+{
+    m_state = state;
 }
 
 bool Response::operator==(const Response& other) const

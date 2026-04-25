@@ -174,10 +174,10 @@ void CgiHandler::start_subprocess()
         Logger::flush();
 
         // write to pipe
-        dup2(m_read_from_script[1], STDOUT_FILENO);
+        ::dup2(m_read_from_script[1], STDOUT_FILENO);
         // dup2(m_read_from_script[1], STDERR_FILENO);
         if (m_write_to_script[0] != -1)
-            dup2(m_write_to_script[0], STDIN_FILENO);
+            ::dup2(m_write_to_script[0], STDIN_FILENO);
 
         // close pipes
         ::close(m_read_from_script[1]);
@@ -389,7 +389,15 @@ void CgiHandler::make_response()
     if (m_read_from_script[0] != -1)
     {
         int body_fd = ::dup(m_read_from_script[0]);
-        m_response.set_body_as_fd(body_fd); // rest of body is read directly to socket from pipe
+        if (body_fd == -1)
+        {
+            throw ResponseError(StatusCode::InternalServerError, "dup() failed", &m_ctx);
+        }
+
+        m_response.set_body_as_fd(body_fd);
+
+        ::close(m_read_from_script[0]);
+        m_read_from_script[0] = -1;
     }
 
     // finish

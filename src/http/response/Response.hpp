@@ -21,7 +21,7 @@ class Response
     ~Response();
 
     // api
-    ssize_t send(int fd);
+    ssize_t send(int socket_fd);
     bool done() const;
 
     // makers
@@ -57,19 +57,30 @@ class Response
     Path m_body_path;
 
     // transmission state
-    enum SendPhase
+    enum State
     {
-        StatusPhase = 0,
-        HeadersPhase,
-        BodyPhase,
+        Status = 0,
+        Headers,
+        Body,
         Done
     };
-    SendPhase m_send_phase;
+    State m_state;
     size_t m_offset;
     size_t m_total_sent;
 
     // utils
+    //-send
+    //--status
+    ssize_t send_status_line(int socket_fd);
     std::string make_status_line();
+    //--headers
+    ssize_t send_headers(int socket_fd);
+    //--body
+    ssize_t send_body(int socket_fd);
+    ssize_t send_body_from_fd(int socket_fd);
+    ssize_t send_body_from_str(int socket_fd);
+    //-state
+    void next_state(State state);
 };
 
 std::ostream& operator<<(std::ostream& os, const Response& response);
