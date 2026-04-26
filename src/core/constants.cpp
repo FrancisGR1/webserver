@@ -35,7 +35,7 @@ const char* server_http_version = "HTTP/1.0";
 const char* crlf = "\r\n";
 const char* crlfcrlf = "\r\n\r\n";
 // - request
-const size_t max_body_size = 1000000;
+const size_t max_body_size = 10000000000; // 1GB
 const size_t max_uri_size = 10000;
 const char* body_whitespaces = " \t\n\f\v";
 
