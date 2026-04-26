@@ -97,7 +97,7 @@ void Connection::read()
         next_state(ConnectionState::Done);
         return;
     }
-    if (bytes == -1)
+    else if (bytes == -1)
     {
         Logger::warn("Connnection: recv() returned -1: errno: '%s'", ::strerror(errno));
 
@@ -119,12 +119,13 @@ void Connection::read()
 
         return;
     }
-
-    // parser works on raw strings but just to be safe...
-    buffer[bytes] = '\0';
+    else
+    {
+        Logger::debug("Connection[id=%lld]: read %ld bytes from client", m_id, bytes);
+    }
 
     // parse
-    m_parser.feed(buffer);
+    m_parser.feed(std::string(buffer, bytes));
 
     if (m_parser.done())
     {

@@ -18,21 +18,14 @@ RequestParser::RequestParser()
 {
 }
 
-void RequestParser::feed(const char* raw)
-{
-    m_buffer += raw;
-    parse();
-}
-
 void RequestParser::feed(const std::string& raw)
 {
-    m_buffer += raw;
-    parse();
-}
+    Logger::trace("RequestParser: add to buffer: size=%lld", raw.size());
 
-void RequestParser::feed(char c)
-{
-    m_buffer += c;
+    m_buffer += raw;
+
+    Logger::debug("RequestParser: new buffer: size=%lld", m_buffer.size());
+
     parse();
 }
 
@@ -96,6 +89,7 @@ void RequestParser::clear()
 void RequestParser::parse()
 {
     typedef ParserState S; // S = state
+    Logger::trace("RequestParser: idx=%ld,buffer_size=%ld", m_idx, m_buffer.size());
     for (; m_state != S::Error && m_state != S::Done && m_idx < m_buffer.size(); m_idx++)
     {
         m_ch = m_buffer.at(m_idx);
@@ -656,6 +650,7 @@ void RequestParser::parse()
     if (m_state == S::Done)
     // post parse work
     {
+        Logger::info("RequestParser: done");
         // multipart body
         if (utils::contains(m_headers, "content-type"))
         {
@@ -663,6 +658,10 @@ void RequestParser::parse()
             if (type.find("multipart/form-data") != std::string::npos)
                 m_multipart_body = parse_multipart(type, m_body);
         }
+    }
+    else
+    {
+        Logger::debug("RequestParser: parsed %lld bytes so far", m_idx);
     }
 }
 
@@ -727,6 +726,8 @@ std::vector<MultiPartBody> RequestParser::parse_multipart(
     const std::string& content_type_header,
     const std::string& body)
 {
+    Logger::debug("RequestParser: parsing multipart data");
+
     std::vector<MultiPartBody> parts;
 
     // extract boundary
