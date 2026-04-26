@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "core/Logger.hpp"
+#include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/request/Request.hpp"
 #include "http/request/RequestParser.hpp"
@@ -201,6 +202,45 @@ std::vector<TestCase> generate_good_test_cases(void)
          "GET /path%20with%20spaces HTTP/1.1\r\nHost: localhost\r\n\r\n",
          Request("GET", "/path%20with%20spaces", "", "HTTP/1.1", {{"host", "localhost"}}, "", {}, StatusCode::Ok)},
     };
+
+    // ─── Big body ────────────────────────────────────────────────────────
+    {
+        size_t big_body_size = 1024 * 1024; // 1MB
+        std::string big_body(big_body_size, 'A');
+        std::string raw =
+            "POST /upload HTTP/1.1\r\nHost: localhost\r\nContent-Length: " + std::to_string(big_body.size()) +
+            "\r\n\r\n" + big_body;
+        test_cases.push_back(
+            {"1MB body with Content-Length",
+             raw,
+             Request(
+                 "POST",
+                 "/upload",
+                 "",
+                 "HTTP/1.1",
+                 {{"host", "localhost"}, {"content-length", std::to_string(big_body.size())}},
+                 big_body,
+                 {},
+                 StatusCode::Ok)});
+    }
+    {
+        std::string big_body = utils::file_to_str("./test_data/get/pdf_file.pdf");
+        std::string raw =
+            "POST /upload HTTP/1.1\r\nHost: localhost\r\nContent-Length: " + std::to_string(big_body.size()) +
+            "\r\n\r\n" + big_body;
+        test_cases.push_back(
+            {"Real PDF file body",
+             raw,
+             Request(
+                 "POST",
+                 "/upload",
+                 "",
+                 "HTTP/1.1",
+                 {{"host", "localhost"}, {"content-length", std::to_string(big_body.size())}},
+                 big_body,
+                 {},
+                 StatusCode::Ok)});
+    }
 
     // ─── Multipart body ──────────────────────────────────────────────
     // multipart single text file
@@ -494,7 +534,7 @@ void test_RequestParser_with_random_sized_chunks(const TestCase& test)
 
 int main()
 {
-    Logger::set_global_level(Log::Fatal);
+    Logger::set_global_level(Log::Debug);
 
     std::cout << "==============================\n";
     std::cout << "======= RequestParser ========\n";
@@ -508,11 +548,11 @@ int main()
     tests = generate_good_test_cases();
     for (auto& test : tests)
     {
+        // if (test.title == "") {}
         test_RequestParser(test);
         test_RequestParser_with_random_sized_chunks(test);
     }
 
-    // bad
     std::cout << constants::red << "\nBad tests\n" << constants::reset;
     tests = generate_bad_test_cases();
     for (auto& test : tests)
