@@ -10,12 +10,13 @@ struct Log
     // https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
     enum Level
     {
-        Trace = 0, // very specific parts of procedures
-        Debug,     // helpful diagnostics
-        Info,      // useful information
-        Warn,      // can potentially cause weird behavior
-        Error,     // error fatal to the operation
-        Fatal,     // error fatal to the application
+        Verbose = 0, // most granular
+        Trace,       // very specific parts of procedures
+        Debug,       // helpful diagnostics
+        Info,        // useful information
+        Warn,        // can potentially cause weird behavior
+        Error,       // error fatal to the operation
+        Fatal,       // error fatal to the application
         None
     };
 };
@@ -23,6 +24,7 @@ struct Log
 class Logger
 {
   public:
+    static void verbose(const char* fmt, ...);
     static void trace(const char* fmt, ...);
     static void debug(const char* fmt, ...);
     static void info(const char* fmt, ...);

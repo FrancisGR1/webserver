@@ -103,7 +103,7 @@ void RequestParser::parse()
         {
             // Start Line
             case S::StartLineMethod:
-                Logger::trace("RequestParser: state - Method: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Method: '%c'", m_ch);
 
                 if (m_ch == ' ')
                 {
@@ -130,7 +130,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::StartLineTargetPath:
-                Logger::trace("RequestParser: state - Path: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Path: '%c'", m_ch);
 
                 if (m_ch == ' ')
                 {
@@ -164,7 +164,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::StartLineTargetQuery:
-                Logger::trace("RequestParser: state - Query: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Query: '%c'", m_ch);
 
                 if (m_ch == ' ')
                 {
@@ -185,7 +185,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::StartLineProtocolVersion:
-                Logger::trace("RequestParser: state - Version: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Version: '%c'", m_ch);
 
                 if (m_ch == '\r')
                 {
@@ -215,7 +215,7 @@ void RequestParser::parse()
                 break;
                 // Start Line - End
             case S::StartLineCR:
-                Logger::trace("RequestParser: state - Status CR: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Status CR: '%c'", m_ch);
 
                 if (m_ch != '\n')
                 {
@@ -230,7 +230,7 @@ void RequestParser::parse()
                 break;
                 // Header
             case S::HeaderKey:
-                Logger::trace("RequestParser: state - Key: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Key: '%c'", m_ch);
 
                 if (m_ch == '\r')
                 {
@@ -255,7 +255,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::HeaderValue:
-                Logger::trace("RequestParser: state - Value: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Value: '%c'", m_ch);
 
                 if (m_ch == '\r')
                 {
@@ -295,7 +295,7 @@ void RequestParser::parse()
                 break;
                 // Header Line - End
             case S::HeaderEndLineCR:
-                Logger::trace("RequestParser: state - Header Line CR: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Header Line CR: '%c'", m_ch);
 
                 if (m_ch == '\n')
                 {
@@ -309,7 +309,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::HeadersEndCR:
-                Logger::trace("RequestParser: state - Headers CR: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Headers CR: '%c'", m_ch);
 
                 {
                     if (m_ch != '\n')
@@ -408,7 +408,7 @@ void RequestParser::parse()
                 }
                 // Body string
             case S::Body:
-                Logger::trace("RequestParser: state - Body(%ld): '%c'", m_body.size() + 1, m_ch);
+                Logger::verbose("RequestParser: state - Body(%ld): '%c'", m_body.size() + 1, m_ch);
 
                 if (m_body.size() < m_content_length)
                 {
@@ -433,7 +433,7 @@ void RequestParser::parse()
                 break;
                 // Body chunked
             case S::BodyChunkSize:
-                Logger::trace("RequestParser: state - Body Chunk Size: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Body Chunk Size: '%c'", m_ch);
 
                 if (m_ch == '\r')
                 {
@@ -455,7 +455,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::BodyChunkSizeExtension:
-                Logger::trace("RequestParser: state - Body Chunk Size Extension: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Body Chunk Size Extension: '%c'", m_ch);
 
                 if (m_ch == '\r')
                 {
@@ -467,7 +467,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::BodyChunkSizeCR:
-                Logger::trace("RequestParser: state - Body Chunk Size CR: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Body Chunk Size CR: '%c'", m_ch);
 
                 if (m_ch != '\n')
                 {
@@ -509,7 +509,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::BodyChunkData:
-                Logger::trace("RequestParser: state - Body Chunk Data: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Body Chunk Data: '%c'", m_ch);
 
                 if (m_chunk_size == 0 && m_ch == '\r')
                 {
@@ -538,7 +538,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::BodyChunkDataCR:
-                Logger::trace("RequestParser: state - Body Chunk Data CR: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Body Chunk Data CR: '%c'", m_ch);
 
                 if (m_ch != '\n')
                 {
@@ -553,7 +553,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::BodyChunkTrailerKey:
-                Logger::trace("RequestParser: state - Body Chunk Trailer Key: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Body Chunk Trailer Key: '%c'", m_ch);
 
                 if (m_ch == '\r')
                 {
@@ -582,7 +582,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::BodyChunkTrailerValue:
-                Logger::trace("RequestParser: state - Body Chunk Trailer Value: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Body Chunk Trailer Value: '%c'", m_ch);
 
                 if (m_ch == '\r')
                 {
@@ -616,7 +616,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::BodyChunkTrailerCR:
-                Logger::trace("RequestParser: state - Body Chunk Trailer CR: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Body Chunk Trailer CR: '%c'", m_ch);
 
                 if (m_ch != '\n')
                 {
@@ -630,7 +630,7 @@ void RequestParser::parse()
                 }
                 break;
             case S::BodyChunkTrailerEndCR:
-                Logger::trace("RequestParser: state - Body Chunk Trailer End CR: '%c'", m_ch);
+                Logger::verbose("RequestParser: state - Body Chunk Trailer End CR: '%c'", m_ch);
 
                 if (m_ch != '\n')
                 {

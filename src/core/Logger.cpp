@@ -13,6 +13,17 @@ std::vector<std::ofstream*> Logger::m_opened_files;
 
 Log::Level Logger::m_global_level = constants::log_level;
 
+void Logger::verbose(const char* fmt, ...)
+{
+    if (should_log(Log::Verbose))
+    {
+        va_list args;
+        va_start(args, fmt);
+        vlog(Log::Trace, fmt, args);
+        va_end(args);
+    }
+};
+
 void Logger::trace(const char* fmt, ...)
 {
     if (should_log(Log::Trace))
@@ -138,6 +149,7 @@ std::string Logger::log_level_to_string(Log::Level level)
 {
     switch (level)
     {
+        case Log::Verbose: return "Verbose";
         case Log::Trace: return "Trace";
         case Log::Debug: return "Debug";
         case Log::Info: return "Info ";
@@ -153,6 +165,7 @@ std::string Logger::log_level_to_color(Log::Level level)
 {
     switch (level)
     {
+        case Log::Verbose: return constants::dim;
         case Log::Trace: return constants::cyan;
         case Log::Debug: return constants::blue;
         case Log::Info: return constants::green;

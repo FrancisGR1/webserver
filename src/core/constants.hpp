@@ -43,6 +43,7 @@ extern const size_t max_uri_size;
 extern const char* body_whitespaces;
 
 // colors
+extern const char* dim;
 extern const char* cyan;
 extern const char* blue;
 extern const char* green;

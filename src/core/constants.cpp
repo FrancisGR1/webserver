@@ -40,6 +40,7 @@ const size_t max_uri_size = 10000;
 const char* body_whitespaces = " \t\n\f\v";
 
 // color codes
+const char* dim = "\033[2m";
 const char* cyan = "\033[36m";
 const char* blue = "\033[34m";
 const char* green = "\033[32m";
