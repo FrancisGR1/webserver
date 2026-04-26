@@ -388,15 +388,8 @@ void CgiHandler::make_response()
     m_response.set_body_as_str(m_body_str);
     if (m_read_from_script[0] != -1)
     {
-        int body_fd = ::dup(m_read_from_script[0]);
-        if (body_fd == -1)
-        {
-            throw ResponseError(StatusCode::InternalServerError, "dup() failed", &m_ctx);
-        }
+        m_response.set_body_as_fd(m_read_from_script[0]);
 
-        m_response.set_body_as_fd(body_fd);
-
-        ::close(m_read_from_script[0]);
         m_read_from_script[0] = -1;
     }
 

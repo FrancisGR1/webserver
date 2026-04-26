@@ -192,7 +192,7 @@ ssize_t Response::send_status_line(int socket_fd)
     }
     else if (sent + m_offset == m_status_line.size())
     {
-        next_state(Done);
+        next_state(Headers);
         m_offset = 0;
         m_headers_str = utils::map_to_str(m_headers);
         m_headers_str += constants::crlf;

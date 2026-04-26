@@ -28,7 +28,7 @@ class EventManager
     // utils
     int to_epoll_event(const EventAction& ea);
     EventAction* add(const EventAction& ea);
-    void remove(const EventAction& ea);
+    int remove(const EventAction& ea);
     void modify(EventAction*& ea, EventAction::Action action);
     EventAction* find(EventAction*& ee) const;
     EventAction* exists(int event_fd) const;

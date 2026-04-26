@@ -121,8 +121,7 @@ int EventManager::to_epoll_event(const EventAction& ea)
 
         case EventAction::WantClose:
         {
-            ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, ea.fd, NULL);
-            remove(ea);
+            ret = remove(ea);
 
             Logger::trace("EventManager: delete fd='%zu'", ea.fd);
 
@@ -138,8 +137,10 @@ int EventManager::to_epoll_event(const EventAction& ea)
     return ret;
 }
 
-void EventManager::remove(const EventAction& ea)
+int EventManager::remove(const EventAction& ea)
 {
+    int ret = 0;
+
     for (size_t i = 0; i < m_events.size(); ++i)
     {
         EventAction* e = m_events[i];
@@ -150,16 +151,19 @@ void EventManager::remove(const EventAction& ea)
         {
             Logger::trace("EventManager: removing connection[id=%lld] fd: '%d'", (e->conn ? e->conn->id() : -1), e->fd);
 
-            ::close(e->fd);
+            //@TODO: melhorar
+            ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, ea.fd, NULL);
+            if (e->type == EventAction::ClientSocket || e->type == EventAction::ServerSocket)
+                ret = ::close(e->fd);
             delete e;
             m_events.erase(m_events.begin() + i);
 
-            return;
+            return ret;
         }
     }
 
     Logger::warn("EventManager: didn't find fd='%d' to remove", ea.fd);
-    return;
+    return ret;
 }
 
 EventAction* EventManager::add(const EventAction& ea)
