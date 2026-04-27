@@ -53,7 +53,7 @@ std::string EventAction::str() const
     ss << "type='" << type_str << "',";
 
     ss << "fd='" << fd << "',";
-    ss << "conn='" << (conn != NULL ? conn->id() : -1);
+    ss << "conn='" << (conn != NULL ? conn->id() : -1) << "'";
 
     return ss.str();
 }

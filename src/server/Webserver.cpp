@@ -91,18 +91,18 @@ void Webserver::run()
         if (n_events == -1)
             continue;
 
-        //@TODO colocar try catch dentro do for loop
-        for (int i = 0; i < n_events; ++i)
-        {
-            const EventAction& event = m_events.get_event(i);
-            Connection* conn = event.conn;
+        EventAction* event = NULL;
 
-            switch (event.type)
+        while (m_events.next(event))
+        {
+            Connection* conn = event->conn;
+
+            switch (event->type)
             {
                 case EventAction::ServerSocket:
                 {
-                    Logger::trace("Webserver: Fd %d is a server socket", event.fd);
-                    const Socket* ss = get_server_socket(event);
+                    Logger::trace("Webserver: Fd %d is a server socket", event->fd);
+                    const Socket* ss = get_server_socket(*event);
                     const ServiceConfig& service = get_service(ss);
                     const EventAction& ec = m_connection_pool.make(ss, service);
                     m_events.apply(ec);
@@ -113,8 +113,8 @@ void Webserver::run()
                     INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
                     Logger::trace(
                         "Webserver: Connection wants to '%s': fd='%d'",
-                        event.action == EventAction::WantRead ? "read from" : "write to",
-                        event.fd);
+                        event->action == EventAction::WantRead ? "read from" : "write to",
+                        event->fd);
 
                     conn->process_request();
 
@@ -124,14 +124,14 @@ void Webserver::run()
                 {
                     INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
 
-                    switch (event.action)
+                    switch (event->action)
                     {
                         //@TODO colocar id na connection
                         case EventAction::WantRead:
                         {
                             Logger::trace(
                                 "Webserver: Connection wants to read to: '%s'",
-                                event.type == EventAction::Pipe ? "pipe" : "socket");
+                                event->type == EventAction::Pipe ? "pipe" : "socket");
 
                             conn->read();
 
@@ -149,7 +149,7 @@ void Webserver::run()
                         {
                             Logger::trace(
                                 "Webserver: Connection wants to write to: '%s'",
-                                event.type == EventAction::Pipe ? "pipe" : "socket");
+                                event->type == EventAction::Pipe ? "pipe" : "socket");
 
                             conn->write();
 
@@ -160,7 +160,7 @@ void Webserver::run()
                         {
                             Logger::trace("Webserver: Connection wants to be closed");
 
-                            if (event.type == EventAction::ClientSocket)
+                            if (event->type == EventAction::ClientSocket)
                                 m_connection_pool.remove(*conn);
 
                             break;
