@@ -8,9 +8,9 @@ namespace constants
 {
 // server
 const char* server_name = "webserv/1.0";
-const size_t read_chunk_size = 4096;
-const size_t pipe_buffer_capacity = 65536;
-const size_t write_chunk_size = 4096;
+const size_t read_chunk_size = 16384;
+const size_t pipe_buffer_capacity = 3; // 65536;
+const size_t write_chunk_size = 16384;
 // - events
 const size_t max_events = 512;
 const Milliseconds epoll_timeout = 60000; // - connections
@@ -50,10 +50,11 @@ const char* bright_red = "\033[91m";
 const char* reset = "\033[0m";
 
 // - logging
-const Log::Level log_level = Log::Trace;
+const Log::Level log_level = Log::Info;
 
 // - name codes
 const char* conn = "\033[37;41mConnection\033[0m";
 const char* cgi = "\033[37;44mCgiHandler\033[0m";
+const char* res = "\033[37;42mResponse\033[0m";
 
 } // namespace constants

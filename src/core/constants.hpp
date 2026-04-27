@@ -58,6 +58,7 @@ extern const Log::Level log_level;
 // - name codes
 extern const char* conn;
 extern const char* cgi;
+extern const char* res;
 
 } // namespace constants
 
