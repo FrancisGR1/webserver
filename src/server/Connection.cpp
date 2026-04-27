@@ -36,9 +36,10 @@ Connection::Connection(int client_fd, const Listener& listener, const ServiceCon
     , m_id(++s_connection_counter)
     , m_service(service)
     , m_socket(client_fd, listener)
+    , m_event_being_handled(NULL)
     , m_processor(this, service)
 {
-    Logger::trace("%s[id=%lld]: constructor", constants::conn, m_id);
+    Logger::verbose("%s[id=%lld]: constructor", constants::conn, m_id);
 }
 
 Connection::~Connection()
@@ -66,6 +67,18 @@ int Connection::fd() const
 long long Connection::id() const
 {
     return m_id;
+}
+
+const EventAction& Connection::event() const
+{
+    REQUIRE(m_event_being_handled != NULL);
+
+    return *m_event_being_handled;
+}
+
+void Connection::set(const EventAction& event_to_handle)
+{
+    m_event_being_handled = &event_to_handle;
 }
 
 bool Connection::done() const
@@ -242,7 +255,7 @@ void Connection::next_state(ConnectionState::Enum state)
 
 void Connection::register_event(EventAction event)
 {
-    Logger::trace("%s[id=%lld]: register event: '%s'", constants::conn, m_id, event.str().c_str());
+    Logger::debug("%s[id=%lld]: register event: '%s'", constants::conn, m_id, event.str().c_str());
     m_events.push_back(event);
 }
 

@@ -50,6 +50,10 @@ class Connection
     const ServiceConfig& service() const;
     const Socket& socket() const;
     long long id() const;
+    const EventAction& event() const;
+
+    // setters
+    void set(const EventAction& event);
 
     // signature
     static long long s_conn_counter;
@@ -63,6 +67,7 @@ class Connection
     const long long m_id;
     const ServiceConfig& m_service;
     Socket m_socket; // owns
+    const EventAction* m_event_being_handled;
 
     // events produced
     std::vector<EventAction> m_events;
