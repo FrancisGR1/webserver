@@ -69,7 +69,8 @@ int EventManager::wait()
 
 bool EventManager::next(EventAction*& out)
 {
-    REQUIRE(m_n_events > 0);
+    if (m_n_events <= 0)
+        return false;
 
     while (m_current_event < static_cast<size_t>(m_n_events))
     {
