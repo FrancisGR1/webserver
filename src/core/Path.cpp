@@ -30,7 +30,7 @@ Path::Path()
     , stat_errno(0)
     , raw("")
 {
-    Logger::trace("Path: default constructor");
+    Logger::verbose("Path: default constructor");
 }
 
 Path::Path(const std::string& str_path)
@@ -53,7 +53,7 @@ Path::Path(const std::string& str_path)
     , stat_errno(0)
     , raw(str_path)
 {
-    Logger::trace("Path: string constructor");
+    Logger::verbose("Path: string constructor");
     init(str_path);
 }
 
@@ -77,7 +77,7 @@ Path::Path(const char* cstr_path)
     , stat_errno(0)
     , raw(cstr_path)
 {
-    Logger::trace("Path: const char* constructor");
+    Logger::verbose("Path: const char* constructor");
     init(cstr_path);
 }
 

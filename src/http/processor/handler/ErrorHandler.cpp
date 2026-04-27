@@ -12,7 +12,7 @@ ErrorHandler::ErrorHandler(const ResponseError& error)
     , m_done(false)
     , m_error_fd(-1)
 {
-    Logger::trace("ErrorHandler: constructor");
+    Logger::verbose("ErrorHandler: constructor");
 }
 
 ErrorHandler::ErrorHandler(StatusCode::Code code)
@@ -21,7 +21,7 @@ ErrorHandler::ErrorHandler(StatusCode::Code code)
     , m_done(false)
     , m_error_fd(-1)
 {
-    Logger::trace("ErrorHandler: constructor");
+    Logger::verbose("ErrorHandler: constructor");
 }
 
 ErrorHandler::ErrorHandler(StatusCode::Code code, const RequestContext& ctx)
@@ -30,12 +30,12 @@ ErrorHandler::ErrorHandler(StatusCode::Code code, const RequestContext& ctx)
     , m_done(false)
     , m_error_fd(-1)
 {
-    Logger::trace("ErrorHandler: constructor");
+    Logger::verbose("ErrorHandler: constructor");
 }
 
 ErrorHandler::~ErrorHandler()
 {
-    Logger::trace("ErrorHandler: constructor");
+    Logger::verbose("ErrorHandler: constructor");
     if (m_error_fd > -1)
     {
         Logger::trace("ErrorHandler: closing fd: %d", m_error_fd);

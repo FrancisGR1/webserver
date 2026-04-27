@@ -14,7 +14,7 @@ EventManager::EventManager(size_t max_events)
     , m_max_events(max_events)
     , m_epoll_events_buffer(new epoll_event[max_events])
 {
-    Logger::trace("EventManager: constructor");
+    Logger::verbose("EventManager: constructor");
 
     m_epoll_fd = epoll_create(1);
     if (m_epoll_fd == -1)
@@ -57,7 +57,7 @@ const EventAction& EventManager::get_event(size_t index) const
     REQUIRE(m_epoll_events_buffer[index].data.ptr != NULL, "data.ptr must never be null!");
 
     EventAction* ea = static_cast<EventAction*>(m_epoll_events_buffer[index].data.ptr);
-    Logger::trace("EventManager: Getting event idx=%d,fd=%d", index, ea->fd);
+    Logger::debug("EventManager: Getting event idx=%d,fd=%d", index, ea->fd);
 
     return (*find(ea));
 }
@@ -152,9 +152,11 @@ int EventManager::remove(const EventAction& ea)
             Logger::trace("EventManager: removing connection[id=%lld] fd: '%d'", (e->conn ? e->conn->id() : -1), e->fd);
 
             //@TODO: melhorar
-            ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, ea.fd, NULL);
             if (e->type == EventAction::ClientSocket || e->type == EventAction::ServerSocket)
+            {
+                ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, ea.fd, NULL);
                 ret = ::close(e->fd);
+            }
             delete e;
             m_events.erase(m_events.begin() + i);
 

@@ -14,7 +14,7 @@
 ConnectionPool::ConnectionPool(size_t max_connections)
     : m_pool(max_connections, NULL)
 {
-    Logger::trace("ConnectionPool: constructor");
+    Logger::verbose("ConnectionPool: constructor");
 }
 
 // destructor

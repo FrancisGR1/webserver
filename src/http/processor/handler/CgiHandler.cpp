@@ -29,7 +29,7 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Second
     , m_total_reads(0)
     , m_body_offset(0)
 {
-    Logger::trace("%s: constructor", constants::cgi);
+    Logger::verbose("%s: constructor", constants::cgi);
 
     m_read_from_script[0] = -1;
     m_read_from_script[1] = -1;
@@ -66,11 +66,12 @@ void CgiHandler::process()
 
             break;
         }
-        //@TODO get current event to decide if you should write or read
         case Pipe:
         {
-            write_to_pipe();
-            read_from_pipe();
+            if (m_ctx.connection()->event().action == EventAction::WantRead)
+                read_from_pipe();
+            else // wants to write
+                write_to_pipe();
             break;
         }
 
@@ -241,7 +242,7 @@ void CgiHandler::read_from_pipe()
                 &m_ctx);
         }
 
-        m_headers += buffer;
+        m_headers.append(buffer, bytes);
 
         size_t body_start = m_headers.find(constants::crlfcrlf);
         if (body_start != std::string::npos)
@@ -332,6 +333,7 @@ void CgiHandler::write_to_pipe()
     // close
     if (m_body_offset >= body.size())
     {
+        register_action(EventAction::WantClose, m_write_to_script[1]);
         ::close(m_write_to_script[1]);
         m_write_to_script[1] = -1;
         Logger::trace("%s: finished writing body to pipe", constants::cgi);
@@ -403,7 +405,7 @@ void CgiHandler::register_action(EventAction::Action action, int fd)
     EventAction event(action, EventAction::Pipe, fd, m_ctx.connection());
     m_events.push_back(event);
 
-    Logger::trace("%s: register event: '%s'", constants::cgi, event.str().c_str());
+    Logger::debug("%s: register event: '%s'", constants::cgi, event.str().c_str());
 }
 
 std::map<std::string, std::string> CgiHandler::init_env()

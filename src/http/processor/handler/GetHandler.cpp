@@ -17,7 +17,7 @@ GetHandler::GetHandler(const RequestContext& ctx)
     , m_done(false)
     , m_get_fd(-1)
 {
-    Logger::trace("GetHandler: constructor");
+    Logger::verbose("GetHandler: constructor");
 }
 
 GetHandler::~GetHandler()

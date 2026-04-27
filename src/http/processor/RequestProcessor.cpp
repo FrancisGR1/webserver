@@ -16,7 +16,7 @@ RequestProcessor::RequestProcessor(Connection* connection, const ServiceConfig& 
     , m_ctx(connection, service)
     , m_handler(NULL)
 {
-    Logger::trace("RequestProcessor: constructor");
+    Logger::verbose("RequestProcessor: constructor");
 }
 
 RequestProcessor::~RequestProcessor()

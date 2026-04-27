@@ -12,7 +12,7 @@ DeleteHandler::DeleteHandler(const RequestContext& ctx)
     : m_ctx(ctx)
     , m_done(false)
 {
-    Logger::trace("DeleteHandler: constructor");
+    Logger::verbose("DeleteHandler: constructor");
 }
 
 DeleteHandler::~DeleteHandler()

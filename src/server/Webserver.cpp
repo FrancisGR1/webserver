@@ -15,7 +15,7 @@ Webserver::Webserver(const Config& config)
     , m_events(constants::max_events)
     , m_connection_pool(constants::max_connections)
 {
-    Logger::trace("Webserver: constructor");
+    Logger::verbose("Webserver: constructor");
 }
 
 Webserver::~Webserver()

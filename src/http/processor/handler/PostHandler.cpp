@@ -21,7 +21,7 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
     , m_offset(0)
     , m_current_part(0)
 {
-    Logger::trace("PostHandler: constructor");
+    Logger::verbose("PostHandler: constructor");
 }
 
 PostHandler::~PostHandler()

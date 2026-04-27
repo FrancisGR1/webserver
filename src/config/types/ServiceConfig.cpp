@@ -8,13 +8,13 @@ ServiceConfig::ServiceConfig()
     : redirection(StatusCode::None, "")
     , max_body_size(constants::max_body_size)
 {
-    Logger::trace("ServiceConfig: constructor");
+    Logger::verbose("ServiceConfig: constructor");
 }
 ServiceConfig::ServiceConfig(LocationConfig location)
     : redirection(StatusCode::None, "")
     , max_body_size(constants::max_body_size)
 {
-    Logger::trace("ServiceConfig: constructor with location");
+    Logger::verbose("ServiceConfig: constructor with location");
     locations[location.name] = location;
 }
 
@@ -22,7 +22,7 @@ ServiceConfig::ServiceConfig(std::vector<LocationConfig> locations_vec)
     : redirection(StatusCode::None, "")
     , max_body_size(constants::max_body_size)
 {
-    Logger::trace("ServiceConfig: constructor with locations' vector");
+    Logger::verbose("ServiceConfig: constructor with locations' vector");
     for (size_t i = 0; i < locations_vec.size(); ++i)
     {
         locations[locations_vec[i].name] = locations_vec[i];
