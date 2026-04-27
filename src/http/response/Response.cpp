@@ -21,7 +21,7 @@ Response::Response()
     , m_offset(0)
     , m_total_sent(0)
 {
-    Logger::trace("Response: constructor");
+    Logger::verbose("Response: constructor");
 }
 
 Response::Response(StatusCode::Code status)
@@ -31,7 +31,7 @@ Response::Response(StatusCode::Code status)
     , m_offset(0)
     , m_total_sent(0)
 {
-    Logger::trace("Response: status constructor");
+    Logger::verbose("Response: status constructor");
 }
 
 Response::Response(StatusCode::Code status, std::map<std::string, std::string> headers, std::string body)
@@ -43,7 +43,7 @@ Response::Response(StatusCode::Code status, std::map<std::string, std::string> h
     , m_offset(0)
     , m_total_sent(0)
 {
-    Logger::trace("Response: status/headers/body constructor");
+    Logger::verbose("Response: status/headers/body constructor");
 }
 
 Response::Response(const Response& other)
@@ -57,7 +57,7 @@ Response::Response(const Response& other)
     , m_offset(other.m_offset)
     , m_total_sent(other.m_total_sent)
 {
-    Logger::trace("Response: copy constructor");
+    Logger::verbose("Response: copy constructor");
 }
 
 Response& Response::operator=(const Response& other)
@@ -254,16 +254,17 @@ ssize_t Response::send_headers(int socket_fd)
 
 ssize_t Response::send_body(int socket_fd)
 {
-    ENSURE(m_state == Response::Body);
+    REQUIRE(m_state == Response::Body);
+
     Logger::trace("Response: send body");
 
-    if (m_body_fd > -1)
-    {
-        return send_body_from_fd(socket_fd);
-    }
-    else if (!m_body_str.empty())
+    if (!m_body_str.empty() && m_offset < m_body_str.size())
     {
         return send_body_from_str(socket_fd);
+    }
+    else if (m_body_fd != -1)
+    {
+        return send_body_from_fd(socket_fd);
     }
     else // no body
     {
@@ -278,11 +279,6 @@ ssize_t Response::send_body_from_fd(int socket_fd)
     Logger::debug("Response: send body from fd=%d", m_body_fd);
 
     ssize_t sent_bytes = 0;
-    // m_body_str is used as a leftover for the next call
-    if (!m_body_str.empty())
-    {
-        return send_body_from_str(socket_fd);
-    }
 
     // @TODO: substitute read() -> send() with sendfile()
     // read
@@ -332,6 +328,8 @@ ssize_t Response::send_body_from_fd(int socket_fd)
 
 ssize_t Response::send_body_from_str(int socket_fd)
 {
+    REQUIRE(m_offset < m_body_str.size());
+
     Logger::debug(
         "Response: send body (string[%zu]): %s", m_body_str.size() - m_offset, (m_body_str.c_str() + m_offset));
 
@@ -342,8 +340,11 @@ ssize_t Response::send_body_from_str(int socket_fd)
     m_total_sent += sent_bytes;
 
     m_offset += sent_bytes;
-    if (m_offset == m_body_str.size())
+
+    if (m_offset == m_body_str.size() && m_body_fd == -1)
+    {
         next_state(Done);
+    }
 
     return sent_bytes;
 }
