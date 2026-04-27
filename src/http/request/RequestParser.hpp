@@ -54,7 +54,7 @@ class RequestParser
   public:
     RequestParser();
 
-    void feed(const std::string& raw);
+    void feed(const char* raw, size_t len);
     bool done() const;
     ParserState::Enum state() const;
     Request get() const;

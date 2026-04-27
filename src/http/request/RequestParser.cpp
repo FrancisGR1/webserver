@@ -18,11 +18,11 @@ RequestParser::RequestParser()
 {
 }
 
-void RequestParser::feed(const std::string& raw)
+void RequestParser::feed(const char* raw, size_t len)
 {
-    Logger::trace("RequestParser: add to buffer: size=%lld", raw.size());
+    Logger::trace("RequestParser: add to buffer: size=%lld", len);
 
-    m_buffer += raw;
+    m_buffer.append(raw, len);
 
     Logger::debug("RequestParser: new buffer: size=%lld", m_buffer.size());
 
@@ -406,8 +406,18 @@ void RequestParser::parse()
 
                 if (m_body.size() < m_content_length)
                 {
-                    m_body += m_ch;
-                    m_state = S::Body;
+                    size_t bytes_needed = m_content_length - m_body.size();
+                    size_t bytes_available = m_buffer.size() - m_idx;
+                    size_t copy_size = std::min(bytes_needed, bytes_available);
+
+                    if (copy_size > 0)
+                    {
+                        m_body.append(&m_buffer[m_idx], copy_size);
+
+                        // @NOTE: must subtract 1 because the m_idx++ in the for loop will add it back.
+                        m_idx += (copy_size - 1);
+                    }
+
                     if (m_body.size() == m_content_length)
                     {
                         m_state = S::Done;
@@ -422,7 +432,9 @@ void RequestParser::parse()
                     else // @NOTE: should never reach here
                         m_status_code = StatusCode::BadRequest;
                     Logger::error(
-                        "RequestParser: body (%ld) is largerthan expected size (%ld)", m_body.size(), m_content_length);
+                        "RequestParser: body (%ld) is larger than expected size (%ld)",
+                        m_body.size(),
+                        m_content_length);
                 }
                 break;
                 // Body chunked

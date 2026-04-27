@@ -135,10 +135,10 @@ void Connection::read()
     else
     {
         Logger::debug("Connection[id=%lld]: read %ld bytes from client", m_id, bytes);
-    }
 
-    // parse
-    m_parser.feed(std::string(buffer, bytes));
+        // parse
+        m_parser.feed(buffer, bytes);
+    }
 
     if (m_parser.done())
     {
@@ -167,6 +167,7 @@ void Connection::read()
             Logger::trace("%s[id=%lld]: on fast path", constants::conn, m_id);
         }
     }
+
     update_activity();
 }
 
