@@ -125,6 +125,11 @@ void Logger::set_global_level(Log::Level level)
     m_global_level = level;
 }
 
+Log::Level Logger::level(void)
+{
+    return m_global_level;
+}
+
 void Logger::vlog(Log::Level level, const char* fmt, va_list args)
 {
     char buffer[5000];

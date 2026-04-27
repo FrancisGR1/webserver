@@ -3,9 +3,10 @@
 
 //@TODO: mudar extensão para .tpp -> incluir .tpp na extensões de cpp
 
-#include "Logger.hpp"
-#include "constants.hpp"
 #include <iostream>
+
+#include "core/Logger.hpp"
+#include "core/constants.hpp"
 
 template <typename logT>
 void Logger::trace_obj(const logT& to_log, const std::string prefix)

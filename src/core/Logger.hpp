@@ -43,6 +43,7 @@ class Logger
     static void close_output();
 
     static void set_global_level(Log::Level level);
+    static Log::Level level(void);
 
   private:
     static std::ostream* m_log_stream;
