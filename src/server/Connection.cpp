@@ -44,7 +44,7 @@ Connection::Connection(int client_fd, const Listener& listener, const ServiceCon
 
 Connection::~Connection()
 {
-    Logger::trace("%s[id=%lld]: destructor", constants::conn, m_id);
+    Logger::verbose("%s[id=%lld]: destructor", constants::conn, m_id);
 }
 
 std::vector<EventAction> Connection::give_events()

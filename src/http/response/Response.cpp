@@ -21,7 +21,7 @@ Response::Response()
     , m_offset(0)
     , m_total_sent(0)
 {
-    Logger::verbose("Response: constructor");
+    Logger::verbose("%s: constructor", constants::res);
 }
 
 Response::Response(StatusCode::Code status)
@@ -31,7 +31,7 @@ Response::Response(StatusCode::Code status)
     , m_offset(0)
     , m_total_sent(0)
 {
-    Logger::verbose("Response: status constructor");
+    Logger::verbose("%s: status constructor", constants::res);
 }
 
 Response::Response(StatusCode::Code status, std::map<std::string, std::string> headers, std::string body)
@@ -43,7 +43,7 @@ Response::Response(StatusCode::Code status, std::map<std::string, std::string> h
     , m_offset(0)
     , m_total_sent(0)
 {
-    Logger::verbose("Response: status/headers/body constructor");
+    Logger::verbose("%s: status/headers/body constructor", constants::res);
 }
 
 Response::Response(const Response& other)
@@ -57,12 +57,12 @@ Response::Response(const Response& other)
     , m_offset(other.m_offset)
     , m_total_sent(other.m_total_sent)
 {
-    Logger::verbose("Response: copy constructor");
+    Logger::verbose("%s: copy constructor", constants::res);
 }
 
 Response& Response::operator=(const Response& other)
 {
-    Logger::trace("Response: assign operator");
+    Logger::verbose("%s: assign operator", constants::res);
 
     if (this != &other)
     {
@@ -82,7 +82,7 @@ Response& Response::operator=(const Response& other)
 
 Response::~Response()
 {
-    Logger::trace("Response: destructor");
+    Logger::verbose("%s: destructor", constants::res);
 
     if (m_body_path.exists)
         ResourceLocker::unlock(m_body_path);
@@ -127,19 +127,19 @@ void Response::set_status(StatusCode::Code status)
 
 void Response::set_header(const std::string& key, const std::string& value)
 {
-    Logger::trace("Response: set header: ['%s']='%s'", key.c_str(), value.c_str());
+    Logger::trace("%s: set header: ['%s']='%s'", constants::res, key.c_str(), value.c_str());
     m_headers[key] = value;
 }
 
 void Response::set_body_as_str(const std::string& str)
 {
-    Logger::trace("Response: set body str: '%s'", str.c_str());
+    Logger::trace("%s: set body str: '%s'", constants::res, str.c_str());
     m_body_str = str;
 }
 
 void Response::set_body_as_fd(int fd)
 {
-    Logger::trace("Response: set body fd: '%d'", fd);
+    Logger::trace("%s: set body fd: '%d'", constants::res, fd);
     m_body_fd = fd;
 }
 
@@ -147,7 +147,7 @@ int Response::set_body_as_path(Path& path)
 {
     REQUIRE(path.exists == true);
 
-    Logger::trace("Response: set body path: '%s'", path.raw.c_str());
+    Logger::trace("%s: set body path: '%s'", constants::res, path.raw.c_str());
     m_body_fd = path.open(O_RDONLY);
     fcntl(m_body_fd, F_SETFL, O_NONBLOCK);
     m_body_path = path;
@@ -180,14 +180,14 @@ ssize_t Response::send_status_line(int socket_fd)
 {
     ENSURE(m_state == Response::Status);
 
-    Logger::trace("Response: send status");
+    Logger::trace("%s: send status", constants::res);
 
     m_status_line = make_status_line();
 
     ssize_t sent = ::send(socket_fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
     if (sent == -1)
     {
-        Logger::warn("Response: sent %ld bytes: errno says: '%s'", sent, ::strerror(errno));
+        Logger::warn("%s: sent %ld bytes: errno says: '%s'", constants::res, sent, ::strerror(errno));
         next_state(Done);
     }
     else if (sent + m_offset == m_status_line.size())
@@ -229,12 +229,12 @@ std::string Response::make_status_line()
 ssize_t Response::send_headers(int socket_fd)
 {
     ENSURE(m_state == Response::Headers);
-    Logger::trace("Response: send headers");
+    Logger::trace("%s: send headers", constants::res);
 
     ssize_t sent = ::send(socket_fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, 0);
     if (sent == -1)
     {
-        Logger::warn("Response: sent %ld bytes: errno says: '%s'", sent, ::strerror(errno));
+        Logger::warn("%s: sent %ld bytes: errno says: '%s'", constants::res, sent, ::strerror(errno));
         next_state(Done);
     }
     else if (sent + m_offset == m_headers_str.size())
@@ -256,7 +256,7 @@ ssize_t Response::send_body(int socket_fd)
 {
     REQUIRE(m_state == Response::Body);
 
-    Logger::trace("Response: send body");
+    Logger::trace("%s: send body", constants::res);
 
     if (!m_body_str.empty() && m_offset < m_body_str.size())
     {
@@ -268,7 +268,7 @@ ssize_t Response::send_body(int socket_fd)
     }
     else // no body
     {
-        Logger::trace("Response: done!");
+        Logger::trace("%s: done!", constants::res);
         next_state(Done);
         return 0;
     }
@@ -284,7 +284,7 @@ ssize_t Response::send_body_from_fd(int socket_fd)
     // read
     char buffer[constants::read_chunk_size + 1] = {};
     ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
-    Logger::trace("Response: read %ld bytes: '%s'", read_bytes, buffer);
+    Logger::trace("%s: read %ld bytes: '%s'", constants::res, read_bytes, buffer);
     if (read_bytes < 0)
     {
         Logger::warn("Response: errno: '%s'", ::strerror(errno));
@@ -299,7 +299,7 @@ ssize_t Response::send_body_from_fd(int socket_fd)
 
     // send
     sent_bytes = ::send(socket_fd, buffer, read_bytes, 0);
-    Logger::trace("Response: sent %ld(%ld) bytes", sent_bytes, m_total_sent);
+    Logger::trace("%s: sent %ld(%ld) bytes", constants::res, sent_bytes, m_total_sent);
     if (sent_bytes < read_bytes)
     {
         // store leftover for next call
@@ -310,13 +310,13 @@ ssize_t Response::send_body_from_fd(int socket_fd)
     }
     if (sent_bytes == -1)
     {
-        Logger::warn("Response: send() error: errno says: '%s'", strerror(errno));
+        Logger::warn("%s: send() error: errno says: '%s'", constants::res, strerror(errno));
         next_state(Done);
         return -1;
     }
     if (sent_bytes == 0)
     {
-        Logger::warn("Response: sent 0 bytes");
+        Logger::warn("%s: sent 0 bytes", constants::res);
         return 0;
     }
 
@@ -331,7 +331,10 @@ ssize_t Response::send_body_from_str(int socket_fd)
     REQUIRE(m_offset < m_body_str.size());
 
     Logger::debug(
-        "Response: send body (string[%zu]): %s", m_body_str.size() - m_offset, (m_body_str.c_str() + m_offset));
+        "%s: send body (string[%zu]): %s",
+        constants::res,
+        m_body_str.size() - m_offset,
+        (m_body_str.c_str() + m_offset));
 
     ssize_t sent_bytes = ::send(socket_fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
     if (sent_bytes < 0)
