@@ -31,7 +31,7 @@ void RequestParser::feed(const std::string& raw)
 
 bool RequestParser::done() const
 {
-    return m_state == ParserState::Done;
+    return m_state == ParserState::Done || error();
 }
 
 ParserState::Enum RequestParser::state() const
