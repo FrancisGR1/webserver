@@ -7,7 +7,6 @@
 #include "constants.hpp"
 
 std::ostream* Logger::m_log_stream = &std::cout;
-//@TODO: istovai dar leaks
 std::ofstream* Logger::m_file_stream = new std::ofstream();
 std::vector<std::ofstream*> Logger::m_opened_files;
 
@@ -108,6 +107,13 @@ void Logger::set_output(const char* file, std::ios_base::openmode mode)
 void Logger::flush()
 {
     *m_log_stream << std::flush;
+}
+
+void Logger::finalize()
+{
+    flush();
+    close_output();
+    delete m_file_stream;
 }
 
 void Logger::close_output()

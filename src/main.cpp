@@ -39,5 +39,7 @@ int main(int argc, char* argv[])
         Logger::fatal("%s", e.what());
     }
 
+    Logger::finalize();
+
     return (0);
 }

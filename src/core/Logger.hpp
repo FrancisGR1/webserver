@@ -42,6 +42,7 @@ class Logger
     static void set_output(const char* file, std::ios_base::openmode mode = std::ios_base::out);
     static void set_output(std::ofstream& ofs);
     static void flush();
+    static void finalize();
     static void close_output();
 
     static void set_global_level(Log::Level level);
