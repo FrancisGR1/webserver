@@ -110,6 +110,12 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
         os << "\t" << it->first << ": " << it->second << "\n";
     }
 
-    print_field(os, "Body", request.body());
+    std::size_t display = 100;
+    os << "Body size: " << request.body().size() << " bytes\n";
+    os << "Body preview: '" << request.body().substr(0, display) << "'";
+    if (request.body().size() > display)
+        os << "...";
+    os << "\n";
+
     return os;
 }

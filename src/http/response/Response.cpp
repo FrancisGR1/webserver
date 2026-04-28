@@ -133,7 +133,7 @@ void Response::set_header(const std::string& key, const std::string& value)
 
 void Response::set_body_as_str(const std::string& str)
 {
-    Logger::trace("%s: set body str: '%s'", constants::res, str.c_str());
+    Logger::trace("%s: set body str: '%.30s'...", constants::res, str.c_str());
     m_body_str = str;
 }
 
@@ -284,7 +284,7 @@ ssize_t Response::send_body_from_fd(int socket_fd)
     // read
     char buffer[constants::read_chunk_size + 1] = {};
     ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
-    Logger::trace("%s: read %ld bytes: '%s'", constants::res, read_bytes, buffer);
+    Logger::trace("%s: read %ld bytes: '%.30s'..", constants::res, read_bytes, buffer);
     if (read_bytes < 0)
     {
         Logger::warn("Response: errno: '%s'", ::strerror(errno));
@@ -331,7 +331,7 @@ ssize_t Response::send_body_from_str(int socket_fd)
     REQUIRE(m_offset < m_body_str.size());
 
     Logger::debug(
-        "%s: send body (string[%zu]): %s",
+        "%s: send body (string[%zu]): %.30s",
         constants::res,
         m_body_str.size() - m_offset,
         (m_body_str.c_str() + m_offset));
@@ -371,7 +371,7 @@ bool Response::operator==(const Response& other) const
 
 std::ostream& operator<<(std::ostream& os, const Response& response)
 {
-    os << "Is done: " << std::boolalpha << response.done() << std::endl;
+    os << "Is done: " << std::boolalpha << response.done() << "\n";
     os << "Status:  '" << response.m_status_line << "'\n";
     os << "Headers str:  '" << response.m_headers_str << "'\n";
     os << "Headers map:\n";
@@ -382,6 +382,11 @@ std::ostream& operator<<(std::ostream& os, const Response& response)
         os << "\t'" << it->first << "': '" << it->second << "'\n";
     }
     os << "Body fd:  " << response.m_body_fd << "\n";
-    os << "Body str: '" << response.m_body_str << "'\n";
+    std::size_t display = 100;
+    os << "Body size: " << response.m_body_str.size() << " bytes\n";
+    os << "Body preview: '" << response.m_body_str.substr(0, display);
+    if (response.body().size() > display)
+        os << "...";
+    os << "\n";
     return os;
 }

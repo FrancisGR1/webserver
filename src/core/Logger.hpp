@@ -36,6 +36,8 @@ class Logger
     static void trace_obj(const logT& to_log, const std::string prefix = "");
     template <typename logT>
     static void debug_obj(const logT& to_log, const std::string prefix = "");
+    template <typename logT>
+    static void info_obj(const logT& to_log, const std::string prefix = "");
 
     static void set_output(const char* file, std::ios_base::openmode mode = std::ios_base::out);
     static void set_output(std::ofstream& ofs);

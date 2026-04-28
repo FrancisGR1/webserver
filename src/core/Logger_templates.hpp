@@ -26,6 +26,15 @@ void Logger::debug_obj(const logT& to_log, const std::string prefix)
     }
 }
 
+template <typename logT>
+void Logger::info_obj(const logT& to_log, const std::string prefix)
+{
+    if (should_log(Log::Info))
+    {
+        tlog(Log::Info, to_log, prefix);
+    }
+}
+
 // forward declaration
 namespace constants
 {

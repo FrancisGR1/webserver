@@ -143,7 +143,7 @@ void Connection::read()
     if (m_parser.done())
     {
         const Request& request_ = m_parser.get();
-        Logger::debug_obj(request_, "Connection: Request: ");
+        Logger::info_obj(request_, "Connection: Request: ");
         m_processor.set(request_);
         next_state(ConnectionState::ProcessingRequest);
 
@@ -173,7 +173,7 @@ void Connection::read()
 
 void Connection::process_request()
 {
-    REQUIRE(m_state.state == ConnectionState::ProcessingRequest);
+    // REQUIRE(m_state.state == ConnectionState::ProcessingRequest);
     if (m_state.state != ConnectionState::ProcessingRequest)
     {
         Logger::warn(
@@ -192,7 +192,7 @@ void Connection::process_request()
 
     if (m_processor.done())
     {
-        Logger::trace("%s[id=%lld]: RequestProcessor: Done!", constants::conn, m_id);
+        Logger::debug("%s[id=%lld]: RequestProcessor: Done!", constants::conn, m_id);
         m_response = m_processor.response();
         Logger::debug_obj(m_response, "Connection: Response:\n");
         register_action(EventAction::WantWrite);
@@ -216,7 +216,7 @@ void Connection::write()
 
     if (m_response.done())
     {
-        Logger::debug_obj(m_response, "Connection: Response:\n");
+        Logger::info_obj(m_response, "Connection: Response:\n");
         Logger::info("%s[id=%lld]: state - done!", constants::conn, m_id);
 
         // close client socket by DEFAULT (HTTP 1.0)
