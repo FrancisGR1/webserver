@@ -7,6 +7,7 @@
 
 #include "core/Path.hpp"
 #include "core/constants.hpp"
+#include "core/contracts.hpp"
 #include "core/utils.hpp"
 #include "http/StatusCode.hpp"
 #include "http/http_utils.hpp"
@@ -68,10 +69,13 @@ void CgiHandler::process()
         }
         case Pipe:
         {
-            if (m_ctx.connection()->event().action == EventAction::WantRead)
+            EventAction::Action action = m_ctx.connection()->event().action;
+            if (action == EventAction::WantRead)
                 read_from_pipe();
-            else // wants to write
+            else if (action == EventAction::WantWrite)
                 write_to_pipe();
+            else
+                INVARIANT(false, "Action should either be read or write!");
             break;
         }
 
@@ -230,17 +234,17 @@ void CgiHandler::read_from_pipe()
         Logger::trace("%s: total bytes read: %zu", constants::cgi, m_total_reads);
         Logger::trace("%s: read: '%s'", constants::cgi, buffer);
 
-        if (m_total_reads > constants::cgi_max_output)
-        {
-            throw ResponseError(
-                StatusCode::BadGateway,
-                utils::fmt(
-                    "%s: output (%zu) exceeded max capacity (%zu)",
-                    constants::cgi,
-                    m_total_reads,
-                    constants::cgi_max_output),
-                &m_ctx);
-        }
+        // if (m_total_reads > constants::cgi_max_output)
+        //{
+        //     throw ResponseError(
+        //         StatusCode::BadGateway,
+        //         utils::fmt(
+        //             "%s: output (%zu) exceeded max capacity (%zu)",
+        //             constants::cgi,
+        //             m_total_reads,
+        //             constants::cgi_max_output),
+        //         &m_ctx);
+        // }
 
         m_headers.append(buffer, bytes);
 
@@ -252,8 +256,6 @@ void CgiHandler::read_from_pipe()
             m_headers = m_headers.substr(0, body_start);
 
             Logger::trace("CgiHandler:\nheaders: '%s';\nbody:    '%s';", m_headers.c_str(), m_body_str.c_str());
-
-            register_action(EventAction::WantClose, m_read_from_script[0]);
 
             // body might have not been totally read
             // but it's ok, Response can handle split bodies
@@ -345,6 +347,13 @@ void CgiHandler::make_response()
 {
     Logger::trace("%s: transform headers to a string", constants::cgi);
 
+    if (m_write_to_script[1] != -1)
+    {
+        register_action(EventAction::WantClose, m_write_to_script[1]);
+        ::close(m_write_to_script[1]);
+        m_write_to_script[1] = -1;
+    }
+
     // https://www.rfc-editor.org/rfc/rfc3875#section-6
     // validate and set headers
     std::vector<std::string> lines = utils::str_split(m_headers, constants::crlf);
@@ -390,6 +399,8 @@ void CgiHandler::make_response()
     m_response.set_body_as_str(m_body_str);
     if (m_read_from_script[0] != -1)
     {
+        register_action(EventAction::WantClose, m_read_from_script[0]);
+        // response takes ownership
         m_response.set_body_as_fd(m_read_from_script[0]);
 
         m_read_from_script[0] = -1;

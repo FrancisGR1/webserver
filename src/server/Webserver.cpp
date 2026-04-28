@@ -96,6 +96,8 @@ void Webserver::run()
         while (m_events.next(event))
         {
             Connection* conn = event->conn;
+            if (conn)
+                conn->set(*event);
 
             switch (event->type)
             {

@@ -14,8 +14,6 @@ EventAction::EventAction(EventAction::Action action, EventAction::Type type, int
     , conn(conn)
 {
     Logger::verbose("EventAction: constructor - params");
-    if (conn)
-        conn->set(*this);
 }
 
 EventAction::EventAction(const EventAction& other)
@@ -25,8 +23,6 @@ EventAction::EventAction(const EventAction& other)
     , conn(other.conn)
 {
     Logger::verbose("EventAction: copy constructor");
-    if (conn)
-        conn->set(*this);
 }
 
 std::string EventAction::str() const

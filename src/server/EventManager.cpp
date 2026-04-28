@@ -45,8 +45,6 @@ EventManager::~EventManager()
 
 int EventManager::wait()
 {
-    Logger::info("EventManager: waiting...");
-
     m_n_events = epoll_wait(m_epoll_fd, m_epoll_events_buffer, constants::max_events, constants::epoll_timeout);
     if (m_n_events == -1)
         Logger::warn("EventManager: epoll_wait() interrupted!");
@@ -59,7 +57,11 @@ int EventManager::wait()
             for (size_t i = 0; i < static_cast<size_t>(m_n_events); ++i)
             {
                 EventAction* ea = static_cast<EventAction*>(m_epoll_events_buffer[i].data.ptr);
-                Logger::debug("EventManager: event=%d: '%s'", i, ea->str().c_str());
+                EventAction* found = find(ea);
+                if (found)
+                    Logger::debug("EventManager: event=%d: '%s'", i, found->str().c_str());
+                else
+                    Logger::debug("EventManager: event=%d: stale", i);
             }
             Logger::debug("==================================");
         }
@@ -79,7 +81,7 @@ bool EventManager::next(EventAction*& out)
         EventAction* found = find(ea);
         if (found == NULL)
         {
-            Logger::warn("EventManager: skipping stale event");
+            // skip stale events
             continue;
         }
         out = found;
@@ -88,11 +90,11 @@ bool EventManager::next(EventAction*& out)
 
     flush_pending_deletes();
 
-    // rest
+    // reset
     m_current_event = 0;
     m_n_events = 0;
 
-    return false; // end
+    return false;
 }
 
 const EventAction* EventManager::get_event(size_t index) const
@@ -208,11 +210,13 @@ int EventManager::remove(const EventAction& ea)
         {
             Logger::trace("EventManager: removing connection[id=%lld] fd: '%d'", (e->conn ? e->conn->id() : -1), e->fd);
 
+            ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, ea.fd, NULL);
+
             if (e->type == EventAction::ClientSocket || e->type == EventAction::ServerSocket)
             {
-                ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, ea.fd, NULL);
                 ret = ::close(e->fd);
             }
+
             m_pending_deletes.push_back(e);
             m_events.erase(m_events.begin() + i);
 
@@ -244,7 +248,6 @@ void EventManager::modify(EventAction*& ea, EventAction::Action action)
     ea->action = action;
 }
 
-//@MUST find a corresponding EventAction or it fails
 EventAction* EventManager::find(EventAction*& ea) const
 {
     if (ea == NULL)
@@ -253,13 +256,12 @@ EventAction* EventManager::find(EventAction*& ea) const
         return NULL;
     }
 
-    Logger::trace("EventManager: find fd='%d' in events", ea->fd);
-
     for (size_t i = 0; i < m_events.size(); ++i)
     {
         if (ea == m_events[i])
         {
             INVARIANT(ea == m_events[i], "EventAction must always be equal to epoll_event!");
+            Logger::trace("EventManager: found fd='%d' in events", ea->fd);
             if (m_events[i]->conn)
                 Logger::trace("EventManager: found connection: '%lld'", m_events[i]->conn->id());
             else

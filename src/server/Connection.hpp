@@ -25,7 +25,6 @@ struct ConnectionState
     std::string str() const;
 };
 
-//@TODO adicionar um unique id
 class Connection
 {
   public:
