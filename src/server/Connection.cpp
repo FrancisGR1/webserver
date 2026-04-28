@@ -251,6 +251,7 @@ const Socket& Connection::socket() const
 // utils
 void Connection::next_state(ConnectionState::Enum state)
 {
+    Logger::info("Connection: go to state: %s", ConnectionState(state).str().c_str());
     m_state.state = state;
 }
 

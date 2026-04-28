@@ -232,7 +232,7 @@ void CgiHandler::read_from_pipe()
 
         m_total_reads += bytes;
         Logger::trace("%s: total bytes read: %zu", constants::cgi, m_total_reads);
-        Logger::trace("%s: read: '%s'", constants::cgi, buffer);
+        Logger::trace("%s: read: '%.30s'%s", constants::cgi, buffer, m_total_reads > 30 ? "..." : "");
 
         // if (m_total_reads > constants::cgi_max_output)
         //{
@@ -255,7 +255,11 @@ void CgiHandler::read_from_pipe()
             m_body_str = m_headers.substr(body_start + 4); // 4 = crlfcrlf size
             m_headers = m_headers.substr(0, body_start);
 
-            Logger::trace("CgiHandler:\nheaders: '%s';\nbody:    '%s';", m_headers.c_str(), m_body_str.c_str());
+            Logger::trace(
+                "CgiHandler:\nheaders: '%s';\nbody:    '%.30s';",
+                m_headers.c_str(),
+                m_body_str.c_str(),
+                m_total_reads > 30 ? "..." : "");
 
             // body might have not been totally read
             // but it's ok, Response can handle split bodies
@@ -393,7 +397,7 @@ void CgiHandler::make_response()
     }
 
     Logger::trace("%s: headers:'%s'", constants::cgi, m_headers.c_str());
-    Logger::trace("%s: body string: '%s'", constants::cgi, m_body_str.c_str());
+    Logger::trace("%s: body string: '%.30s'", constants::cgi, m_body_str.c_str(), m_total_reads > 30 ? "..." : "");
     Logger::trace("%s: body fd: '%d'", constants::cgi, m_read_from_script[0]);
 
     m_response.set_body_as_str(m_body_str);

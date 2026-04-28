@@ -284,7 +284,7 @@ ssize_t Response::send_body_from_fd(int socket_fd)
     // read
     char buffer[constants::read_chunk_size + 1] = {};
     ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
-    Logger::trace("%s: read %ld bytes: '%.30s'..", constants::res, read_bytes, buffer);
+    Logger::trace("%s: read %ld bytes: '%.30s'...", constants::res, read_bytes, buffer);
     if (read_bytes < 0)
     {
         Logger::warn("Response: errno: '%s'", ::strerror(errno));
