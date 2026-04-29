@@ -3,6 +3,10 @@
 #include <string>
 #include <vector>
 
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include "config/types/LocationConfig.hpp"
 #include "config/types/ServiceConfig.hpp"
 #include "core/Logger.hpp"
@@ -10,6 +14,7 @@
 #include "http/StatusCode.hpp"
 #include "http/processor/handler/CgiHandler.hpp"
 #include "http/response/ResponseError.hpp"
+#include "server/Connection.hpp"
 #include "server/EventManager.hpp"
 
 #include "test_utils.hpp"
@@ -32,7 +37,8 @@ struct TestCase
         service = ServiceConfig{{script_location}};
         socket = std::make_unique<Socket>(3, listener); // 3 = dummy fd
         events = std::make_unique<EventManager>(1024);
-        ctx = std::make_unique<RequestContext>(nullptr, service);
+        conn = std::make_unique<Connection>(3, listener, service);
+        ctx = std::make_unique<RequestContext>(conn.get(), service);
 
         // load cgi directives
         Directive directive{Token::DirectiveCgi, {".py", "/usr/bin/python3"}};
@@ -60,6 +66,7 @@ struct TestCase
 
     // Owned resources
     Listener listener;
+    std::unique_ptr<Connection> conn;
     std::unique_ptr<Socket> socket;
     std::unique_ptr<EventManager> events;
     std::unique_ptr<RequestContext> ctx;
@@ -127,7 +134,7 @@ std::vector<TestCase> generate_good_test_cases(void)
     // we test a safe big size (half of the max capacity), which is the theoretical
     // max for one big message.
     // Bigger messages should be tested in the integration tests
-    std::string big_body(constants::pipe_buffer_capacity / 2, 'A');
+    std::string big_body(65536 / 2, 'A');
     test_cases.emplace_back(
         "echo big body",
         "./test_data/scripts/good/echo_stdin.py",
@@ -239,15 +246,21 @@ void test_good_CgiHandler(const TestCase& test)
     Logger::info("===============\nTest: '%s'", test.title.c_str());
     CgiHandler handler(test.request, *test.ctx, TEST_TIMEOUT);
 
+    EventAction write_ev{EventAction::WantWrite, EventAction::ClientSocket, 3, test.conn.get()};
+    EventAction read_ev{EventAction::WantRead, EventAction::ClientSocket, 3, test.conn.get()};
+    EventAction* ev = &write_ev;
+
     while (!handler.done())
     {
+        if (ev == &read_ev && handler.is_writing())
+            ev = &write_ev;
+        else
+            ev = &read_ev;
         try
         {
+            test.conn->set(*ev);
             handler.process();
-            if (test.title != "echo big body")
-                usleep(100); // give initial time to os to setup the pipe/subprocess
-            else
-                sleep(1); // need more time for a big body
+            usleep(10000); // give initial time to os to setup the pipe/subprocess
         }
         catch (const ResponseError& error)
         {
@@ -260,6 +273,50 @@ void test_good_CgiHandler(const TestCase& test)
     }
 
     Logger::debug_obj(handler.response(), "CgiHandler: response: ");
+
+    if (handler.response().body_fd() != -1)
+    {
+        Logger::debug("test_CgiHandler: get the rest of the content from the pipe");
+
+        // mock socket
+        // default case: evalute status code and compare bodies
+        // create tmp socket
+        int sv[2];
+        ::socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
+        ::fcntl(sv[0], F_SETFL, O_NONBLOCK);
+        ::fcntl(sv[1], F_SETFL, O_NONBLOCK);
+
+        // drain
+        Response& res = const_cast<Response&>(handler.response());
+        while (!res.done())
+            res.send(sv[0]); // send to one end
+
+        // read everything from the other end
+        std::string received;
+        char buffer[4096];
+        ssize_t bytes;
+        while ((bytes = ::read(sv[1], buffer, sizeof(buffer))) > 0)
+            received.append(buffer, bytes);
+
+        ::close(sv[0]);
+        ::close(sv[1]);
+
+        Logger::debug("test_CgiHandler: received:bytes=%lld,data='%s'", received.size(), received.c_str());
+
+        // received contains status line + headers + body
+        // strip status line and headers to get just the body
+        size_t body_start = received.find(constants::crlfcrlf);
+        std::string body = (body_start != std::string::npos) ? received.substr(body_start + 4) : "";
+
+        if (body == test.expected.body())
+            std::cout << constants::green << "[OK] " << constants::reset << test.title << "\n";
+        else
+        {
+            std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
+            std::cerr << "body size got: " << body.size() << " expected: " << test.expected.body().size() << "\n";
+        }
+        return;
+    }
 
     // compare status codes and bodies
     // @ASSUMPTIO body output of cgi is equal to request body - it just mirrors
@@ -280,14 +337,22 @@ void test_good_CgiHandler(const TestCase& test)
 void test_bad_CgiHandler(const TestCase& test)
 {
     Logger::info("Test: '%s'", test.title.c_str());
-    CgiHandler ch(test.request, *test.ctx, TEST_TIMEOUT);
+    CgiHandler handler(test.request, *test.ctx, TEST_TIMEOUT);
 
-    while (!ch.done())
+    EventAction write_ev{EventAction::WantWrite, EventAction::ClientSocket, 3, test.conn.get()};
+    EventAction read_ev{EventAction::WantRead, EventAction::ClientSocket, 3, test.conn.get()};
+    EventAction* ev = &write_ev;
+    while (!handler.done())
     {
+        if (ev == &read_ev && handler.is_writing())
+            ev = &write_ev;
+        else
+            ev = &read_ev;
         try
         {
-            ch.process();
-            usleep(100); // give initial time to os to setup the pipe/subprocess
+            test.conn->set(*ev);
+            handler.process();
+            usleep(10000); // give initial time to os to setup the pipe/subprocess
         }
         catch (const ResponseError& error)
         {
@@ -313,16 +378,16 @@ void test_bad_CgiHandler(const TestCase& test)
     std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
     std::cerr << "=====\nExpected Error!\n"
               << "=====\nDidn't catch an error, Got:\n"
-              << ch.response();
+              << handler.response();
 }
 
 int main()
 {
-    Logger::set_global_level(Log::Debug);
+    Logger::set_global_level(Log::Error);
 
     // send output of cgi to here
     // to check what subprocess says
-    Logger::set_output("./logs/subprocess.log", std::ios::out | std::ios::trunc);
+    // Logger::set_output("./logs/subprocess.log", std::ios::out | std::ios::trunc);
 
     std::cout << "==============================\n";
     std::cout << "========== CgiHandler ========\n";
@@ -336,11 +401,10 @@ int main()
     tests = generate_good_test_cases();
     for (auto& test : tests)
     {
-        if (test.title != "echo big body")
-            continue;
+        // if (test.title != "custom status code")
+        //     continue;
         test_good_CgiHandler(test);
     }
-    return 00;
 
     // bad
     std::cout << constants::red << "\nBad tests\n" << constants::reset;
