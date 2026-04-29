@@ -173,8 +173,8 @@ void Webserver::run()
 
             m_events.apply(conn->give_events());
 
-            if (conn->done())
-                m_connection_pool.remove(*conn);
+            // if (conn->done())
+            //     m_connection_pool.remove(*conn);
         }
 
         m_connection_pool.remove_idles(m_events);
