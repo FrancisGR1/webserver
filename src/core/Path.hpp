@@ -15,6 +15,7 @@ struct Path
     const char* c_str() const;
 
     int open(int flags, int permissions = 0644);
+    int close(void);
     bool operator<(const Path& other) const;
 
     // signature
@@ -47,9 +48,6 @@ struct Path
     // meta-data
     off_t size;
     time_t mtime;
-
-    //@QUESTION @TODO: eliminar?
-    int stat_errno;
 
     std::string raw;
 

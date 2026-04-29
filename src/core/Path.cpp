@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <iostream>
 #include <string>
+
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -27,7 +29,6 @@ Path::Path()
     , can_execute(false)
     , size(0)
     , mtime(0)
-    , stat_errno(0)
     , raw("")
 {
     Logger::verbose("Path: default constructor");
@@ -50,7 +51,6 @@ Path::Path(const std::string& str_path)
     , can_execute(false)
     , size(0)
     , mtime(0)
-    , stat_errno(0)
     , raw(str_path)
 {
     Logger::verbose("Path: string constructor");
@@ -74,7 +74,6 @@ Path::Path(const char* cstr_path)
     , can_execute(false)
     , size(0)
     , mtime(0)
-    , stat_errno(0)
     , raw(cstr_path)
 {
     Logger::verbose("Path: const char* constructor");
@@ -153,7 +152,7 @@ void Path::init(const std::string& str_path)
     struct stat st;
     if (stat(raw.c_str(), &st) != 0)
     {
-        stat_errno = errno;
+        Logger::error("Path: errno says: '%s'", strerror(errno));
         return;
     }
     else
@@ -187,10 +186,22 @@ void Path::init(const std::string& str_path)
 
 int Path::open(int flags, int permissions)
 {
-    int fd = ::open(c_str(), flags, permissions);
-    if (fd > -1) // reinit
+    int opened_fd = ::open(c_str(), flags, permissions);
+    if (opened_fd > -1)
+    {
         init(c_str());
-    return fd;
+        fd = opened_fd;
+    }
+    return opened_fd;
+}
+
+int Path::close(void)
+{
+    int result = 0;
+    if (fd > -1)
+        result = ::close(fd);
+    fd = -1;
+    return result;
 }
 
 std::ostream& operator<<(std::ostream& os, const Path& path)
