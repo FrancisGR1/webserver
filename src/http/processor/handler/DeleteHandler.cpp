@@ -37,7 +37,7 @@ void DeleteHandler::process()
     if (path.is_directory)
         http_utils::throw_conflict_delete(path, m_ctx);
 
-    if (!ResourceLocker::lock(path))
+    if (!ResourceLocker::is_unlocked(path))
         http_utils::throw_service_unavailable(path, m_ctx);
 
     // delete file

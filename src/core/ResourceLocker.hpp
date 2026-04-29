@@ -13,6 +13,7 @@ class ResourceLocker
   public:
     static bool lock(const Path& path);
     static bool unlock(const Path& path);
+    static bool is_unlocked(const Path& path);
 
   private:
     typedef std::pair<dev_t, ino_t> ResourceKey;

@@ -213,15 +213,18 @@ void GetHandler::handle_file(Response& response, Path& path)
     response.set_header("Content-Type", path.mime);
     response.set_header("Date", utils::http_date());
 
-    m_get_fd = response.set_body_as_path(path);
-    if (m_get_fd < 0)
-    {
-        http_utils::throw_internal_server_error_not_valid(path, m_ctx);
-    }
-    if (!ResourceLocker::lock(path))
+    if (!ResourceLocker::is_unlocked(path))
     {
         // is an occupied  resource
         http_utils::throw_service_unavailable(path, m_ctx);
+    }
+    else
+    {
+        m_get_fd = response.set_body_as_path(path);
+        if (m_get_fd < 0)
+        {
+            http_utils::throw_internal_server_error_not_valid(path, m_ctx);
+        }
     }
 }
 

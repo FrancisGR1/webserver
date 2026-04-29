@@ -147,6 +147,7 @@ int Response::set_body_as_path(Path& path)
 {
     REQUIRE(path.exists == true);
 
+    ResourceLocker::lock(path);
     Logger::trace("%s: set body path: '%s'", constants::res, path.raw.c_str());
     m_body_fd = path.open(O_RDONLY);
     fcntl(m_body_fd, F_SETFL, O_NONBLOCK);
@@ -292,6 +293,7 @@ ssize_t Response::send_body_from_fd(int socket_fd)
     }
     if (read_bytes == 0)
     {
+
         next_state(Done);
         return 0;
     }
@@ -354,6 +356,12 @@ ssize_t Response::send_body_from_str(int socket_fd)
 
 void Response::next_state(Response::State state)
 {
+    if (state == Done)
+    {
+        if (m_body_path.exists)
+            ResourceLocker::unlock(m_body_path);
+    }
+
     m_state = state;
 }
 
