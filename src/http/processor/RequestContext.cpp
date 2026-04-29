@@ -1,7 +1,6 @@
-#include <stdexcept>
-
-#include "http/processor/RequestConfig.hpp"
 #include "http/processor/RequestContext.hpp"
+#include "core/contracts.hpp"
+#include "http/processor/RequestConfig.hpp"
 #include "server/Connection.hpp"
 
 RequestContext::RequestContext(Connection* connection, const ServiceConfig& service)
@@ -13,21 +12,21 @@ RequestContext::RequestContext(Connection* connection, const ServiceConfig& serv
 
 const RequestConfig& RequestContext::config() const
 {
-    if (m_request_config == NULL)
-        throw std::logic_error("RequestContext: Tried to access request config Null Pointer!");
+    REQUIRE(m_request_config != NULL, "RequestContext: Tried to access request config Null Pointer!");
+
+    return *m_request_config;
+}
+
+RequestConfig& RequestContext::config()
+{
+    REQUIRE(m_request_config != NULL, "RequestContext: Tried to access request config Null Pointer!");
+
     return *m_request_config;
 }
 
 Connection* RequestContext::connection() const
 {
     return m_connection;
-}
-
-RequestConfig& RequestContext::config()
-{
-    if (m_request_config == NULL)
-        throw std::logic_error("RequestContext: Tried to access request config Null Pointer!");
-    return *m_request_config;
 }
 
 RequestContext::~RequestContext()
