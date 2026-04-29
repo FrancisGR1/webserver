@@ -27,6 +27,10 @@ class CgiHandler : public IRequestHandler
     const Response& response() const;
     std::vector<EventAction> give_events();
 
+    // specific of cgi
+    bool is_reading() const;
+    bool is_writing() const;
+
   private:
     enum State
     {
@@ -49,6 +53,7 @@ class CgiHandler : public IRequestHandler
     Seconds m_timeout;
     size_t m_failed_reads;
     std::vector<EventAction> m_events;
+    bool m_reading_body;
 
     // environment
     std::map<std::string, std::string> m_env;

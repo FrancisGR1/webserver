@@ -26,6 +26,7 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Second
     , m_response(StatusCode::Ok) //@NOTE: rfc says response is ok by default
     , m_timeout(timeout)
     , m_failed_reads(0)
+    , m_reading_body(false)
     , m_env(init_env())
     , m_total_reads(0)
     , m_body_offset(0)
@@ -53,7 +54,6 @@ void CgiHandler::process()
 
     switch (m_state)
     {
-        //@TODO code in fast path for short cgi scripts
         case Init:
         {
             if (!m_ctx.config().allows_method(m_request.method()))
@@ -76,12 +76,15 @@ void CgiHandler::process()
                 write_to_pipe();
             else
                 INVARIANT(false, "Action should either be read or write!");
-            break;
-        }
 
-        case Res:
-        {
-            make_response();
+            if (!is_writing() && !is_reading())
+            {
+                make_response();
+
+                // finish
+                m_state = Done;
+                m_timer.stop();
+            }
 
             break;
         }
@@ -219,6 +222,11 @@ void CgiHandler::start_subprocess()
     }
 }
 
+bool CgiHandler::is_reading() const
+{
+    return m_read_from_script[0] != -1;
+}
+
 void CgiHandler::read_from_pipe()
 {
     // read pipe to buffer
@@ -234,38 +242,29 @@ void CgiHandler::read_from_pipe()
         Logger::trace("%s: total bytes read: %zu", constants::cgi, m_total_reads);
         Logger::trace("%s: read: '%.30s'%s", constants::cgi, buffer, m_total_reads > 30 ? "..." : "");
 
-        // if (m_total_reads > constants::cgi_max_output)
-        //{
-        //     throw ResponseError(
-        //         StatusCode::BadGateway,
-        //         utils::fmt(
-        //             "%s: output (%zu) exceeded max capacity (%zu)",
-        //             constants::cgi,
-        //             m_total_reads,
-        //             constants::cgi_max_output),
-        //         &m_ctx);
-        // }
-
-        m_headers.append(buffer, bytes);
-
-        size_t body_start = m_headers.find(constants::crlfcrlf);
-        if (body_start != std::string::npos)
+        if (m_reading_body)
         {
-            // separate body and headers
-            m_body_str = m_headers.substr(body_start + 4); // 4 = crlfcrlf size
-            m_headers = m_headers.substr(0, body_start);
+            m_body_str.append(buffer, bytes);
+        }
+        else
+        {
+            m_headers.append(buffer, bytes);
 
-            Logger::trace(
-                "CgiHandler:\nheaders: '%s';\nbody:    '%.30s';",
-                m_headers.c_str(),
-                m_body_str.c_str(),
-                m_total_reads > 30 ? "..." : "");
+            size_t body_start = m_headers.find(constants::crlfcrlf);
+            if (body_start != std::string::npos)
+            {
+                // separate body and headers
+                m_body_str = m_headers.substr(body_start + 4); // 4 = crlfcrlf size
+                m_headers = m_headers.substr(0, body_start);
 
-            // body might have not been totally read
-            // but it's ok, Response can handle split bodies
-            // (1st part in string and 2nd part in file)
-            // so go to next state regardless
-            make_response();
+                Logger::trace(
+                    "CgiHandler:\nheaders: '%s';\nbody:    '%.30s'%s",
+                    m_headers.c_str(),
+                    m_body_str.c_str(),
+                    m_total_reads > 30 ? "..." : "");
+
+                m_reading_body = true;
+            }
         }
     }
     else if (bytes == 0) // EOF
@@ -289,13 +288,7 @@ void CgiHandler::read_from_pipe()
         }
 
         register_action(EventAction::WantClose, m_read_from_script[0]);
-        if (m_write_to_script[1] != -1)
-            register_action(EventAction::WantClose, m_write_to_script[1]);
-
         m_read_from_script[0] = -1;
-        m_write_to_script[1] = -1;
-
-        m_state = Res;
     }
     else // nothing was read
     {
@@ -307,24 +300,29 @@ void CgiHandler::read_from_pipe()
     }
 }
 
+bool CgiHandler::is_writing() const
+{
+    return m_write_to_script[1] != -1;
+}
+
 void CgiHandler::write_to_pipe()
 {
     // is done
-    if (m_write_to_script[1] == -1)
-        return;
+    REQUIRE(is_writing(), "Writing to pipe should only happen when there is still something to write");
+
+    int write_fd = m_write_to_script[1];
 
     const std::string& body = m_request.body();
-
     if (body.empty())
     {
-        register_action(EventAction::WantClose, m_write_to_script[1]);
-        ::close(m_write_to_script[1]);
+        register_action(EventAction::WantClose, write_fd);
+        ::close(write_fd);
         m_write_to_script[1] = -1;
         return;
     }
 
     // write as much as possible in one go
-    ssize_t bytes = ::write(m_write_to_script[1], body.c_str() + m_body_offset, body.size() - m_body_offset);
+    ssize_t bytes = ::write(write_fd, body.c_str() + m_body_offset, body.size() - m_body_offset);
 
     if (bytes > 0)
     {
@@ -339,8 +337,8 @@ void CgiHandler::write_to_pipe()
     // close
     if (m_body_offset >= body.size())
     {
-        register_action(EventAction::WantClose, m_write_to_script[1]);
-        ::close(m_write_to_script[1]);
+        register_action(EventAction::WantClose, write_fd);
+        ::close(write_fd);
         m_write_to_script[1] = -1;
         Logger::trace("%s: finished writing body to pipe", constants::cgi);
     }
@@ -349,14 +347,9 @@ void CgiHandler::write_to_pipe()
 // transform the data read from the pipe into a Http Response
 void CgiHandler::make_response()
 {
-    Logger::trace("%s: transform headers to a string", constants::cgi);
+    REQUIRE(!is_writing(), "Making a response should only be possible after writing to the pipe being over");
 
-    if (m_write_to_script[1] != -1)
-    {
-        register_action(EventAction::WantClose, m_write_to_script[1]);
-        ::close(m_write_to_script[1]);
-        m_write_to_script[1] = -1;
-    }
+    Logger::trace("%s: transform headers to a string", constants::cgi);
 
     // https://www.rfc-editor.org/rfc/rfc3875#section-6
     // validate and set headers
@@ -409,10 +402,6 @@ void CgiHandler::make_response()
 
         m_read_from_script[0] = -1;
     }
-
-    // finish
-    m_timer.stop();
-    m_state = Done;
 }
 
 void CgiHandler::register_action(EventAction::Action action, int fd)
