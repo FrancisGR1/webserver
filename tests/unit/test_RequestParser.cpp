@@ -441,7 +441,7 @@ void test_RequestParser(const TestCase& test)
 {
     RequestParser parser;
 
-    parser.feed(test.raw_request);
+    parser.feed(test.raw_request.c_str(), test.raw_request.size());
     Request result = parser.get();
 
     // check
@@ -491,7 +491,7 @@ void test_RequestParser_with_random_sized_chunks(const TestCase& test)
         std::string chunk = test.raw_request.substr(at, random);
 
         // feed the substr
-        parser.feed(chunk);
+        parser.feed(test.raw_request.c_str(), test.raw_request.size());
 
         // advance
         at += random;
@@ -534,7 +534,7 @@ void test_RequestParser_with_random_sized_chunks(const TestCase& test)
 
 int main()
 {
-    Logger::set_global_level(Log::Debug);
+    Logger::set_global_level(Log::Error);
 
     std::cout << "==============================\n";
     std::cout << "======= RequestParser ========\n";

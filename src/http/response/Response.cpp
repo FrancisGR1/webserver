@@ -133,7 +133,7 @@ void Response::set_header(const std::string& key, const std::string& value)
 
 void Response::set_body_as_str(const std::string& str)
 {
-    Logger::trace("%s: set body str: '%.30s'...", constants::res, str.c_str());
+    Logger::trace("%s: set body str(size=%zu): '%.30s'...", constants::res, str.size(), str.c_str());
     m_body_str = str;
 }
 
