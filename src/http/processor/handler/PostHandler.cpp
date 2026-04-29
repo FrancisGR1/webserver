@@ -17,7 +17,7 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
     : m_request(request)
     , m_ctx(ctx)
     , m_done(false)
-    , m_post_fd(-1)
+    , m_post("")
     , m_offset(0)
     , m_current_part(0)
 {
@@ -27,10 +27,10 @@ PostHandler::PostHandler(const Request& request, const RequestContext& ctx)
 PostHandler::~PostHandler()
 {
     Logger::trace("PostHandler: destructor");
-    if (m_post_fd > -1)
+    if (m_post.fd > -1)
     {
-        Logger::trace("PostHandler: close '%d'", m_post_fd);
-        ::close(m_post_fd);
+        Logger::trace("PostHandler: close '%d'", m_post.fd);
+        m_post.close();
     }
 }
 
@@ -94,10 +94,10 @@ std::vector<EventAction> PostHandler::give_events()
     return std::vector<EventAction>();
 }
 
-const std::vector<Path>& PostHandler::upload_paths() const
-{
-    return m_upload_paths;
-}
+// const std::vector<Path>& PostHandler::upload_paths() const
+//{
+//     return m_upload_paths;
+// }
 
 std::string PostHandler::make_uri() const
 {
@@ -169,7 +169,7 @@ std::string PostHandler::make_file_name() const
 
 void PostHandler::upload_request_body()
 {
-    if (m_post_fd == -1) // set upload dir
+    if (m_post.fd == -1) // set upload dir
     {
         Path upload_dir = m_ctx.config().path();
         expect_uploadable(m_request, m_ctx.config(), upload_dir, m_ctx);
@@ -179,20 +179,20 @@ void PostHandler::upload_request_body()
         // make upload location
         m_upload_uri = make_uri();
         // make upload real path
-        Path p = utils::join_paths(upload_dir.raw, m_upload_filename);
+        m_post = utils::join_paths(upload_dir.raw, m_upload_filename);
         //  open fd and store in events
-        m_post_fd = p.open(O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        m_post.open(O_WRONLY | O_CREAT | O_TRUNC, 0644);
         // occupy
-        ResourceLocker::lock(p);
+        ResourceLocker::lock(m_post);
         // push
-        m_upload_paths.push_back(p);
-        if (m_post_fd <= 2)
+        // m_upload_paths.push_back(m_post);
+        if (m_post.fd <= 2)
         {
-            ResourceLocker::unlock(m_upload_paths.back());
+            ResourceLocker::unlock(m_post);
             http_utils::throw_internal_server_error_failed_upload(upload_dir, m_ctx);
         }
 
-        Logger::debug("PostHandler: write to fd=%d '%s'", m_post_fd, m_upload_paths.back().c_str());
+        Logger::debug("PostHandler: write to fd=%d '%s'", m_post.fd, m_post.c_str());
     }
 
     if (!m_done)
@@ -200,13 +200,12 @@ void PostHandler::upload_request_body()
         size_t to_write = (m_request.body().size() - m_offset) > constants::write_chunk_size
                               ? constants::write_chunk_size
                               : m_request.body().size() - m_offset;
-        ssize_t written = ::write(m_post_fd, m_request.body().c_str() + m_offset, to_write);
+        ssize_t written = ::write(m_post.fd, m_request.body().c_str() + m_offset, to_write);
         if (written == -1)
         {
-            ResourceLocker::unlock(m_upload_paths.back());
-            ::close(m_post_fd);
-            m_post_fd = -1;
-            http_utils::throw_internal_server_error_failed_upload(m_upload_paths.back(), m_ctx);
+            ResourceLocker::unlock(m_post);
+            m_post.close();
+            http_utils::throw_internal_server_error_failed_upload(m_post, m_ctx);
         }
 
         if (written >= 0)
@@ -219,7 +218,7 @@ void PostHandler::upload_request_body()
 
     if (m_done)
     {
-        Logger::trace("PostHandler: finished writing fd=%d", m_post_fd);
+        Logger::trace("PostHandler: finished writing fd=%d", m_post.fd);
 
         // status
         m_response.set_status(StatusCode::Created);
@@ -242,11 +241,10 @@ void PostHandler::upload_request_body()
         m_response.set_header("Content-Length", utils::to_string(json.size()));
 
         // close posted file
-        ::close(m_post_fd);
-        m_post_fd = -1;
+        m_post.close();
 
         // unoccupy
-        ResourceLocker::unlock(m_upload_paths.back());
+        ResourceLocker::unlock(m_post);
     }
 }
 
@@ -258,7 +256,7 @@ void PostHandler::upload_multipart_body()
     {
         const MultiPartBody& part = parts[m_current_part];
 
-        if (m_post_fd == -1)
+        if (m_post.fd == -1)
         {
             Path upload_dir = m_ctx.config().path();
             expect_uploadable(m_request, m_ctx.config(), upload_dir, m_ctx);
@@ -272,34 +270,33 @@ void PostHandler::upload_multipart_body()
             // uri
             m_upload_uri = make_uri();
             // save
-            m_upload_paths.push_back(utils::join_paths(upload_dir.raw, m_upload_filename));
+            m_post = utils::join_paths(upload_dir.raw, m_upload_filename);
             // open
-            m_post_fd = open(m_upload_paths.back().raw.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            m_post.open(O_WRONLY | O_CREAT | O_TRUNC, 0644);
             // lock
-            ResourceLocker::lock(m_upload_paths.back());
-            if (m_post_fd <= 2)
-                http_utils::throw_internal_server_error_failed_upload(m_upload_paths[m_current_part], m_ctx);
+            ResourceLocker::lock(m_post);
+            if (m_post.fd <= 2)
+                http_utils::throw_internal_server_error_failed_upload(m_post, m_ctx);
 
             m_offset = 0;
-            Logger::debug("PostHandler: multipart write to fd=%d '%s'", m_post_fd, m_upload_paths.back().raw.c_str());
+            Logger::debug("PostHandler: multipart write to fd=%d '%s'", m_post.fd, m_post.c_str());
         }
 
         // write chunk
         size_t to_write = (part.body.size() - m_offset) > constants::write_chunk_size ? constants::write_chunk_size
                                                                                       : part.body.size() - m_offset;
-        ssize_t written = ::write(m_post_fd, part.body.c_str() + m_offset, to_write);
+        ssize_t written = ::write(m_post.fd, part.body.c_str() + m_offset, to_write);
         if (written >= 0)
             m_offset += written;
 
         if (m_offset == static_cast<ssize_t>(part.body.size()))
         {
-            // this part is overr
-            ::close(m_post_fd);
-            m_post_fd = -1;
+            // this part is over
+            m_post.close();
             m_offset = 0;
             m_current_part++;
             // unoccupy
-            ResourceLocker::unlock(m_upload_paths.back());
+            ResourceLocker::unlock(m_post);
         }
         else // not done yet, come back next process() call
         {
