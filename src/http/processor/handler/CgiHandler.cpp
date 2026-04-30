@@ -42,10 +42,27 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Second
 CgiHandler::~CgiHandler()
 {
     Logger::trace("%s: destructor", constants::cgi);
-    if (m_read_from_script[0] != -1)
-        ::close(m_read_from_script[0]);
-    if (m_write_to_script[1] != -1)
-        ::close(m_write_to_script[1]);
+
+    for (int i = 0; i < 2; ++i)
+    {
+        if (m_read_from_script[i] != -1)
+        {
+            ::close(m_read_from_script[i]);
+            m_read_from_script[i] = -1;
+        }
+
+        if (m_write_to_script[i] != -1)
+        {
+            ::close(m_write_to_script[i]);
+            m_write_to_script[i] = -1;
+        }
+    }
+
+    if (m_subprocess_id > 0)
+    {
+        ::kill(m_subprocess_id, SIGKILL);
+        ::waitpid(m_subprocess_id, NULL, 0);
+    }
 }
 
 void CgiHandler::process()
@@ -288,6 +305,7 @@ void CgiHandler::read_from_pipe()
         }
 
         register_action(EventAction::WantClose, m_read_from_script[0]);
+        ::close(m_read_from_script[0]);
         m_read_from_script[0] = -1;
     }
     else // nothing was read
@@ -467,7 +485,7 @@ void CgiHandler::expect_has_time_left() const
     if (m_timer.expired())
     {
         ::kill(m_subprocess_id, SIGKILL);
-        ::waitpid(m_subprocess_id, NULL, 0); // reap it
+        ::waitpid(m_subprocess_id, NULL, 0); // catch it
         http_utils::throw_gateway_timeout(m_script.raw, m_timeout, m_ctx);
     }
 }

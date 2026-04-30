@@ -20,6 +20,12 @@ ConnectionPool::ConnectionPool(size_t max_connections)
 // destructor
 ConnectionPool::~ConnectionPool()
 {
+    for (size_t i = 0; i < m_pool.size(); ++i)
+    {
+        delete m_pool[i];
+        m_pool[i] = NULL;
+    }
+
     Logger::trace("ConnectionPool: destructor");
 }
 

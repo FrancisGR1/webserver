@@ -22,7 +22,6 @@ class ConnectionPool
 
   private:
     size_t m_max_conns;
-    //@TODO substituir por std::priority_queue e organizar por "last activity"
     std::vector<Connection*> m_pool;
 };
 

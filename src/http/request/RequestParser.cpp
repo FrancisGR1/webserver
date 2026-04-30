@@ -111,7 +111,7 @@ void RequestParser::parse()
                     if (m_method != "GET" && m_method != "POST" && m_method != "DELETE")
                     {
                         Logger::error("RequestParser: didn't implement method: %s", m_method.c_str());
-                        m_status_code = StatusCode::NotImplemented;
+                        m_status_code = StatusCode::MethodNotAllowed;
                         m_state = S::Error;
                         break;
                     }
