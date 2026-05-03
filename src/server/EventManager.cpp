@@ -1,7 +1,8 @@
-#include "EventManager.hpp"
+#include "server/EventManager.hpp"
 #include "core/Logger.hpp"
 #include "core/contracts.hpp"
 #include "server/Connection.hpp"
+#include "server/ConnectionPool.hpp"
 #include "server/EventAction.hpp"
 
 #include <sys/epoll.h>
@@ -9,12 +10,14 @@
 
 #include <cstring>
 
-EventManager::EventManager(size_t max_events)
+EventManager::EventManager(size_t max_events, ConnectionPool& connections)
     : m_epoll_fd(-1)
     , m_epoll_events_buffer(new epoll_event[max_events])
     , m_current_event(0)
     , m_n_events(-1)
     , m_max_events(max_events)
+    , m_connection_pool(connections)
+
 {
     Logger::verbose("EventManager: constructor");
 
@@ -23,8 +26,6 @@ EventManager::EventManager(size_t max_events)
     {
         throw std::runtime_error("EventManager: Failed to create epoll fd!");
     }
-
-    m_events.reserve(max_events);
 }
 
 EventManager::~EventManager()
@@ -36,10 +37,10 @@ EventManager::~EventManager()
 
     delete[] m_epoll_events_buffer;
 
-    for (size_t i = 0; i < m_events.size(); ++i)
+    for (std::list<EventAction*>::iterator it = m_events.begin(); it != m_events.end(); ++it)
     {
-        ::close(m_events[i]->fd);
-        delete m_events[i];
+        ::close((*it)->fd);
+        delete *it;
     }
 }
 
@@ -135,6 +136,9 @@ int EventManager::apply(const std::vector<EventAction>& event_actions)
     {
         ret = apply(event_actions[i]);
     }
+
+    m_connection_pool.remove_idles(*this);
+
     return ret;
 }
 
@@ -180,8 +184,6 @@ int EventManager::to_epoll_event(const EventAction& ea)
         {
             ret = remove(ea);
 
-            Logger::trace("EventManager: delete fd='%zu'", ea.fd);
-
             break;
         }
     }
@@ -200,25 +202,32 @@ int EventManager::remove(const EventAction& ea)
 
     int ret = 0;
 
-    for (size_t i = 0; i < m_events.size(); ++i)
+    for (std::list<EventAction*>::iterator it = m_events.begin(); it != m_events.end(); ++it)
     {
-        EventAction* e = m_events[i];
+        EventAction* e = *it;
 
         INVARIANT(e != NULL, "EventAction* in events must never be null!");
 
         if (ea.fd == e->fd)
         {
-            Logger::trace("EventManager: removing connection[id=%lld] fd: '%d'", (e->conn ? e->conn->id() : -1), e->fd);
-
             ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, ea.fd, NULL);
 
             if (e->type == EventAction::ClientSocket || e->type == EventAction::ServerSocket)
             {
                 ret = ::close(e->fd);
+                if (e->type == EventAction::ClientSocket && e->conn != NULL)
+                {
+                    m_connection_pool.remove(*e->conn);
+                    Logger::trace("EventManager: delete connection[id=%zu] fd='%zu'", ea.conn->id(), ea.fd);
+                }
+            }
+            else
+            {
+                Logger::trace("EventManager: delete socket fd='%zu'", ea.fd);
             }
 
             m_pending_deletes.push_back(e);
-            m_events.erase(m_events.begin() + i);
+            m_events.erase(it);
 
             return ret;
         }
@@ -256,17 +265,16 @@ EventAction* EventManager::find(EventAction*& ea) const
         return NULL;
     }
 
-    for (size_t i = 0; i < m_events.size(); ++i)
+    for (std::list<EventAction*>::const_iterator it = m_events.begin(); it != m_events.end(); ++it)
     {
-        if (ea == m_events[i])
+        if (ea == *it)
         {
-            INVARIANT(ea == m_events[i], "EventAction must always be equal to epoll_event!");
             Logger::trace("EventManager: found fd='%d' in events", ea->fd);
-            if (m_events[i]->conn)
-                Logger::trace("EventManager: found connection: '%lld'", m_events[i]->conn->id());
+            if ((*it)->conn)
+                Logger::trace("EventManager: found connection: '%lld'", (*it)->conn->id());
             else
-                Logger::trace("EventManager: server socket: '%d'", m_events[i]->fd);
-            return m_events[i];
+                Logger::trace("EventManager: server socket: '%d'", (*it)->fd);
+            return *it;
         }
     }
 
@@ -279,16 +287,15 @@ EventAction* EventManager::exists(int event_fd) const
 {
     REQUIRE(event_fd >= 0);
 
-    for (size_t i = 0; i < m_events.size(); ++i)
+    for (std::list<EventAction*>::const_iterator it = m_events.begin(); it != m_events.end(); ++it)
     {
-        if (event_fd == m_events[i]->fd)
+        if (event_fd == (*it)->fd)
         {
-            if (m_events[i]->conn)
-                Logger::trace(
-                    "EventManager: found connection: id=%lld,fd=%d", m_events[i]->conn->id(), m_events[i]->fd);
+            if ((*it)->conn)
+                Logger::trace("EventManager: found connection: id=%lld,fd=%d", (*it)->conn->id(), (*it)->fd);
             else
-                Logger::trace("EventManager: server socket: '%d'", m_events[i]->fd);
-            return m_events[i];
+                Logger::trace("EventManager: server socket: '%d'", (*it)->fd);
+            return *it;
         }
     }
 
@@ -297,9 +304,7 @@ EventAction* EventManager::exists(int event_fd) const
 
 void EventManager::flush_pending_deletes(void)
 {
-    for (size_t i = 0; i < m_pending_deletes.size(); ++i)
-    {
-        delete m_pending_deletes[i];
-    }
+    for (std::list<EventAction*>::iterator it = m_pending_deletes.begin(); it != m_pending_deletes.end(); ++it)
+        delete *it;
     m_pending_deletes.clear();
 }

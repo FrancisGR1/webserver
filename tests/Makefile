@@ -39,6 +39,8 @@ integration: $(SERVER)
 	echo $${PWD}; \
 	echo "Makefile: Running lua quick.lua..."; \
 	lua quick.lua; \
+	echo "Makefile: Running lua big.lua..."; \
+	lua big.lua; \
 	echo "Makefile: Running go test..."; \
 	go test; \
 	kill $$WEBSERV_PID 2>/dev/null; \

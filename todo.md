@@ -66,11 +66,12 @@
 # Gestão Eventos
 - [x] passar EventManager para a ligacao -> contexto do processador
 - [x] máquina de estados
-- [ ] implementar o padrão de desenho "Chain of Responsibility"
+- [x] implementar o padrão de desenho "Chain of Responsibility"
 ---> problema: o EventsManager vai ser passado por referência para uma série de objetos, o que significa que a responsabilidade é partilhada por muitas entidades, logo, confunde a lógica e pode criar bugs difíceis de resolver.
 ---> solução: padrão de chain of responsibility: todos os objetos que quiserem tocar nos eventos, têm de devolver uma event action, a ligação faz o resto
-- [ ] fazer fd manager que adiciona/remove eventos e adiciona/remove ligações -> ResourceRegistry
-- [ ] podemos usar o void *ptr  em epoll_data para guardar o que quer que seja - futuro Refactor tem de ter isto em conta
+- [x] fazer fd manager que adiciona/remove eventos e adiciona/remove ligações
+- [x] podemos usar o void *ptr  em epoll_data para guardar o que quer que seja - futuro Refactor tem de ter isto em conta
+- [ ] implementar EventQueue de modo a não ter de declarar EventAction(...) por todo o código
 
 # Gestão Clientes
 - [x] class Socket que guarde o contexto do servico do socket em si (fd)
@@ -79,7 +80,8 @@
 - [x] implementar maquina de estados - receber - processar - enviar
 - [x] múltiplos fds podem estar associados à mesma ligação - fazer pool de ligações
 - [ ] Gestão: Substituir connection pool for event.data.ptr (ptr para context) (ligação + tipo de fd + fd) em vez de pool de fds)
-- [ ] Dividir work() em read() e send(), o caller passa a gerir o próximo estado, conforme state()
+- [x] Dividir work() em read() e send(), o caller passa a gerir o próximo estado, conforme state()
+- [ ] Definir o evento atual que está a tratar
 - [ ] Refazer a arquitetura para chegar a 1 milhão de ligações -> múltiplos even pools e forks()
 
 # Utils
@@ -97,11 +99,12 @@
 - [x] Fazer Makefile
 
 # Bónus
-- [ ] Adicionar cgis: javascript, php, lua, bash
+- [x] Adicionar cgis: javascript, php, lua, bash
 - [ ] Sessão
 - [ ] Cookies
 
 # Outros
+- [ ] Mudar erros para StatusCode (adicionar info necessária à struct em vez de usar func throwers (http_utils namespace))
 - [ ] Melhor diagrama geral
 - [ ] Inicializar todos os objetos: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es20-always-initialize-an-object
 - [ ] Melhorar mensagens de erro (especificar dados)
@@ -136,7 +139,8 @@ Testar:
         - [ ] adicionar testes para casos com "../../.."
 
 ### Integração
-- [ ] Testes ao webserver em GO: POST -> GET -> DELETE -> GET
+- [x] Testes ao webserver em GO: POST -> GET -> DELETE -> GET
+- [ ] Testar cgi
 - [ ] Tester da escola
 
 ### Estresse

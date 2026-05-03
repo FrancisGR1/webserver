@@ -12,8 +12,8 @@ bool Webserver::is_running = true;
 Webserver::Webserver(const Config& config)
     : m_config(config)
     , m_server_sockets()
-    , m_events(constants::max_events)
     , m_connection_pool(constants::max_connections)
+    , m_events(constants::max_events, m_connection_pool)
 {
     Logger::verbose("Webserver: constructor");
 }
@@ -128,7 +128,6 @@ void Webserver::run()
 
                     switch (event->action)
                     {
-                        //@TODO colocar id na connection
                         case EventAction::WantRead:
                         {
                             Logger::trace(
@@ -172,12 +171,7 @@ void Webserver::run()
             }
 
             m_events.apply(conn->give_events());
-
-            // if (conn->done())
-            //     m_connection_pool.remove(*conn);
         }
-
-        m_connection_pool.remove_idles(m_events);
     }
 
     Logger::info("Webserver: stop running");

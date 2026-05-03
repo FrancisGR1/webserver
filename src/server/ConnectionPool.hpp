@@ -4,6 +4,8 @@
 #include "server/Connection.hpp"
 #include "server/EventManager.hpp"
 
+class EventManager;
+
 class ConnectionPool
 {
   public:

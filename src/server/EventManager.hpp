@@ -1,15 +1,19 @@
 #ifndef EVENT_MANAGER
 #define EVENT_MANAGER
 
+#include <list>
 #include <vector>
 
+#include "server/ConnectionPool.hpp"
 #include "server/EventAction.hpp"
+
+class ConnectionPool;
 
 class EventManager
 {
   public:
     // construct/destruct
-    EventManager(size_t max_events);
+    EventManager(size_t max_events, ConnectionPool& connections);
     ~EventManager();
 
     // manage events
@@ -24,12 +28,14 @@ class EventManager
     int m_epoll_fd;
     // an event is one of the following: socket, file, pipe
     epoll_event* m_epoll_events_buffer;
-    std::vector<EventAction*> m_events;
-    std::vector<EventAction*> m_pending_deletes;
+    std::list<EventAction*> m_events;
+    std::list<EventAction*> m_pending_deletes;
     //-iteration
     size_t m_current_event;
     int m_n_events;
     size_t m_max_events;
+    //-connections
+    ConnectionPool& m_connection_pool;
 
     // utils
     const EventAction* get_event(size_t index) const;

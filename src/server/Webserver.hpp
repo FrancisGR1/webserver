@@ -32,8 +32,8 @@ class Webserver
   private:
     const Config& m_config;
     std::map<int, Socket*> m_server_sockets;
-    EventManager m_events;
     ConnectionPool m_connection_pool;
+    EventManager m_events;
 
     // utils
     Socket* make_server_socket(const Listener& listener);
