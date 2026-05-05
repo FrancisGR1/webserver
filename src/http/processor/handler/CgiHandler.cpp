@@ -175,7 +175,7 @@ void CgiHandler::start_subprocess()
         Path interpreter = m_ctx.config().cgi_interpreter();
         Path script = m_ctx.config().path();
         char* argv[] = {const_cast<char*>(interpreter.c_str()), const_cast<char*>(script.cgi_name.c_str()), NULL};
-        Logger::trace("%s: Subprocess: argv: '%s' '%s'", constants::cgi, interpreter.c_str(), script.cgi_name.c_str());
+        Logger::info("%s: Subprocess: argv: '%s' '%s'", constants::cgi, interpreter.c_str(), script.cgi_name.c_str());
 
         if (::chdir(script.cgi_dir.c_str()) == -1)
         {
@@ -436,7 +436,7 @@ std::map<std::string, std::string> CgiHandler::init_env()
 
     // default headers
     env["AUTH_TYPE"] = "";
-    env["CONTENT_LENGTH"] = "";
+    env["CONTENT_LENGTH"] = utils::to_string(m_request.body().size());
     env["CONTENT_TYPE"] = m_script.mime;
     env["GATEWAY_INTERFACE"] = "CGI/1.1";
     env["PATH_INFO"] = m_script.cgi_info;
@@ -447,6 +447,8 @@ std::map<std::string, std::string> CgiHandler::init_env()
     env["REMOTE_IDENT"] = "";
     env["REMOTE_USER"] = "";
     env["REQUEST_METHOD"] = m_request.method();
+    env["REDIRECT_STATUS"] = "200"; // php-cgi requirement
+    env["SCRIPT_FILENAME"] = m_script.cgi_name;
     env["SCRIPT_NAME"] = m_script.cgi_name;
     env["SERVER_NAME"] = m_ctx.config().service().server_name;
     //@NOTE connection is never null, except in the tests
@@ -463,6 +465,7 @@ std::map<std::string, std::string> CgiHandler::init_env()
         std::string key = "HTTP_" + to_uppercase_and_underscore(it->first);
         env[key] = it->second;
     }
+
     return env;
 }
 

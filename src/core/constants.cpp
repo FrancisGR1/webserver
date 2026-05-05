@@ -50,7 +50,7 @@ const char* bright_red = "\033[91m";
 const char* reset = "\033[0m";
 
 // - logging
-const Log::Level log_level = Log::Debug;
+const Log::Level log_level = Log::Trace;
 
 // - name codes
 const char* conn = "\033[37;41mConnection\033[0m";
