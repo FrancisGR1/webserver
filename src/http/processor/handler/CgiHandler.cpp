@@ -145,19 +145,17 @@ void CgiHandler::setup_pipes()
     }
     fcntl(m_read_from_script[0], F_SETFL, O_NONBLOCK);
 
-    // open stdin pipe if there is a body
-    if (m_request.body().size() > 0)
+    // open stdin pipe
+    if (::pipe(m_write_to_script) == -1)
     {
-        if (::pipe(m_write_to_script) == -1)
-        {
-            close(m_read_from_script[0]);
-            close(m_read_from_script[1]);
-
-            throw ResponseError(
-                StatusCode::InternalServerError, "CgiHandler: pipe() call to write to script failed!", &m_ctx);
-        }
-        fcntl(m_write_to_script[1], F_SETFL, O_NONBLOCK);
+        close(m_read_from_script[0]);
+        close(m_read_from_script[1]);
+        throw ResponseError(
+            StatusCode::InternalServerError, "CgiHandler: pipe() call to write to script failed!", &m_ctx);
     }
+    ::fcntl(m_write_to_script[1], F_SETFL, O_NONBLOCK);
+    ::fcntl(m_write_to_script[1], F_SETFD, FD_CLOEXEC);
+    ::fcntl(m_write_to_script[0], F_SETFD, FD_CLOEXEC);
 }
 
 void CgiHandler::start_subprocess()
