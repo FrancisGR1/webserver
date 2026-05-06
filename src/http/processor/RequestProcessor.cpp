@@ -167,6 +167,7 @@ void RequestProcessor::process()
                 {
                     m_state = Done;
                 }
+                utils::copy_events(m_events, m_handler->give_events());
                 break;
             }
             case Done:
@@ -179,12 +180,15 @@ void RequestProcessor::process()
     catch (const ResponseError& e)
     {
         Logger::error("RequestProcessor: %s", e.msg().c_str());
+        m_events = m_handler->give_events();
+        utils::copy_events(m_events, m_handler->give_events());
         delete m_handler;
         m_handler = new ErrorHandler(e);
 
         // Error handler does it in one go
         // so just process and finish
         m_handler->process();
+        utils::copy_events(m_events, m_handler->give_events());
 
         m_state = Done;
     }
@@ -209,9 +213,9 @@ const Response& RequestProcessor::response() const
 
 std::vector<EventAction> RequestProcessor::give_events()
 {
-    if (m_state >= Handling)
-        return m_handler->give_events();
-    return std::vector<EventAction>();
+    std::vector<EventAction> result;
+    result.swap(m_events);
+    return result;
 }
 
 void RequestProcessor::set(const Request& request)

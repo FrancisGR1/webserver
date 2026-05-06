@@ -43,20 +43,20 @@ CgiHandler::~CgiHandler()
 {
     Logger::trace("%s: destructor", constants::cgi);
 
-    for (int i = 0; i < 2; ++i)
-    {
-        if (m_read_from_script[i] != -1)
-        {
-            ::close(m_read_from_script[i]);
-            m_read_from_script[i] = -1;
-        }
+    // for (int i = 0; i < 2; ++i)
+    //{
+    //     if (m_read_from_script[i] != -1)
+    //     {
+    //         ::close(m_read_from_script[i]);
+    //         m_read_from_script[i] = -1;
+    //     }
 
-        if (m_write_to_script[i] != -1)
-        {
-            ::close(m_write_to_script[i]);
-            m_write_to_script[i] = -1;
-        }
-    }
+    //    if (m_write_to_script[i] != -1)
+    //    {
+    //        ::close(m_write_to_script[i]);
+    //        m_write_to_script[i] = -1;
+    //    }
+    //}
 
     if (m_subprocess_id > 0)
     {
@@ -154,6 +154,7 @@ void CgiHandler::setup_pipes()
             StatusCode::InternalServerError, "CgiHandler: pipe() call to write to script failed!", &m_ctx);
     }
     ::fcntl(m_write_to_script[1], F_SETFL, O_NONBLOCK);
+
     ::fcntl(m_write_to_script[1], F_SETFD, FD_CLOEXEC);
     ::fcntl(m_write_to_script[0], F_SETFD, FD_CLOEXEC);
 }
@@ -196,6 +197,10 @@ void CgiHandler::start_subprocess()
         // flush logs before overriding stdout
         Logger::flush();
 
+        // so Logger::error() doesnt get piped
+        int saved_stdout = ::dup(STDOUT_FILENO);
+        ::fcntl(saved_stdout, F_SETFD, FD_CLOEXEC);
+
         // write to pipe
         ::dup2(m_read_from_script[1], STDOUT_FILENO);
         // dup2(m_read_from_script[1], STDERR_FILENO);
@@ -212,13 +217,15 @@ void CgiHandler::start_subprocess()
             ::close(m_write_to_script[0]);
         }
 
+        // restore stdout for Logger::error()
+        ::dup2(saved_stdout, STDOUT_FILENO);
+        ::close(saved_stdout);
+
         // execute
         ::execve(argv[0], argv, &envp[0]);
-        Logger::error("%s: Subprocess: execve() gone wrong! Aborting!", constants::cgi);
+        Logger::error("%s: Subprocess: execve() gone wrong! Exiting!", constants::cgi);
 
-        // on error, exit without cleanup
-        // @TODO @QUESTION: isto chama os destrutores?
-        std::abort();
+        std::exit(1);
     }
     else // main process
     {
@@ -227,13 +234,11 @@ void CgiHandler::start_subprocess()
 
         // close unused pipe ends
         ::close(m_read_from_script[1]);
-        if (m_write_to_script[0] != -1)
-            ::close(m_write_to_script[0]);
+        ::close(m_write_to_script[0]);
 
         // add events
         register_action(EventAction::WantRead, m_read_from_script[0]);
-        if (m_write_to_script[1] != -1)
-            register_action(EventAction::WantWrite, m_write_to_script[1]);
+        register_action(EventAction::WantWrite, m_write_to_script[1]);
     }
 }
 
@@ -284,6 +289,10 @@ void CgiHandler::read_from_pipe()
     }
     else if (bytes == 0) // EOF
     {
+        // close
+        register_action(EventAction::WantClose, m_read_from_script[0]);
+        //::close(m_read_from_script[0]);
+        m_read_from_script[0] = -1;
 
         int status = 0;
         int res = waitpid(m_subprocess_id, &status, 0);
@@ -298,13 +307,9 @@ void CgiHandler::read_from_pipe()
         {
             throw ResponseError(
                 StatusCode::BadGateway,
-                utils::fmt("%s: subprocess exited with %d code", constants::cgi, WEXITSTATUS(status)),
+                utils::fmt("%s: subprocess exited with code '%d'", constants::cgi, WEXITSTATUS(status)),
                 &m_ctx);
         }
-
-        register_action(EventAction::WantClose, m_read_from_script[0]);
-        ::close(m_read_from_script[0]);
-        m_read_from_script[0] = -1;
     }
     else // nothing was read
     {
@@ -332,7 +337,7 @@ void CgiHandler::write_to_pipe()
     if (body.empty())
     {
         register_action(EventAction::WantClose, write_fd);
-        ::close(write_fd);
+        //::close(write_fd);
         m_write_to_script[1] = -1;
         return;
     }
@@ -354,7 +359,7 @@ void CgiHandler::write_to_pipe()
     if (m_body_offset >= body.size())
     {
         register_action(EventAction::WantClose, write_fd);
-        ::close(write_fd);
+        //::close(write_fd);
         m_write_to_script[1] = -1;
         Logger::trace("%s: finished writing body to pipe", constants::cgi);
     }

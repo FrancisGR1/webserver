@@ -49,6 +49,7 @@ class RequestProcessor : public IRequestHandler
     State m_state;
     RequestContext m_ctx;
     IRequestHandler* m_handler;
+    std::vector<EventAction> m_events;
 };
 
 #endif // REQUESTPROCESSOR_HPP

@@ -5,6 +5,7 @@
 #include "server/ConnectionPool.hpp"
 #include "server/EventAction.hpp"
 
+#include <fcntl.h>
 #include <sys/epoll.h>
 #include <unistd.h>
 
@@ -26,6 +27,7 @@ EventManager::EventManager(size_t max_events, ConnectionPool& connections)
     {
         throw std::runtime_error("EventManager: Failed to create epoll fd!");
     }
+    ::fcntl(m_epoll_fd, F_SETFD, FD_CLOEXEC);
 }
 
 EventManager::~EventManager()
@@ -212,18 +214,25 @@ int EventManager::remove(const EventAction& ea)
         {
             ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, ea.fd, NULL);
 
+            if (ret == -1)
+                Logger::error("epoll_ctl DEL failed: %s", strerror(errno));
             if (e->type == EventAction::ClientSocket || e->type == EventAction::ServerSocket)
             {
                 ret = ::close(e->fd);
                 if (e->type == EventAction::ClientSocket && e->conn != NULL)
                 {
-                    m_connection_pool.remove(*e->conn);
                     Logger::trace("EventManager: delete connection[id=%zu] fd='%zu'", ea.conn->id(), ea.fd);
+                    m_connection_pool.remove(*e->conn);
+                }
+                else
+                {
+                    Logger::trace("EventManager: delete server socket fd='%zu'", ea.fd);
                 }
             }
             else
             {
-                Logger::trace("EventManager: delete socket fd='%zu'", ea.fd);
+                ret = ::close(e->fd);
+                Logger::trace("EventManager: delete pipe fd='%zu'", ea.fd);
             }
 
             m_pending_deletes.push_back(e);

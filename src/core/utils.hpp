@@ -1,6 +1,8 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include "server/EventAction.hpp"
+
 #include <map>
 #include <sstream>
 #include <string>
@@ -23,6 +25,7 @@ std::string map_to_str(std::map<std::string, std::string> headers);
 std::string timestamp();
 std::string http_date();
 bool is_valid_cgi_extension(const std::string& str);
+void copy_events(std::vector<EventAction>& dst, const std::vector<EventAction>& src);
 
 // find element in container
 template <typename Container>

@@ -196,4 +196,9 @@ bool is_valid_cgi_extension(const std::string& str)
     return false;
 }
 
+void copy_events(std::vector<EventAction>& dst, const std::vector<EventAction>& src)
+{
+    dst.insert(dst.end(), src.begin(), src.end());
+}
+
 } // namespace utils
