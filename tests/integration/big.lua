@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 
-local BASE_URL = "http://127.0.0.1:8090"
+local BASE_URL = "http://127.0.0.1:8091"
 local SMALL_TEST_FILE = "./data_to_send/10_bytes.txt"
 local TEST_FILE = "./data_to_send/10k_bytes.txt"
 local BIG_TEST_FILE = "./data_to_send/pdf_file.pdf"

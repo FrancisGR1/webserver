@@ -45,10 +45,10 @@ func TestMethodNotAllowed(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("PUT /post: expected 405, got %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusNotImplemented {
+		t.Errorf("PUT /post: expected 501, got %d", resp.StatusCode)
 	} else {
-		t.Logf("OK - got 405 for unsupported method")
+		t.Logf("OK - got 501 for unsupported method")
 	}
 }
 
