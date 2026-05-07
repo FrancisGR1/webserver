@@ -19,6 +19,9 @@ class Config
 
   private:
     std::string m_file_content;
+
+    // utils
+    void expect_unique_listeners(void) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const Config& cfg);
