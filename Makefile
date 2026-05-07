@@ -5,10 +5,10 @@ CC       = c++
 OBJ_DIR  = obj
 VERSION  = -std=c++98
 CFLAGS   = -Werror -Wall -Wextra #-Weffc++
-DEBUG    = -g
-OPTIMIZE = -O3
+DEBUG    = #-O0 -g
+RELEASE  = -O3 -DNDEBUG
 INC      = -Isrc
-FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG)
+FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG) $(RELEASE)
 
 TESTS_DIR = tests
 
