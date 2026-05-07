@@ -351,12 +351,12 @@ void CgiHandler::write_to_pipe()
     }
 
     // write as much as possible in one go
-    ssize_t bytes = ::write(write_fd, body.c_str() + m_body_offset, body.size() - m_body_offset);
+    ssize_t written = ::write(write_fd, body.c_str() + m_body_offset, body.size() - m_body_offset);
 
-    if (bytes > 0)
+    if (written > 0)
     {
-        m_body_offset += bytes;
-        Logger::trace("%s: wrote %ld to pipe (total %zu/%zu)", constants::cgi, bytes, m_body_offset, body.size());
+        m_body_offset += written;
+        Logger::trace("%s: wrote %ld to pipe (total %zu/%zu)", constants::cgi, written, m_body_offset, body.size());
     }
     else
     {
@@ -364,7 +364,7 @@ void CgiHandler::write_to_pipe()
     }
 
     // close
-    if (m_body_offset >= body.size())
+    if (written <= 0 || m_body_offset >= body.size())
     {
         register_action(EventAction::WantClose, write_fd);
         //::close(write_fd);

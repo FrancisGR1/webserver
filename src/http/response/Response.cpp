@@ -192,7 +192,7 @@ ssize_t Response::send_status_line(int socket_fd)
         next_state(Done);
         return sent;
     }
-    else if (sent + m_offset == m_status_line.size())
+    else if (sent == 0 || sent + m_offset == m_status_line.size())
     {
         next_state(Headers);
         m_offset = 0;
@@ -239,7 +239,7 @@ ssize_t Response::send_headers(int socket_fd)
         Logger::warn("%s: sent %ld bytes: errno says: '%s'", constants::res, sent, ::strerror(errno));
         next_state(Done);
     }
-    else if (sent + m_offset == m_headers_str.size())
+    else if (sent == 0 || sent + m_offset == m_headers_str.size())
     {
         next_state(Body);
         m_offset = 0;

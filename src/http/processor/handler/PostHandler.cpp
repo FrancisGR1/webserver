@@ -211,9 +211,10 @@ void PostHandler::upload_request_body()
             http_utils::throw_internal_server_error_failed_upload(m_post, m_ctx);
         }
 
-        if (written >= 0)
+        if (written > 0)
             m_offset += written;
-        if (m_offset == static_cast<ssize_t>(m_request.body().size()))
+
+        if (written == 0 || m_offset == static_cast<ssize_t>(m_request.body().size()))
             m_done = true;
 
         Logger::trace("PostHandler: write %zu(%zu)", written, m_offset);
@@ -289,10 +290,10 @@ void PostHandler::upload_multipart_body()
         size_t to_write = (part.body.size() - m_offset) > constants::write_chunk_size ? constants::write_chunk_size
                                                                                       : part.body.size() - m_offset;
         ssize_t written = ::write(m_post.fd, part.body.c_str() + m_offset, to_write);
-        if (written >= 0)
+        if (written > 0)
             m_offset += written;
 
-        if (m_offset == static_cast<ssize_t>(part.body.size()))
+        if (written == -1 || m_offset == static_cast<ssize_t>(part.body.size()))
         {
             // this part is over
             m_post.close();
