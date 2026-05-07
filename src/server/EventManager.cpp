@@ -93,6 +93,14 @@ bool EventManager::next(EventAction*& out)
             // skip stale events
             continue;
         }
+
+        if (m_processed_fds.count(found->fd))
+        {
+            continue;
+        }
+
+        m_processed_fds.insert(found->fd);
+
         out = found;
         return true;
     }
@@ -100,6 +108,7 @@ bool EventManager::next(EventAction*& out)
     flush_pending_deletes();
 
     // reset
+    m_processed_fds.clear();
     m_current_event = 0;
     m_n_events = 0;
 

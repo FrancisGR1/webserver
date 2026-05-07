@@ -2,6 +2,7 @@
 #define EVENT_MANAGER
 
 #include <list>
+#include <set>
 #include <vector>
 
 #include "server/ConnectionPool.hpp"
@@ -31,6 +32,7 @@ class EventManager
     std::list<EventAction*> m_events;
     std::list<EventAction*> m_pending_deletes;
     //-iteration
+    std::set<int> m_processed_fds;
     size_t m_current_event;
     int m_n_events;
     size_t m_max_events;
