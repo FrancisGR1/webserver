@@ -1,43 +1,39 @@
 #ifndef CONTRACT_HPP
 #define CONTRACT_HPP
-#include <cstdlib>
 
 #include "core/Logger.hpp"
+#include <cstdlib>
+#include <stdexcept>
 
 #ifdef NDEBUG
-#define CONTRACT_ABORT()
+#define CONTRACT_FAIL(kind, cond, msg)                                                                                 \
+    throw std::runtime_error(kind " failed: " #cond " (" __FILE__ ":" + std::to_string(__LINE__) + ") - " msg)
 #else
-#define CONTRACT_ABORT() std::abort()
+#define CONTRACT_FAIL(kind, cond, msg)                                                                                 \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        Logger::fatal(kind " failed: %s (%s:%d) - %s", #cond, __FILE__, __LINE__, msg);                                \
+        std::abort();                                                                                                  \
+    } while (0)
 #endif
 
-#define REQUIRE(cond, ...)                                                                                             \
+#define REQUIRE(cond, msg)                                                                                             \
     do                                                                                                                 \
     {                                                                                                                  \
         if (!(cond))                                                                                                   \
-        {                                                                                                              \
-            Logger::fatal("Precondition failed: %s (%s:%d) - " __VA_ARGS__, #cond, __FILE__, __LINE__);                \
-            CONTRACT_ABORT();                                                                                          \
-        }                                                                                                              \
+            CONTRACT_FAIL("Precondition", cond, msg);                                                                  \
     } while (0)
 
-#define ENSURE(cond, ...)                                                                                              \
+#define ENSURE(cond, msg)                                                                                              \
     do                                                                                                                 \
     {                                                                                                                  \
         if (!(cond))                                                                                                   \
-        {                                                                                                              \
-            Logger::fatal("Postcondition failed: %s (%s:%d) - " __VA_ARGS__, #cond, __FILE__, __LINE__);               \
-            CONTRACT_ABORT();                                                                                          \
-        }                                                                                                              \
+            CONTRACT_FAIL("Postcondition", cond, msg);                                                                 \
     } while (0)
 
-#define INVARIANT(cond, ...)                                                                                           \
+#define INVARIANT(cond, msg)                                                                                           \
     do                                                                                                                 \
     {                                                                                                                  \
         if (!(cond))                                                                                                   \
-        {                                                                                                              \
-            Logger::fatal("Invariant violated: %s (%s:%d) - " __VA_ARGS__, #cond, __FILE__, __LINE__);                 \
-            CONTRACT_ABORT();                                                                                          \
-        }                                                                                                              \
+            CONTRACT_FAIL("Invariant", cond, msg);                                                                     \
     } while (0)
-
-#endif // CONTRACT_HPP
