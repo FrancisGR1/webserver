@@ -60,32 +60,6 @@ void Webserver::setup()
     }
 }
 
-Socket* Webserver::get_server_socket(const EventAction& ea)
-{
-    REQUIRE(ea.type == EventAction::ServerSocket, "EventAction must be from server socket");
-
-    return m_server_sockets.find(ea.fd)->second;
-}
-
-const ServiceConfig& Webserver::get_service(const Socket* server_socket)
-{
-    REQUIRE(server_socket != NULL, "Socket is Null!");
-
-    for (size_t i = 0; i < m_config.services.size(); ++i)
-    {
-        const ServiceConfig& service = m_config.services[i];
-        for (size_t j = 0; j < service.listeners.size(); ++j)
-        {
-            const Listener& config_listener = service.listeners[j];
-            if (server_socket->listener() == config_listener)
-                return service;
-        }
-    }
-
-    INVARIANT(false, "No matching service found for socket");
-    return m_config.services[0]; // unreachable
-}
-
 void Webserver::run()
 {
     Logger::info("Webserver: running");
@@ -253,6 +227,32 @@ Socket* Webserver::make_server_socket(const Listener& listener)
     }
 
     return new Socket(socket_fd, listener);
+}
+
+Socket* Webserver::get_server_socket(const EventAction& ea)
+{
+    REQUIRE(ea.type == EventAction::ServerSocket, "EventAction must be from server socket");
+
+    return m_server_sockets.find(ea.fd)->second;
+}
+
+const ServiceConfig& Webserver::get_service(const Socket* server_socket)
+{
+    REQUIRE(server_socket != NULL, "Socket is Null!");
+
+    for (size_t i = 0; i < m_config.services.size(); ++i)
+    {
+        const ServiceConfig& service = m_config.services[i];
+        for (size_t j = 0; j < service.listeners.size(); ++j)
+        {
+            const Listener& config_listener = service.listeners[j];
+            if (server_socket->listener() == config_listener)
+                return service;
+        }
+    }
+
+    INVARIANT(false, "No matching service found for socket");
+    return m_config.services[0]; // unreachable
 }
 
 void Webserver::handle_sigint(int sig)

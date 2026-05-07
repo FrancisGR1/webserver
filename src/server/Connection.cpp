@@ -127,7 +127,6 @@ void Connection::read()
 
         if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
-            // Trace instead of Warn: this is a normal part of non-blocking I/O
             Logger::trace(
                 "%s[id=%lld]: recv() error on fd %d (waiting for data): error says: '%s'",
                 constants::conn,
