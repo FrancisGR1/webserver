@@ -45,19 +45,26 @@ void Webserver::setup()
             // make server socket
             const Listener& listener = service.listeners[j];
             Socket* socket = make_server_socket(listener);
+	    if (socket == NULL) // skip
+                continue;
 
             // store socket
             m_server_sockets.insert(std::pair<int, Socket*>(socket->fd(), socket));
             EventAction ea(EventAction::WantRead, EventAction::ServerSocket, socket->fd(), NULL);
-            if (m_events.apply(ea) == -1)
+	    if (m_events.apply(ea) == -1)
             {
-                throw std::runtime_error("Failed to add socket to events");
+                Logger::warn("Webserver: failed to add socket to events, skipping");
+                delete socket;
+                continue;
             }
 
             Logger::info(
                 "Webserver: listening on %s:%s", socket->listener().host.c_str(), socket->listener().port.c_str());
         }
     }
+
+    if (m_server_sockets.empty())
+        throw std::runtime_error("Webserver: no listeners could be bound, aborting");
 }
 
 void Webserver::run()
@@ -178,52 +185,56 @@ Socket* Webserver::make_server_socket(const Listener& listener)
 
     if (getaddrinfo(listener.host.c_str(), listener.port.c_str(), &hints, &result) != 0)
     {
-        throw std::runtime_error(
-            utils::fmt("getaddrinfo() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
+        Logger::warn("Webserver: getaddrinfo() failed for listener %s:%s, skipping",
+            listener.host.c_str(), listener.port.c_str());
+        return NULL;
     }
 
     int socket_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if (socket_fd < 0)
     {
-        throw std::runtime_error(
-            utils::fmt("socket() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
+        ::freeaddrinfo(result);
+        Logger::warn("Webserver: socket() failed for listener %s:%s, skipping",
+            listener.host.c_str(), listener.port.c_str());
+        return NULL;
     }
 
-    //@QUESTION opt 1?
     int opt = 1;
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1
+        || setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) == -1)
     {
+        ::close(socket_fd);
         ::freeaddrinfo(result);
-        throw std::runtime_error(
-            utils::fmt("setsockopt() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
-    }
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) == -1)
-    {
-        ::freeaddrinfo(result);
-        throw std::runtime_error(
-            utils::fmt("setsockopt() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
+        Logger::warn("Webserver: setsockopt() failed for listener %s:%s, skipping",
+            listener.host.c_str(), listener.port.c_str());
+        return NULL;
     }
 
     if (fcntl(socket_fd, F_SETFL, O_NONBLOCK) == -1)
     {
+        ::close(socket_fd);
         ::freeaddrinfo(result);
-        throw std::runtime_error(
-            utils::fmt("fcntl() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
+        Logger::warn("Webserver: fcntl() failed for listener %s:%s, skipping",
+            listener.host.c_str(), listener.port.c_str());
+        return NULL;
     }
 
     if (bind(socket_fd, result->ai_addr, result->ai_addrlen) < 0)
     {
+        ::close(socket_fd);
         ::freeaddrinfo(result);
-        throw std::runtime_error(
-            utils::fmt("bind() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
+        Logger::warn("Webserver: bind() failed for listener %s:%s, skipping",
+            listener.host.c_str(), listener.port.c_str());
+        return NULL;
     }
     ::freeaddrinfo(result);
 
-    //@QUESTION porquê 10 aqui?
     if (listen(socket_fd, 10) < 0)
     {
-        throw std::runtime_error(
-            utils::fmt("listen() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
+        ::close(socket_fd);
+        Logger::warn("Webserver: listen() failed for listener %s:%s, skipping",
+            listener.host.c_str(), listener.port.c_str());
+        return NULL;
     }
 
     return new Socket(socket_fd, listener);
