@@ -4,7 +4,6 @@
 
 #include "ConfigLexer.hpp"
 #include "config/Config.hpp"
-#include "config/ConfigTypes.hpp"
 #include "config/parser/ConfigParser.hpp"
 #include "config/types/LocationConfig.hpp"
 #include "core/utils.hpp"
