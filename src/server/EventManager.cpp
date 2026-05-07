@@ -263,8 +263,8 @@ int EventManager::remove(const EventAction& ea)
 
 EventAction* EventManager::add(const EventAction& ea)
 {
-    REQUIRE(ea.fd >= 0, "EventAction fd must be valid: '%d'", ea.fd);
-    REQUIRE(!exists(ea.fd), "EventAction fd must not exist: '%d'", ea.fd);
+    REQUIRE(ea.fd >= 0, "EventAction fd must be valid");
+    REQUIRE(!exists(ea.fd), "EventAction fd must not exist");
 
     Logger::trace("EventManager: add fd='%d' to events", ea.fd);
 
@@ -309,7 +309,7 @@ EventAction* EventManager::find(EventAction*& ea) const
 // check if it exists in stored events
 EventAction* EventManager::exists(int event_fd) const
 {
-    REQUIRE(event_fd >= 0);
+    REQUIRE(event_fd >= 0, "Must be a valid fd");
 
     for (std::list<EventAction*>::const_iterator it = m_events.begin(); it != m_events.end(); ++it)
     {

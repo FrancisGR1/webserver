@@ -73,7 +73,7 @@ long long Connection::id() const
 
 const EventAction& Connection::event() const
 {
-    REQUIRE(m_event_being_handled != NULL);
+    REQUIRE(m_event_being_handled != NULL, "Event can't be null");
 
     return *m_event_being_handled;
 }
@@ -238,11 +238,13 @@ void Connection::write()
 void Connection::send_error_and_close(StatusCode::Code code)
 {
     ErrorHandler handler(code);
-    handler.process();
-    INVARIANT(handler.done());
+    while (!handler.done())
+        handler.process();
+
     Response& res = handler.response();
     while (!res.done())
         res.send(m_socket.fd());
+
     finish();
 }
 

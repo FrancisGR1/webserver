@@ -104,8 +104,8 @@ std::vector<Path> PostHandler::upload_paths() const
 
 std::string PostHandler::make_uri() const
 {
-    REQUIRE(m_ctx.config().location() != NULL);
-    REQUIRE(m_upload_filename != "");
+    REQUIRE(m_ctx.config().location() != NULL, "Location must not be null");
+    REQUIRE(m_upload_filename != "", "Upload file must be a non empty string");
 
     std::string uri = utils::join_paths(m_ctx.config().location()->name, m_upload_filename);
     Logger::debug("PostHandler: uri: '%s'", uri.c_str());

@@ -145,7 +145,7 @@ void Response::set_body_as_fd(int fd)
 
 int Response::set_body_as_path(Path& path)
 {
-    REQUIRE(path.exists == true);
+    REQUIRE(path.exists == true, "Path must exist");
 
     ResourceLocker::lock(path);
     Logger::trace("%s: set body path: '%s'", constants::res, path.raw.c_str());
@@ -179,7 +179,7 @@ const std::map<std::string, std::string>& Response::headers() const
 //@REFACTOR enviar status_line + headers
 ssize_t Response::send_status_line(int socket_fd)
 {
-    ENSURE(m_state == Response::Status);
+    ENSURE(m_state == Response::Status, "Must be at status status");
 
     Logger::trace("%s: send status", constants::res);
 
@@ -230,7 +230,7 @@ std::string Response::make_status_line()
 
 ssize_t Response::send_headers(int socket_fd)
 {
-    ENSURE(m_state == Response::Headers);
+    ENSURE(m_state == Response::Headers, "Must be at headers' state");
     Logger::trace("%s: send headers", constants::res);
 
     ssize_t sent = ::send(socket_fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, MSG_NOSIGNAL);
@@ -256,7 +256,7 @@ ssize_t Response::send_headers(int socket_fd)
 
 ssize_t Response::send_body(int socket_fd)
 {
-    REQUIRE(m_state == Response::Body);
+    REQUIRE(m_state == Response::Body, "State must be at Body");
 
     Logger::trace("%s: send body", constants::res);
 
@@ -331,7 +331,7 @@ ssize_t Response::send_body_from_fd(int socket_fd)
 
 ssize_t Response::send_body_from_str(int socket_fd)
 {
-    REQUIRE(m_offset < m_body_str.size());
+    REQUIRE(m_offset < m_body_str.size(), "Offset must be less than the body to send");
 
     Logger::debug(
         "%s: send body (string[%zu]): %.30s",

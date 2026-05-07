@@ -1,12 +1,12 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include "server/EventAction.hpp"
-
 #include <map>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "server/EventAction.hpp"
 
 namespace utils
 {

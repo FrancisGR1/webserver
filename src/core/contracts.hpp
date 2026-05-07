@@ -1,13 +1,15 @@
 #ifndef CONTRACT_HPP
 #define CONTRACT_HPP
 
-#include "core/Logger.hpp"
 #include <cstdlib>
 #include <stdexcept>
 
+#include "core/Logger.hpp"
+#include "core/utils.hpp"
+
 #ifdef NDEBUG
 #define CONTRACT_FAIL(kind, cond, msg)                                                                                 \
-    throw std::runtime_error(kind " failed: " #cond " (" __FILE__ ":" + std::to_string(__LINE__) + ") - " msg)
+    throw std::runtime_error(kind " failed: " #cond " (" __FILE__ ":" + utils::to_string(__LINE__) + ") - " msg)
 #else
 #define CONTRACT_FAIL(kind, cond, msg)                                                                                 \
     do                                                                                                                 \
@@ -37,3 +39,5 @@
         if (!(cond))                                                                                                   \
             CONTRACT_FAIL("Invariant", cond, msg);                                                                     \
     } while (0)
+
+#endif // CONTRACT_HPP
