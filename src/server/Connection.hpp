@@ -37,7 +37,7 @@ class Connection
     int fd() const;
     bool done() const;
     std::time_t last_activity();
-    void send_error(StatusCode::Code code);
+    void send_error_and_close(StatusCode::Code code);
 
     // states
     void read();
@@ -61,6 +61,7 @@ class Connection
     // saves current work state
     ConnectionState m_state;
     Seconds m_last_activity;
+    Seconds m_start_reading;
 
     // context
     const long long m_id;
@@ -81,6 +82,8 @@ class Connection
     void register_event(EventAction event);
     void register_action(EventAction::Action action);
     void update_activity(void);
+    bool request_timeout(void) const;
+    void finish(void);
 
     // illegal - copy semantics
     // every connection must be a reference/pointer

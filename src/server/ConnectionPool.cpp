@@ -85,9 +85,9 @@ void ConnectionPool::remove_idles(EventManager& event_manager)
             Logger::debug("ConnectionPool: removing idle connection: '%p'", (void*)m_pool[i]);
 
             if (m_pool[i]->state() == ConnectionState::Reading)
-                m_pool[i]->send_error(StatusCode::RequestTimeout);
+                m_pool[i]->send_error_and_close(StatusCode::RequestTimeout);
             else if (m_pool[i]->state() == ConnectionState::ProcessingRequest)
-                m_pool[i]->send_error(StatusCode::ServiceUnavailable);
+                m_pool[i]->send_error_and_close(StatusCode::ServiceUnavailable);
             else
             {
                 // send nothing

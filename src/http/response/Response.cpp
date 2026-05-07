@@ -185,11 +185,12 @@ ssize_t Response::send_status_line(int socket_fd)
 
     m_status_line = make_status_line();
 
-    ssize_t sent = ::send(socket_fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, 0);
+    ssize_t sent = ::send(socket_fd, m_status_line.c_str() + m_offset, m_status_line.size() - m_offset, MSG_NOSIGNAL);
     if (sent == -1)
     {
         Logger::warn("%s: sent %ld bytes: errno says: '%s'", constants::res, sent, ::strerror(errno));
         next_state(Done);
+        return sent;
     }
     else if (sent + m_offset == m_status_line.size())
     {
@@ -232,7 +233,7 @@ ssize_t Response::send_headers(int socket_fd)
     ENSURE(m_state == Response::Headers);
     Logger::trace("%s: send headers", constants::res);
 
-    ssize_t sent = ::send(socket_fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, 0);
+    ssize_t sent = ::send(socket_fd, m_headers_str.c_str() + m_offset, m_headers_str.size() - m_offset, MSG_NOSIGNAL);
     if (sent == -1)
     {
         Logger::warn("%s: sent %ld bytes: errno says: '%s'", constants::res, sent, ::strerror(errno));
@@ -300,7 +301,7 @@ ssize_t Response::send_body_from_fd(int socket_fd)
     buffer[read_bytes] = '\0';
 
     // send
-    sent_bytes = ::send(socket_fd, buffer, read_bytes, 0);
+    sent_bytes = ::send(socket_fd, buffer, read_bytes, MSG_NOSIGNAL);
     Logger::trace("%s: sent %ld(%ld) bytes", constants::res, sent_bytes, m_total_sent);
     if (sent_bytes < read_bytes)
     {
@@ -338,7 +339,7 @@ ssize_t Response::send_body_from_str(int socket_fd)
         m_body_str.size() - m_offset,
         (m_body_str.c_str() + m_offset));
 
-    ssize_t sent_bytes = ::send(socket_fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, 0);
+    ssize_t sent_bytes = ::send(socket_fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, MSG_NOSIGNAL);
     if (sent_bytes < 0)
         return sent_bytes;
 

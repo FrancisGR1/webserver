@@ -22,6 +22,8 @@ class ErrorHandler : public IRequestHandler
     const Response& response() const;
     std::vector<EventAction> give_events();
 
+    Response& response();
+
     // utils
     static std::string make_default_body(StatusCode::Code code);
 

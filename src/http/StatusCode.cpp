@@ -1,4 +1,5 @@
 #include "http/StatusCode.hpp"
+#include "core/contracts.hpp"
 
 std::string StatusCode::to_reason(StatusCode::Code c)
 {
@@ -6,6 +7,8 @@ std::string StatusCode::to_reason(StatusCode::Code c)
 
     switch (c)
     {
+        case SC::None: INVARIANT(false, "Should never be None");
+
         // === Successful ===
         case SC::Ok: return "OK";
         case SC::Created: return "Created";
@@ -14,6 +17,9 @@ std::string StatusCode::to_reason(StatusCode::Code c)
 
         // === Redirection ===
         case SC::MovedPermanently: return "Moved Permanently";
+        case SC::Found: return "Found";
+        case SC::SeeOther: return "SeeOther";
+        case SC::TemporaryRedirect: return "Temporary Redirect";
         case SC::PermanentRedirect: return "Permanent Redirect";
 
         // === Client Side Error ===
@@ -22,6 +28,7 @@ std::string StatusCode::to_reason(StatusCode::Code c)
         case SC::NotFound: return "Not Found";
         case SC::MethodNotAllowed: return "Method Not Allowed";
         case SC::NotAcceptable: return "Not Acceptable";
+        case SC::RequestTimeout: return "Request Timeout";
         case SC::Conflict: return "Conflict";
         case SC::LengthRequired: return "Length Required";
         case SC::ContentTooLarge: return "Content Too Large";
@@ -37,9 +44,10 @@ std::string StatusCode::to_reason(StatusCode::Code c)
         case SC::ServiceUnavailable: return "Service Unavailable";
         case SC::GatewayTimeout: return "Gateway Timeout";
         case SC::HttpVersionNotSupported: return "HTTP Version Not Supported";
-
-        default: return "";
     };
+
+    INVARIANT(false, "Unreachable");
+    return "";
 }
 
 bool StatusCode::exists(StatusCode::Code code)

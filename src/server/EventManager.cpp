@@ -51,7 +51,7 @@ int EventManager::wait()
     m_n_events = epoll_wait(m_epoll_fd, m_epoll_events_buffer, constants::max_events, constants::epoll_timeout);
     if (m_n_events == -1)
         Logger::warn("EventManager: epoll_wait() interrupted!");
-    else
+    else if (m_n_events > 0)
     {
         Logger::debug("EventManager: %d event(s) ready:", m_n_events);
         if (Logger::level() <= Log::Debug)
@@ -68,6 +68,10 @@ int EventManager::wait()
             }
             Logger::debug("==================================");
         }
+    }
+    else
+    {
+        Logger::debug("EventManager: woke up");
     }
     return (m_n_events);
 }

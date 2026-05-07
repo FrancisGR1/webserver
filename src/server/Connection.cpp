@@ -5,6 +5,7 @@
 #include "core/constants.hpp"
 #include "core/contracts.hpp"
 #include "http/processor/RequestProcessor.hpp"
+#include "http/processor/handler/ErrorHandler.hpp"
 #include "server/Connection.hpp"
 #include "server/EventAction.hpp"
 #include "server/Socket.hpp"
@@ -33,6 +34,7 @@ static long long s_connection_counter = 0;
 Connection::Connection(int client_fd, const Listener& listener, const ServiceConfig& service)
     : m_state(ConnectionState::Reading)
     , m_last_activity(Timer::now())
+    , m_start_reading(m_last_activity)
     , m_id(++s_connection_counter)
     , m_service(service)
     , m_socket(client_fd, listener)
@@ -99,6 +101,15 @@ void Connection::read()
         Logger::warn("%s[id=%lld]: Trying to read when in '%s' state", constants::conn, m_id, m_state.str().c_str());
     }
 
+    if (request_timeout())
+    {
+        Logger::error("%s[id=%lld]: request timeout", constants::conn, m_id);
+
+        send_error_and_close(StatusCode::RequestTimeout);
+
+        return;
+    }
+
     Logger::trace("%s[id=%lld]: state - Reading", constants::conn, m_id);
 
     // read client info to buffer
@@ -107,7 +118,7 @@ void Connection::read()
     if (bytes == 0)
     {
         Logger::info("%s[id=%lld]: Client closed connection on fd %d", constants::conn, m_id, m_socket.fd());
-        next_state(ConnectionState::Done);
+        finish();
         return;
     }
     else if (bytes == -1)
@@ -220,17 +231,20 @@ void Connection::write()
         Logger::info("%s[id=%lld]: state - done!", constants::conn, m_id);
 
         // close client socket by DEFAULT (HTTP 1.0)
-        register_action(EventAction::WantClose);
-        next_state(ConnectionState::Done);
+        finish();
     }
     update_activity();
 }
 
-void Connection::send_error(StatusCode::Code code)
+void Connection::send_error_and_close(StatusCode::Code code)
 {
-    Response res(code);
-    res.send(m_socket.fd());
-    next_state(ConnectionState::Done);
+    ErrorHandler handler(code);
+    handler.process();
+    INVARIANT(handler.done());
+    Response& res = handler.response();
+    while (!res.done())
+        res.send(m_socket.fd());
+    finish();
 }
 
 ConnectionState::Enum Connection::state() const
@@ -270,4 +284,15 @@ void Connection::register_action(EventAction::Action action)
 void Connection::update_activity(void)
 {
     m_last_activity = Timer::now();
+}
+
+bool Connection::request_timeout(void) const
+{
+    return Timer::now() - m_start_reading > constants::request_timeout;
+}
+
+void Connection::finish(void)
+{
+    next_state(ConnectionState::Done);
+    register_action(EventAction::WantClose);
 }

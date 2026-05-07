@@ -180,9 +180,14 @@ void RequestProcessor::process()
     catch (const ResponseError& e)
     {
         Logger::error("RequestProcessor: %s", e.msg().c_str());
-        m_events = m_handler->give_events();
-        utils::copy_events(m_events, m_handler->give_events());
-        delete m_handler;
+
+        if (m_state >= Dispatching)
+        {
+            m_events = m_handler->give_events();
+            utils::copy_events(m_events, m_handler->give_events());
+            delete m_handler;
+        }
+
         m_handler = new ErrorHandler(e);
 
         // Error handler does it in one go

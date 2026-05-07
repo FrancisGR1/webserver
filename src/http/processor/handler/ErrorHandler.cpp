@@ -98,6 +98,11 @@ const Response& ErrorHandler::response() const
     return m_response;
 }
 
+Response& ErrorHandler::response()
+{
+    return m_response;
+}
+
 std::string ErrorHandler::make_default_body(StatusCode::Code code)
 {
     // build default body

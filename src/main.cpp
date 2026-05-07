@@ -30,7 +30,8 @@ int main(int argc, char* argv[])
 
         // server
         Webserver server(config);
-        signal(SIGINT, handle_signal);
+        ::signal(SIGINT, handle_signal);
+        ::signal(SIGPIPE, SIG_IGN);
         server.setup();
         server.run();
     }
