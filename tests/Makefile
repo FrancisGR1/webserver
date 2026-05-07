@@ -30,22 +30,21 @@ integration: $(SERVER)
 	@echo "\t======================="
 	@echo "\t===== INTEGRATION ====="
 	@echo "\t======================="
-	@echo "\nMakefile: Starting webserv for integration tests..."
-	@echo "Makefile: Server logs -> integration/webserv.log"; \
-	cd ./integration; \
-	./$(SERVER) > webserv.log 2>&1 & \
-	WEBSERV_PID=$$!; \
-	sleep 1; \
-	echo $${PWD}; \
+	@cd ./integration; \
+	echo "Makefile: Please start the test server inside ./integration:"; \
+	echo ""; \
+	echo "    cd integration && ./$(SERVER)"; \
+	echo ""; \
+	read -p "Press Enter when the server is ready..." dummy; \
 	echo "Makefile: Running lua quick.lua..."; \
 	lua quick.lua; \
 	echo "Makefile: Running lua big.lua..."; \
 	lua big.lua; \
 	echo "Makefile: Running go test..."; \
 	go test; \
-	kill $$WEBSERV_PID 2>/dev/null; \
-	wait $$WEBSERV_PID 2>/dev/null; \
-	echo "Makefile: webserv stopped."
+	echo "Makefile: Running siege..."; \
+	./stress/run.sh; \
+	echo "Makefile: All tests done. You can stop the server now."
 
 tests: unit integration
 
