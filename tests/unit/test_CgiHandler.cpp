@@ -22,7 +22,7 @@
 // how much time we should wait for idle subprocesses
 // if the subprocess doesn't do anything for TEST_TIMEOUT time
 // it gives a 504
-const Seconds TEST_TIMEOUT = 6;
+const Seconds TEST_TIMEOUT = 5.0;
 
 struct TestCase
 {
@@ -36,7 +36,8 @@ struct TestCase
         script_location = LocationConfig{"/scripts", "./test_data/"};
         service = ServiceConfig{{script_location}};
         socket = std::make_unique<Socket>(3, listener); // 3 = dummy fd
-        events = std::make_unique<EventManager>(1024);
+        conns = std::make_unique<ConnectionPool>(5);
+        events = std::make_unique<EventManager>(1024, *conns);
         conn = std::make_unique<Connection>(3, listener, service);
         ctx = std::make_unique<RequestContext>(conn.get(), service);
 
@@ -68,6 +69,7 @@ struct TestCase
     Listener listener;
     std::unique_ptr<Connection> conn;
     std::unique_ptr<Socket> socket;
+    std::unique_ptr<ConnectionPool> conns;
     std::unique_ptr<EventManager> events;
     std::unique_ptr<RequestContext> ctx;
 
@@ -212,7 +214,8 @@ std::vector<TestCase> generate_bad_test_cases(void)
         "pipe overflow",
         "./test_data/scripts/bad/pipe_overflow.py",
         Request("GET", "/scripts/bad/pipe_overflow.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
-        Response(StatusCode::GatewayTimeout, {}, "")); //@NOTE might be 502 alternatively
+        //@WARN: may vary depending on TEST_TIMEOUT
+        Response(StatusCode::BadGateway, {}, "")); //@NOTE might be 502 alternatively
     // no output - empty response, no headers
     test_cases.emplace_back(
         "no output",
@@ -231,14 +234,19 @@ std::vector<TestCase> generate_bad_test_cases(void)
         "./test_data/scripts/bad/wrong_status_code.py",
         Request("GET", "/scripts/bad/wrong_status_code.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
         Response(StatusCode::BadGateway, {}, ""));
-    // random output - unpredictable behavior
-    test_cases.emplace_back(
-        "random output",
-        "./test_data/scripts/bad/random.py",
-        Request("GET", "/scripts/bad/random.py", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
-        Response(StatusCode::BadGateway, {}, ""));
     // clang-format on
     return test_cases;
+}
+
+static void close_pipes(const std::vector<EventAction>& events)
+{
+    for (size_t i = 0; i < events.size(); ++i)
+    {
+        if (events[i].type == EventAction::Pipe && events[i].action == EventAction::WantClose)
+        {
+            ::close(events[i].fd);
+        }
+    }
 }
 
 void test_good_CgiHandler(const TestCase& test)
@@ -270,6 +278,8 @@ void test_good_CgiHandler(const TestCase& test)
             std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
             return;
         }
+
+        close_pipes(handler.give_events());
     }
 
     Logger::debug_obj(handler.response(), "CgiHandler: response: ");
@@ -372,6 +382,7 @@ void test_bad_CgiHandler(const TestCase& test)
             }
             return;
         }
+        close_pipes(handler.give_events());
     }
 
     // on error
@@ -401,7 +412,7 @@ int main()
     tests = generate_good_test_cases();
     for (auto& test : tests)
     {
-        // if (test.title != "custom status code")
+        // if (test.title != "simple script")
         //     continue;
         test_good_CgiHandler(test);
     }

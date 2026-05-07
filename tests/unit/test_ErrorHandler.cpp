@@ -30,6 +30,7 @@ struct ErrorHandlerTestCase
     // owned resources
     Listener listener;
     std::unique_ptr<Socket> socket;
+    std::unique_ptr<ConnectionPool> conns;
     std::unique_ptr<EventManager> events;
     std::unique_ptr<RequestContext> ctx;
 
@@ -54,7 +55,8 @@ ErrorHandlerTestCase::ErrorHandlerTestCase(
     , expected{expect}
 {
     socket = std::make_unique<Socket>(3, listener); // 3 = dummy fd
-    events = std::make_unique<EventManager>(1024);
+    conns = std::make_unique<ConnectionPool>(5);
+    events = std::make_unique<EventManager>(1024, *conns);
     ctx = std::make_unique<RequestContext>(nullptr, service);
 
     ctx->config().set(location);

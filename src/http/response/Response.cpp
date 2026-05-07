@@ -340,8 +340,11 @@ ssize_t Response::send_body_from_str(int socket_fd)
         (m_body_str.c_str() + m_offset));
 
     ssize_t sent_bytes = ::send(socket_fd, m_body_str.c_str() + m_offset, m_body_str.size() - m_offset, MSG_NOSIGNAL);
-    if (sent_bytes < 0)
+    if (sent_bytes <= 0)
+    {
+        next_state(Done);
         return sent_bytes;
+    }
 
     m_total_sent += sent_bytes;
 

@@ -11,6 +11,7 @@
 #include "http/processor/RequestContext.hpp"
 #include "http/request/Request.hpp"
 #include "http/response/Response.hpp"
+#include "server/ConnectionPool.hpp"
 #include "server/EventManager.hpp"
 #include "server/Socket.hpp"
 
@@ -35,6 +36,7 @@ struct HandlerTestCase
     // owned resources
     Listener listener;
     std::unique_ptr<Socket> socket;
+    std::unique_ptr<ConnectionPool> conns;
     std::unique_ptr<EventManager> events;
     std::unique_ptr<RequestContext> ctx;
 
@@ -57,7 +59,8 @@ HandlerTestCase::HandlerTestCase(
     service = sv;
     location = lc;
     socket = std::make_unique<Socket>(3, listener); // 3 = dummy fd
-    events = std::make_unique<EventManager>(1024);
+    conns = std::make_unique<ConnectionPool>(5);
+    events = std::make_unique<EventManager>(1024, *conns);
     ctx = std::make_unique<RequestContext>(nullptr, service);
 
     ctx->config().set(file_path);

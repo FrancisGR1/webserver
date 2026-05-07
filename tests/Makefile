@@ -8,9 +8,9 @@ CXXFLAGS    = -Wall -Werror -Wextra -std=c++23 -I../src/
 UNITS       = unit/test_resolve_target.out \
 	      unit/test_RequestParser.out \
 	      unit/test_GetHandler.out \
-	      unit/test_PostHandler.out \
 	      unit/test_DeleteHandler.out \
 	      unit/test_ErrorHandler.out \
+	      unit/test_PostHandler.out \
 	      unit/test_CgiHandler.out
 
 .PHONY: all unit integration clean fclean re
