@@ -22,6 +22,3 @@ siege -c $CONCURRENCY -t $DURATION -b \
 
 echo -e "\n--- CGI ---"
 siege -c $CONCURRENCY -t $DURATION -b "$BASE/scripts/good/hello.py"
-
-echo -e "\n--- Redirection ---"
-siege -c $CONCURRENCY -t $DURATION -b "$BASE/redir"

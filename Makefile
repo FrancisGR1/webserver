@@ -31,7 +31,6 @@ SOURCES  = \
 	  src/server/Webserver.cpp \
 	  \
 	  src/config/Config.cpp \
-	  src/config/ConfigTypes.cpp \
 	  src/config/parser/ConfigLexer.cpp \
 	  src/config/parser/ConfigParser.cpp \
 	  src/config/parser/Token.cpp \
