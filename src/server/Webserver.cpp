@@ -207,6 +207,12 @@ Socket* Webserver::make_server_socket(const Listener& listener)
         throw std::runtime_error(
             utils::fmt("setsockopt() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
     }
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) == -1)
+    {
+        ::freeaddrinfo(result);
+        throw std::runtime_error(
+            utils::fmt("setsockopt() failed for listener %s:%s", listener.host.c_str(), listener.port.c_str()));
+    }
 
     if (fcntl(socket_fd, F_SETFL, O_NONBLOCK) == -1)
     {
