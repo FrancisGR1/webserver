@@ -217,12 +217,13 @@ void CgiHandler::start_subprocess()
             ::close(m_write_to_script[0]);
         }
 
+        // execute
+        ::execve(argv[0], argv, &envp[0]);
+
         // restore stdout for Logger::error()
         ::dup2(saved_stdout, STDOUT_FILENO);
         ::close(saved_stdout);
 
-        // execute
-        ::execve(argv[0], argv, &envp[0]);
         Logger::error("%s: Subprocess: execve() gone wrong! Exiting!", constants::cgi);
 
         std::exit(1);
@@ -310,6 +311,13 @@ void CgiHandler::read_from_pipe()
                 utils::fmt("%s: subprocess exited with code '%d'", constants::cgi, WEXITSTATUS(status)),
                 &m_ctx);
         }
+        if (WIFSIGNALED(status))
+        {
+            throw ResponseError(
+                StatusCode::BadGateway,
+                utils::fmt("%s: subprocess killed by signal '%d'", constants::cgi, WTERMSIG(status)),
+                &m_ctx);
+        }
     }
     else // nothing was read
     {
@@ -370,6 +378,12 @@ void CgiHandler::make_response()
 {
     REQUIRE(!is_writing(), "Making a response should only be possible after writing to the pipe being over");
 
+    if (m_headers.empty() && m_body_str.empty())
+    {
+        throw ResponseError(
+            StatusCode::BadGateway, utils::fmt("%s: subprocess produced no output", constants::cgi), &m_ctx);
+    }
+
     Logger::trace("%s: transform headers to a string", constants::cgi);
 
     // https://www.rfc-editor.org/rfc/rfc3875#section-6
@@ -378,6 +392,8 @@ void CgiHandler::make_response()
     for (size_t i = 0; i < lines.size(); ++i)
     {
         const std::string& line = lines[i];
+        if (line.empty())
+            continue;
         size_t colon_pos = line.find(":");
         if (colon_pos != std::string::npos)
         {

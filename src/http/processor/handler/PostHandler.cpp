@@ -94,10 +94,13 @@ std::vector<EventAction> PostHandler::give_events()
     return std::vector<EventAction>();
 }
 
-// const std::vector<Path>& PostHandler::upload_paths() const
-//{
-//     return m_upload_paths;
-// }
+std::vector<Path> PostHandler::upload_paths() const
+{
+    std::vector<Path> result;
+    if (m_post.exists || m_post.fd != -1)
+        result.push_back(m_post);
+    return result;
+}
 
 std::string PostHandler::make_uri() const
 {

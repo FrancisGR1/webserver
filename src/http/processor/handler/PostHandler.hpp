@@ -21,7 +21,7 @@ class PostHandler : public IRequestHandler
     std::vector<EventAction> give_events();
 
     // getters
-    const std::vector<Path>& upload_paths() const;
+    std::vector<Path> upload_paths() const;
 
   private:
     // dependencies

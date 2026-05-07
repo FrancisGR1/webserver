@@ -46,7 +46,6 @@ std::string StatusCode::to_reason(StatusCode::Code c)
         case SC::HttpVersionNotSupported: return "HTTP Version Not Supported";
     };
 
-    INVARIANT(false, "Unreachable");
     return "";
 }
 

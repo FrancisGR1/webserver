@@ -201,7 +201,7 @@ Socket* Webserver::make_server_socket(const Listener& listener)
 
     //@QUESTION opt 1?
     int opt = 1;
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
     {
         ::freeaddrinfo(result);
         throw std::runtime_error(

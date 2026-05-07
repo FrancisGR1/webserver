@@ -62,7 +62,7 @@ void GetHandler::process()
         {
             // index path
             // join index file to location root directive (if existent)
-            Path index_path = utils::join_paths(config.root().raw, config.index().raw);
+            Path index_path = utils::join_paths(config.path().raw, config.index().raw);
             if (!index_path.exists)
                 http_utils::throw_not_found(index_path, m_ctx);
             if (!index_path.is_regular_file)
@@ -131,7 +131,7 @@ std::string GetHandler::make_autoindex(const Path& path)
     {
         std::string name = entry->d_name;
 
-        //@TODO: .. pode passar se não for root
+        // ignore
         if (name == "." || name == "..")
             continue;
 
@@ -194,12 +194,13 @@ void GetHandler::handle_autoindex(Response& response, const Path& path)
     response.set_status(StatusCode::Ok);
     // header
     response.set_header("Connection", "close"); // @NOTE: HTTP-1.0 closes by default
-    response.set_header("Content-Length", utils::to_string(path.size));
     response.set_header("Content-Type", MimeTypes::from_extension("html"));
     response.set_header("Date", utils::http_date());
     // body
     std::string autoindex = make_autoindex(path);
     response.set_body_as_str(autoindex);
+    // length header
+    response.set_header("Content-Length", utils::to_string(autoindex.size()));
 }
 
 void GetHandler::handle_file(Response& response, Path& path)

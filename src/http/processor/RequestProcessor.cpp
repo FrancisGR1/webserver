@@ -154,7 +154,7 @@ void RequestProcessor::process()
                 else if (m_request.method() == "DELETE")
                     m_handler = new DeleteHandler(m_ctx);
                 else
-                    throw ResponseError(StatusCode::BadRequest, "Didn't find handler");
+                    throw ResponseError(StatusCode::BadRequest, "Didn't find handler", &m_ctx);
                 m_state = Handling;
             }
                 // fall through
