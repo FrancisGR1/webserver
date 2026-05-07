@@ -43,7 +43,7 @@ void ConfigParser::parse()
                 m_config.services.push_back(service);
                 break;
             }
-            default: throw std::runtime_error("Error: Invalid1\n");
+            default: throw std::runtime_error("Error: Only 'Service{...}' is allowed in global scope\n");
         }
     }
 }
@@ -77,7 +77,7 @@ void ConfigParser::parse_service(Token& t, ServiceConfig& service)
             }
             default:
             {
-                throw std::runtime_error("Error: Invalid2\n");
+                throw std::runtime_error("Error: Only locations and directives are allowed in service scope\n");
             }
         }
     }
@@ -122,17 +122,16 @@ void ConfigParser::parse_directive(Token& t, Token::Type context, Directive& dir
     t.classify_word_in_context(Token::DirectiveName);
     directive.type = t.type;
 
-    //@TODO: colocar aqui um check de contexto em vez dos throws abaixo
     switch (t.type)
     {
         case Token::DirectiveListen:
             if (context != Token::Service)
-                throw std::runtime_error("Invalid3\n");
+                throw std::runtime_error("Error: expected service context token\n");
             parse_listener(t, directive);
             break;
         case Token::DirectiveServerName:
             if (context != Token::Service)
-                throw std::runtime_error("Invalid4\n");
+                throw std::runtime_error("Error: expected service context token\n");
             parse_server_name(t, directive);
             break;
 
@@ -147,7 +146,7 @@ void ConfigParser::parse_directive(Token& t, Token::Type context, Directive& dir
         case Token::DirectiveCgi: parse_cgi(t, directive); break;
         case Token::DirectiveRedirect: parse_redirect(t, directive); break;
 
-        default: throw std::runtime_error("Invalid6\n");
+        default: throw std::runtime_error("Error: Unknow directive\n");
     }
 }
 
@@ -159,24 +158,24 @@ void ConfigParser::parse_listener(Token& t, Directive& directive)
     const Token interface_tok = m_lexer.advance();
     size_t colon_pos = interface_tok.value.find(':');
     if (colon_pos == std::string::npos)
-        throw std::runtime_error("Invalid7\n");
+        throw std::runtime_error("Error: Listener is missing ':'\n");
 
     std::string host = interface_tok.value.substr(0, colon_pos);
     std::string port_str = interface_tok.value.substr(colon_pos + 1);
 
     std::vector<std::string> octets = utils::str_split(host, ".");
     if (octets.size() != 4)
-        throw std::runtime_error("Invalid8\n");
+        throw std::runtime_error("Error: IPv4 must have 4 octets separated by '.'\n");
     for (size_t i = 0; i < octets.size(); i++)
     {
         size_t octet = atoi(octets.at(i).c_str());
         if (octet > 255)
-            throw std::runtime_error("Invalid9\n");
+            throw std::runtime_error("Error: octets must be <= 255\n");
     }
 
     size_t port = atoi(port_str.c_str());
     if (port < 1 || port > 65535)
-        throw std::runtime_error("Invalid10\n");
+        throw std::runtime_error("Error: port must be between 1 and 65535\n");
 
     directive.start_pos = listen_tok.start_pos;
     directive.name = listen_tok.value;
@@ -231,7 +230,7 @@ void ConfigParser::parse_max_body_size(Token& t, Directive& directive)
     const Token max_body_size_num_tok = m_lexer.advance();
 
     if (!utils::str_isdigit(max_body_size_num_tok.value))
-        throw std::runtime_error("Invalid11\n");
+        throw std::runtime_error("Error: max_boddy_size must be a digit\n");
 
     directive.args.push_back(max_body_size_num_tok.value);
 
@@ -247,10 +246,10 @@ void ConfigParser::parse_error_page(Token& t, Directive& directive)
 
     const Token error_page_code_tok = m_lexer.advance();
     if (!utils::str_isdigit(error_page_code_tok.value))
-        throw std::runtime_error("Invalid12\n");
+        throw std::runtime_error("Error: error code must be a digit\n");
     size_t code = atoi(error_page_code_tok.value.c_str());
     if (code < 100 || code > 599)
-        throw std::runtime_error("Invalid13\n");
+        throw std::runtime_error("Error: error code must be betwenn 100 and 599\n");
 
     const Token error_page_file_tok = m_lexer.advance();
 
@@ -327,7 +326,7 @@ void ConfigParser::parse_listing(Token& t, Directive& directive)
 
     const Token listing_bool_tok = m_lexer.advance();
     if (listing_bool_tok.value != "on" && listing_bool_tok.value != "off")
-        throw std::runtime_error("Invalid14\n");
+        throw std::runtime_error("Error: listing must be either 'on' or 'off'\n");
 
     directive.name = listing_tok.value;
     directive.start_pos = listing_tok.start_pos;
@@ -346,7 +345,7 @@ void ConfigParser::parse_upload(Token& t, Directive& directive)
 
     const Token upload_bool_tok = m_lexer.advance();
     if (upload_bool_tok.value != "on" && upload_bool_tok.value != "off")
-        throw std::runtime_error("Invalid15\n");
+        throw std::runtime_error("Error: upload must be either 'on' or 'off'\n");
 
     directive.name = upload_tok.value;
     directive.start_pos = upload_tok.start_pos;
@@ -365,7 +364,7 @@ void ConfigParser::parse_cgi(Token& t, Directive& directive)
 
     const Token cgi_extension_tok = m_lexer.advance();
     if (!utils::is_valid_cgi_extension(cgi_extension_tok.value))
-        throw std::runtime_error("Invalid16\n");
+        throw std::runtime_error("Error: invalid extension\n");
 
     const Token cgi_file_tok = m_lexer.advance();
 
@@ -387,10 +386,10 @@ void ConfigParser::parse_redirect(Token& t, Directive& directive)
 
     const Token redirect_code_tok = m_lexer.advance();
     if (!utils::str_isdigit(redirect_code_tok.value))
-        throw std::runtime_error("Invalid17\n");
+        throw std::runtime_error("Error: redirection code must be a digit\n");
     size_t code = atoi(redirect_code_tok.value.c_str());
     if (!StatusCode::is_redirection(code))
-        throw std::runtime_error("Invalid18\n");
+        throw std::runtime_error("Error: redirection code is not a valid http status code\n");
 
     const Token redirect_path_tok = m_lexer.advance();
 
