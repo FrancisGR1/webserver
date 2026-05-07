@@ -27,7 +27,7 @@ class Webserver
     void run();
 
     // for CTRL+C
-    static bool is_running;
+    static volatile bool is_running;
 
   private:
     const Config& m_config;

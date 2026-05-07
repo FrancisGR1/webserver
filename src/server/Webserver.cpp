@@ -2,14 +2,13 @@
 
 #include "core/Logger.hpp"
 #include "core/contracts.hpp"
-#include "core/utils.hpp"
 #include "server/Connection.hpp"
 #include "server/EventAction.hpp"
 #include "server/EventManager.hpp"
 #include "server/Socket.hpp"
 #include "server/Webserver.hpp"
 
-bool Webserver::is_running = true;
+volatile bool Webserver::is_running = true;
 
 Webserver::Webserver(const Config& config)
     : m_config(config)
@@ -45,13 +44,13 @@ void Webserver::setup()
             // make server socket
             const Listener& listener = service.listeners[j];
             Socket* socket = make_server_socket(listener);
-	    if (socket == NULL) // skip
+            if (socket == NULL) // skip
                 continue;
 
             // store socket
             m_server_sockets.insert(std::pair<int, Socket*>(socket->fd(), socket));
             EventAction ea(EventAction::WantRead, EventAction::ServerSocket, socket->fd(), NULL);
-	    if (m_events.apply(ea) == -1)
+            if (m_events.apply(ea) == -1)
             {
                 Logger::warn("Webserver: failed to add socket to events, skipping");
                 delete socket;
@@ -185,8 +184,10 @@ Socket* Webserver::make_server_socket(const Listener& listener)
 
     if (getaddrinfo(listener.host.c_str(), listener.port.c_str(), &hints, &result) != 0)
     {
-        Logger::warn("Webserver: getaddrinfo() failed for listener %s:%s, skipping",
-            listener.host.c_str(), listener.port.c_str());
+        Logger::warn(
+            "Webserver: getaddrinfo() failed for listener %s:%s, skipping",
+            listener.host.c_str(),
+            listener.port.c_str());
         return NULL;
     }
 
@@ -194,19 +195,21 @@ Socket* Webserver::make_server_socket(const Listener& listener)
     if (socket_fd < 0)
     {
         ::freeaddrinfo(result);
-        Logger::warn("Webserver: socket() failed for listener %s:%s, skipping",
-            listener.host.c_str(), listener.port.c_str());
+        Logger::warn(
+            "Webserver: socket() failed for listener %s:%s, skipping", listener.host.c_str(), listener.port.c_str());
         return NULL;
     }
 
     int opt = 1;
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1
-        || setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) == -1)
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
+        setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) == -1)
     {
         ::close(socket_fd);
         ::freeaddrinfo(result);
-        Logger::warn("Webserver: setsockopt() failed for listener %s:%s, skipping",
-            listener.host.c_str(), listener.port.c_str());
+        Logger::warn(
+            "Webserver: setsockopt() failed for listener %s:%s, skipping",
+            listener.host.c_str(),
+            listener.port.c_str());
         return NULL;
     }
 
@@ -214,8 +217,8 @@ Socket* Webserver::make_server_socket(const Listener& listener)
     {
         ::close(socket_fd);
         ::freeaddrinfo(result);
-        Logger::warn("Webserver: fcntl() failed for listener %s:%s, skipping",
-            listener.host.c_str(), listener.port.c_str());
+        Logger::warn(
+            "Webserver: fcntl() failed for listener %s:%s, skipping", listener.host.c_str(), listener.port.c_str());
         return NULL;
     }
 
@@ -223,8 +226,8 @@ Socket* Webserver::make_server_socket(const Listener& listener)
     {
         ::close(socket_fd);
         ::freeaddrinfo(result);
-        Logger::warn("Webserver: bind() failed for listener %s:%s, skipping",
-            listener.host.c_str(), listener.port.c_str());
+        Logger::warn(
+            "Webserver: bind() failed for listener %s:%s, skipping", listener.host.c_str(), listener.port.c_str());
         return NULL;
     }
     ::freeaddrinfo(result);
@@ -232,8 +235,8 @@ Socket* Webserver::make_server_socket(const Listener& listener)
     if (listen(socket_fd, 10) < 0)
     {
         ::close(socket_fd);
-        Logger::warn("Webserver: listen() failed for listener %s:%s, skipping",
-            listener.host.c_str(), listener.port.c_str());
+        Logger::warn(
+            "Webserver: listen() failed for listener %s:%s, skipping", listener.host.c_str(), listener.port.c_str());
         return NULL;
     }
 
@@ -270,5 +273,5 @@ void Webserver::handle_sigint(int sig)
 {
     (void)sig;
     Webserver::is_running = false;
-    std::cout << std::endl;
+    ::write(STDOUT_FILENO, "\n", 1);
 }
