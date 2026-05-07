@@ -98,79 +98,91 @@ void Webserver::run()
             Connection* conn = event->conn;
             if (conn)
                 conn->set(*event);
-
-            switch (event->type)
+            try
             {
-                case EventAction::ServerSocket:
+                INVARIANT(false, "fail test");
+                switch (event->type)
                 {
-                    Logger::trace("Webserver: Fd %d is a server socket", event->fd);
-                    const Socket* ss = get_server_socket(*event);
-                    const ServiceConfig& service = get_service(ss);
-                    const EventAction& ec = m_connection_pool.make(ss, service);
-                    m_events.apply(ec);
-                    continue;
-                }
-                case EventAction::Pipe:
-                {
-                    INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
-                    Logger::trace(
-                        "Webserver: Connection wants to '%s': fd='%d'",
-                        event->action == EventAction::WantRead ? "read from" : "write to",
-                        event->fd);
-
-                    conn->process_request();
-
-                    break;
-                }
-                case EventAction::ClientSocket:
-                {
-                    INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
-
-                    switch (event->action)
+                    case EventAction::ServerSocket:
                     {
-                        case EventAction::WantRead:
+                        Logger::trace("Webserver: Fd %d is a server socket", event->fd);
+                        const Socket* ss = get_server_socket(*event);
+                        const ServiceConfig& service = get_service(ss);
+                        const EventAction& ec = m_connection_pool.make(ss, service);
+                        m_events.apply(ec);
+                        continue;
+                    }
+                    case EventAction::Pipe:
+                    {
+                        INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
+                        Logger::trace(
+                            "Webserver: Connection wants to '%s': fd='%d'",
+                            event->action == EventAction::WantRead ? "read from" : "write to",
+                            event->fd);
+
+                        conn->process_request();
+
+                        break;
+                    }
+                    case EventAction::ClientSocket:
+                    {
+                        INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
+
+                        switch (event->action)
                         {
-                            Logger::trace(
-                                "Webserver: Connection wants to read to: '%s'",
-                                event->type == EventAction::Pipe ? "pipe" : "socket");
+                            case EventAction::WantRead:
+                            {
+                                Logger::trace(
+                                    "Webserver: Connection wants to read to: '%s'",
+                                    event->type == EventAction::Pipe ? "pipe" : "socket");
 
-                            conn->read();
+                                conn->read();
 
-                            break;
-                        }
-                        case EventAction::WantProcessRequest:
-                        {
-                            Logger::trace("Webserver: Connection wants to process request");
+                                break;
+                            }
+                            case EventAction::WantProcessRequest:
+                            {
+                                Logger::trace("Webserver: Connection wants to process request");
 
-                            conn->process_request();
+                                conn->process_request();
 
-                            break;
-                        }
-                        case EventAction::WantWrite:
-                        {
-                            Logger::trace(
-                                "Webserver: Connection wants to write to: '%s'",
-                                event->type == EventAction::Pipe ? "pipe" : "socket");
+                                break;
+                            }
+                            case EventAction::WantWrite:
+                            {
+                                Logger::trace(
+                                    "Webserver: Connection wants to write to: '%s'",
+                                    event->type == EventAction::Pipe ? "pipe" : "socket");
 
-                            conn->write();
+                                conn->write();
 
-                            break;
-                        }
-                        case EventAction::WantClose: //@NOTE rare path, only happens if something went wrong with the
-                                                     // fds
-                        {
-                            Logger::trace("Webserver: Connection wants to be closed");
+                                break;
+                            }
+                            case EventAction::WantClose: //@NOTE rare path, only happens if something went wrong with
+                                                         // the
+                                                         // fds
+                            {
+                                Logger::trace("Webserver: Connection wants to be closed");
 
-                            if (event->type == EventAction::ClientSocket)
-                                m_connection_pool.remove(*conn);
+                                if (event->type == EventAction::ClientSocket)
+                                    m_connection_pool.remove(*conn);
 
-                            break;
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            m_events.apply(conn->give_events());
+                m_events.apply(conn->give_events());
+            }
+            catch (const std::exception& error)
+            {
+                Logger::error("Webserver: '%s'", error.what());
+                if (conn)
+                {
+                    conn->send_error_and_close(StatusCode::InternalServerError);
+                }
+            }
         }
     }
 
