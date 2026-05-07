@@ -100,7 +100,6 @@ void Webserver::run()
                 conn->set(*event);
             try
             {
-                INVARIANT(false, "fail test");
                 switch (event->type)
                 {
                     case EventAction::ServerSocket:
