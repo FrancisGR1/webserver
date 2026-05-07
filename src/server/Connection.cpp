@@ -95,10 +95,10 @@ std::time_t Connection::last_activity()
 
 void Connection::read()
 {
-    REQUIRE(m_state.state == ConnectionState::Reading);
     if (m_state.state != ConnectionState::Reading)
     {
         Logger::warn("%s[id=%lld]: Trying to read when in '%s' state", constants::conn, m_id, m_state.str().c_str());
+        return;
     }
 
     if (request_timeout())
@@ -184,7 +184,6 @@ void Connection::read()
 
 void Connection::process_request()
 {
-    // REQUIRE(m_state.state == ConnectionState::ProcessingRequest);
     if (m_state.state != ConnectionState::ProcessingRequest)
     {
         Logger::warn(
@@ -214,10 +213,10 @@ void Connection::process_request()
 
 void Connection::write()
 {
-    REQUIRE(m_state.state == ConnectionState::Writing);
     if (m_state.state != ConnectionState::Writing)
     {
         Logger::warn("%s[id=%lld]: Trying to write when in '%s' state", constants::conn, m_id, m_state.str().c_str());
+        return;
     }
 
     Logger::trace("%s[id=%lld]: state - Writing", constants::conn, m_id);
