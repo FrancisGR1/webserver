@@ -1,4 +1,5 @@
-#include "server/Webserver.hpp"
+#include <csignal>
+
 #include "core/Logger.hpp"
 #include "core/contracts.hpp"
 #include "core/utils.hpp"
@@ -6,6 +7,7 @@
 #include "server/EventAction.hpp"
 #include "server/EventManager.hpp"
 #include "server/Socket.hpp"
+#include "server/Webserver.hpp"
 
 bool Webserver::is_running = true;
 
@@ -30,6 +32,9 @@ Webserver::~Webserver()
 // if there's an error in setup(), server won't run
 void Webserver::setup()
 {
+    // signals
+    ::signal(SIGINT, Webserver::handle_sigint);
+    ::signal(SIGPIPE, SIG_IGN);
 
     Logger::info("Webserver: setting up sockets");
     for (size_t i = 0; i < m_config.services.size(); i++)
@@ -248,4 +253,11 @@ Socket* Webserver::make_server_socket(const Listener& listener)
     }
 
     return new Socket(socket_fd, listener);
+}
+
+void Webserver::handle_sigint(int sig)
+{
+    (void)sig;
+    Webserver::is_running = false;
+    std::cout << std::endl;
 }

@@ -39,6 +39,7 @@ class Webserver
     Socket* make_server_socket(const Listener& listener);
     Socket* get_server_socket(const EventAction& ea);
     const ServiceConfig& get_service(const Socket* server_socket);
+    static void handle_sigint(int sig);
 
     // illegal
     Webserver(); // must be initialized with config

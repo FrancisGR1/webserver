@@ -4,15 +4,6 @@
 #include "core/Logger.hpp"
 #include "core/constants.hpp"
 #include "server/Webserver.hpp"
-#include <csignal> /* handle signal */
-
-// @TODO mudar para setup()
-void handle_signal(int sig)
-{
-    (void)sig;
-    Webserver::is_running = false;
-    std::cout << std::endl;
-}
 
 int main(int argc, char* argv[])
 {
@@ -30,8 +21,6 @@ int main(int argc, char* argv[])
 
         // server
         Webserver server(config);
-        ::signal(SIGINT, handle_signal);
-        ::signal(SIGPIPE, SIG_IGN);
         server.setup();
         server.run();
     }
