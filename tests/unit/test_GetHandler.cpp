@@ -1,0 +1,459 @@
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <string_view>
+
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include "core/Logger.hpp"
+#include "core/Path.hpp"
+#include "core/constants.hpp"
+#include "core/utils.hpp"
+#include "http/StatusCode.hpp"
+#include "http/processor/handler/GetHandler.hpp"
+#include "http/response/ResponseError.hpp"
+
+#include "test_utils.hpp"
+
+static constexpr std::string_view RESULT_FILE = "./test_data/logs/gh_result.txt";
+static constexpr std::string_view RESULT_BODY_FILE = "./test_data/logs/gh_result_body.txt";
+static constexpr std::string_view DIFF_FILE = "./test_data/logs/gh_diff_log.txt";
+
+std::vector<tu::HandlerTestCase> generate_good_test_cases(void)
+{
+    // default service
+    LocationConfig get{
+        "/get",
+        {{Token::DirectiveMethods, {"GET"}},
+         {Token::DirectiveRoot, {"./test_data/get/"}},
+         {Token::DirectiveDefaultFile, {"default.md"}}}};
+    ServiceConfig service{get};
+
+    std::vector<tu::HandlerTestCase> test_cases = {};
+    test_cases.reserve(100);
+
+    // clang-format off
+
+    // simple hello world
+    test_cases.emplace_back(
+        "simple hello",
+        "./test_data/get/hello.md",
+	service,
+	get,
+        Request("GET", "/get/hello.md", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+    
+    // Empty file
+    test_cases.emplace_back(
+        "empty file",
+        "./test_data/get/empty.txt",
+	service,
+	get,
+        Request("GET", "/get/empty.txt", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+
+    // Default file
+    test_cases.emplace_back(
+        "default file",
+        "./test_data/get/default.md",
+	service,
+	get,
+        Request("GET", "/get/", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+
+    // Large file (to test chunked reads)
+    test_cases.emplace_back(
+        "large file",
+        "./test_data/get/large.txt",
+	service,
+	get,
+        Request("GET", "/get/large.txt", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+    
+    // Different content types
+    // html
+    test_cases.emplace_back(
+        "html file",
+        "./test_data/get/index.html",
+	service,
+	get,
+        Request("GET", "/get/index.html", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+
+    // jpeg
+    test_cases.emplace_back(
+        "jpeg file",
+        "./test_data/get/giant_cat.jpeg",
+	service,
+	get,
+        Request("GET", "/get/giant_cat.jpeg", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+
+    // json
+    test_cases.emplace_back(
+        "large json",
+        "./test_data/get/large.json",
+	service,
+	get,
+        Request("GET", "/get/large.json", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+
+    // xml
+    test_cases.emplace_back(
+        "xml",
+        "./test_data/get/xml_file.xml",
+	service,
+	get,
+        Request("GET", "/get/xml_file.xml", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+
+    // pdf
+    test_cases.emplace_back(
+        "434 page pdf",
+        "./test_data/get/pdf_file.pdf",
+	service,
+	get,
+        Request("GET", "/get/pdf_file.pdf", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+
+    // mp4
+    test_cases.emplace_back(
+        "5 sec video",
+        "./test_data/get/test.mp4",
+	service,
+	get,
+        Request("GET", "/get/test.mp4", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+
+    // -----------------------------------
+    // Autoindex
+    // set autoindex on
+    Directive dir{Token::DirectiveListing, {"on"}};
+    get.set(dir);
+
+    test_cases.emplace_back(
+        "autoindex",
+        "./test_data/get/",
+	service,
+	get,
+        Request("GET", "/get/", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::Ok)
+    );
+
+    // -----------------------------------
+    // Redirection
+    // create redirection location/service
+    LocationConfig redirect
+    { "/redirect",
+	    {
+		{Token::DirectiveMethods, {"GET"}},
+		{Token::DirectiveRedirect, {"301", "redirected_path.com"}}
+	    }
+    };
+    ServiceConfig rsv{redirect};
+
+    test_cases.emplace_back(
+        "redirection",
+        "./test_data/redirect/default.md",
+	rsv,
+	redirect,
+        Request("GET", "/redirect/", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::MovedPermanently)
+    );
+
+    // clang-format on
+    return test_cases;
+}
+
+std::vector<tu::HandlerTestCase> generate_bad_test_cases(void)
+{
+    std::vector<tu::HandlerTestCase> test_cases = {};
+    test_cases.reserve(100);
+    // clang-format off
+
+    LocationConfig error{
+        "/error",
+        {{Token::DirectiveMethods, {"GET"}},
+         {Token::DirectiveRoot, {"./test_data/get/error"}},
+         }};
+    ServiceConfig service{error};
+
+    // File not found
+    test_cases.emplace_back(
+        "file not found",
+        "./test_data/get/error/nonexistent.md",
+        service,
+        error,
+        Request("GET", "/get/error/nonexistent.md", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+        Response(StatusCode::NotFound, {}, "")
+    );
+
+    // Directory 
+    test_cases.emplace_back(
+         "request is a directory",
+         "./test_data/get/error/",
+         service,
+         error,
+         Request("GET", "/get/error", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+         Response(StatusCode::Forbidden, {}, "")
+     );
+
+    // Nonexistent default file
+     Directive directive{Token::DirectiveDefaultFile, {{"nonexistent.md"}}};
+     error.set(directive);
+     test_cases.emplace_back(
+         "default file doesn't exist",
+         "./test_data/get/error/",
+         service,
+         error,
+         Request("GET", "/get/error", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+         Response(StatusCode::NotFound, {}, "")
+     );
+
+     // create file with no permissions
+     const std::string no_perms_file = std::string("./test_data/get/error/") + "no_perms.md";
+     std::ofstream(no_perms_file.c_str()).close();
+     chmod(no_perms_file.c_str(), 0000);
+
+     // No permissions default file
+     directive = {Token::DirectiveDefaultFile, {{"no_perms.md"}}};
+     error.set(directive);
+     test_cases.emplace_back(
+         "default has no permissions",
+         "./test_data/get/error/",
+         service,
+         error,
+         Request("GET", "/get/error", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+         Response(StatusCode::Forbidden, {}, "")
+     );
+
+     // No permissions requested file
+     test_cases.emplace_back(
+         "requested file has no permissions",
+         "./test_data/get/error/no_perms.md",
+         service,
+         error,
+         Request("GET", "/get/error/no_perms.md", "", "HTTP/1.1", {}, "", {}, StatusCode::Ok),
+         Response(StatusCode::Forbidden, {}, "")
+     );
+
+    // clang-format on
+    return test_cases;
+}
+
+void test_good_GetHandler(const tu::HandlerTestCase& test)
+{
+    Logger::info("===============\nTest: '%s'", test.title.data());
+    GetHandler handler{*test.ctx};
+    Logger::debug_obj(*test.ctx->config().location(), "Config:\n");
+    Logger::debug_obj(test.request, "Request:\n");
+
+    // process request
+    while (!handler.done())
+    {
+        try
+        {
+            handler.process();
+        }
+        catch (const ResponseError& error)
+        {
+            Logger::error("ResponseError: '%s'", error.msg().data());
+            // these are not supposed to give an error
+            std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
+            return;
+        }
+    }
+
+    // get response
+    Response res = handler.response();
+    Logger::debug_obj(res, "GetHandler: response: ");
+
+    // handle specific cases
+    if (test.title == "redirection" || test.title == "autoindex")
+    {
+        if (res.status_code() == test.expected.status_code())
+            std::cout << constants::green << "[OK] " << constants::reset << test.title << "\n";
+        else
+            std::cout << constants::red << "[KO]! " << constants::reset << test.title
+                      << "\n\tExpected code: " << test.expected.status_code() << "\n\tGot code: " << res.status_code()
+                      << "\n";
+        return;
+    }
+
+    // default case: evalute status code and compare bodies
+    // create tmp socket
+    int sv[2];
+    socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
+    fcntl(sv[0], F_SETFL, O_NONBLOCK);
+    fcntl(sv[1], F_SETFL, O_NONBLOCK);
+
+    // socket -> buffer -> file
+    char buf[constants::read_chunk_size + 1];
+    std::ofstream out(RESULT_FILE.data());
+    ssize_t n;
+    while (!res.done())
+    {
+        res.send(sv[0]);
+        while ((n = read(sv[1], buf, constants::read_chunk_size)) > 0)
+        {
+            out.write(buf, n);
+        }
+    }
+    close(sv[0]);
+    close(sv[1]);
+    out.flush();
+
+    // create file only  based off response body
+    std::string result_str = utils::file_to_str(RESULT_FILE.data());
+    size_t pos = result_str.find(constants::crlfcrlf) + 4;
+    std::string body_str = result_str.substr(pos);
+    std::ofstream body_file(RESULT_BODY_FILE.data());
+    body_file << body_str;
+    body_file.flush();
+
+    // diff expected vs result
+    int diff_result = tu::diff_and_log(RESULT_BODY_FILE.data(), test.file_path.raw.data(), DIFF_FILE.data());
+    if (diff_result == 0 && test.expected.status_code() == res.status_code())
+    {
+        std::cout << constants::green << "[OK] " << constants::reset << test.title << "\n";
+    }
+    else
+    {
+        std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
+        // clang-format off
+        std::cerr << "=====\nExpected:\n"
+		  << "Status: " << test.expected.status_code() << "\n"
+                  << test.file_path.raw.data() << "':\n'" << utils::file_to_str(test.file_path.raw.data()) << "'\n"
+                  << "=====\nGot:\n"
+		  << "Status: " << res.status_code() << "\n"
+                  << RESULT_BODY_FILE << "':\n'" << utils::file_to_str(RESULT_BODY_FILE.data()) << "'\n"
+		  << "=====\nDiff:\n'"
+		  << DIFF_FILE << "':\n'" << utils::file_to_str(DIFF_FILE.data()) << "'\n";
+        // clang-format on
+    }
+}
+
+void test_bad_GetHandler(const tu::HandlerTestCase& test)
+{
+    Logger::info("===============\nTest: '%s'", test.title.data());
+    GetHandler handler{*test.ctx};
+
+    // process request
+    while (!handler.done())
+    {
+        try
+        {
+            handler.process();
+        }
+        catch (const ResponseError& error)
+        {
+            Logger::debug("ResponseError: '%s'", error.msg().data());
+            Logger::debug_obj(error, "GetHandler: error response: ");
+            // should error
+            if (error.status_code() == test.expected.status_code())
+                std::cerr << constants::green << "[OK] " << constants::reset << test.title << "\n";
+            else
+            {
+                std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
+                std::cerr << "=====\nExpected:\n"
+                          << "Status: " << test.expected.status_code() << "\n"
+                          << "=====\nGot:\n"
+                          << "Status: " << error.status_code() << "\n";
+            }
+            return;
+        }
+    }
+
+    // get response
+    Response res = handler.response();
+    Logger::debug_obj(res, "GetHandler: response: ");
+
+    // default case: evalute status code and compare bodies
+    // create tmp socket
+    int sv[2];
+    socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
+    fcntl(sv[0], F_SETFL, O_NONBLOCK);
+    fcntl(sv[1], F_SETFL, O_NONBLOCK);
+
+    // socket -> buffer -> file
+    char buf[constants::read_chunk_size + 1];
+    std::ofstream out(RESULT_FILE.data());
+    ssize_t n;
+    while (!res.done())
+    {
+        res.send(sv[0]);
+        while ((n = read(sv[1], buf, constants::read_chunk_size)) > 0)
+        {
+            out.write(buf, n);
+        }
+    }
+    close(sv[0]);
+    close(sv[1]);
+    out.flush();
+
+    std::cerr << constants::red << "[KO]! " << constants::reset << test.title << "\n";
+    // clang-format off
+    std::cerr << "=====\nExpected:\n"
+	  << "Status: " << test.expected.status_code() << "\n"
+          << "=====\nGot:\n"
+	  << "Status: " << res.status_code() << "\n";
+    // clang-format on
+}
+
+int main(void)
+{
+    Logger::set_global_level(Log::Error);
+
+    std::cout << "==============================\n";
+    std::cout << "========= GetHandler ========\n";
+    std::cout << "==============================\n";
+
+    // good
+    std::cout << constants::green << "\nGood tests\n" << constants::reset;
+    std::vector<tu::HandlerTestCase> tests = generate_good_test_cases();
+    for (auto& test : tests)
+    {
+
+        try
+        {
+            test_good_GetHandler(test);
+        }
+        catch (const std::exception& e)
+        {
+            Logger::fatal("Test: '%s'", e.what());
+        }
+    }
+
+    // bad
+    std::cout << constants::red << "\nBad tests\n" << constants::reset;
+    tests = generate_bad_test_cases();
+
+    for (auto& test : tests)
+    {
+        try
+        {
+            test_bad_GetHandler(test);
+        }
+        catch (const std::exception& e)
+        {
+            Logger::fatal("Test: '%s'", e.what());
+        }
+    }
+
+    Logger::flush();
+    return 0;
+}

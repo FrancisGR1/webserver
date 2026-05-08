@@ -1,184 +1,277 @@
-#include "core/utils.hpp"
-#include "core/Logger.hpp"
-#include "Socket.hpp"
-#include "Webserver.hpp"
-#include "Connection.hpp"
-#include "EventManager.hpp"
+#include <csignal>
 
-bool	Webserver::is_running = true;
+#include "core/Logger.hpp"
+#include "core/contracts.hpp"
+#include "server/Connection.hpp"
+#include "server/EventAction.hpp"
+#include "server/EventManager.hpp"
+#include "server/Socket.hpp"
+#include "server/Webserver.hpp"
+
+volatile bool Webserver::is_running = true;
 
 Webserver::Webserver(const Config& config)
-	: config_(config)
-	, connection_pool_(events_) {}
+    : m_config(config)
+    , m_server_sockets()
+    , m_connection_pool(constants::max_connections)
+    , m_events(constants::max_events, m_connection_pool)
+{
+    Logger::verbose("Webserver: constructor");
+}
 
 Webserver::~Webserver()
 {
-	/* fechar sockets do servidor */
-	for (std::map<int, Socket*>::iterator it = server_sockets_.begin(); it != server_sockets_.end(); it++)
-		delete it->second;
-}
+    Logger::trace("Webserver: destructor");
 
-bool	Webserver::isServerSocket(int fd)
-{
-	return (server_sockets_.find(fd) != server_sockets_.end());
-}
-
-/*@QUESTION: quando algo falha a excecao e lancada e devemos liberar 'socket_fd' ? */
-Socket* Webserver::make_server_socket(const Listener& listener, const ServiceConfig& service)
-{
-	struct addrinfo hints = {};
-	struct addrinfo* result;
-
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-
-	if (getaddrinfo(listener.host.c_str(), listener.port.c_str(), &hints, &result) != 0)
-	{
-		throw std::runtime_error(utils::fmt("getaddrinfo() failed for listener %s:%s", 
-					listener.host.c_str(), listener.port.c_str()));
-	}
-	/* criar socket, configurar, bind... */
-	int socket_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	//@TODO substituir por exception de servidor
-	//@TODO recuperar antigas mensagens de erros
-	if (socket_fd < 0)
-	{
-		::freeaddrinfo(result);
-		throw std::runtime_error(utils::fmt("socket() failed for listener %s:%s", 
-					listener.host.c_str(), listener.port.c_str()));
-	}
-
-	/*	setsockopt precisa de um ponteiro para a opcao e para que SO_REUSEADDR seja ativado precisa ser 1 */
-	int opt = 1;
-	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-	{
-		::freeaddrinfo(result);
-		close(socket_fd);
-		throw std::runtime_error(utils::fmt("setsockopt() failed for listener %s:%s", 
-					listener.host.c_str(), listener.port.c_str()));
-	}
-
-	if (fcntl(socket_fd, F_SETFL, O_NONBLOCK) == -1)
-	{
-		::freeaddrinfo(result);
-		close(socket_fd);
-		throw std::runtime_error(utils::fmt("fcntl() failed for listener %s:%s", 
-					listener.host.c_str(), listener.port.c_str()));
-	}
-
-	if (bind(socket_fd, result->ai_addr, result->ai_addrlen) < 0)
-	{
-		::freeaddrinfo(result);
-		close(socket_fd);
-		throw std::runtime_error(utils::fmt("bind() failed for listener %s:%s", 
-					listener.host.c_str(), listener.port.c_str()));
-	}
-	::freeaddrinfo(result);
-
-	if (listen(socket_fd, SOMAXCONN) < 0)
-	{
-		close(socket_fd);
-		throw std::runtime_error(utils::fmt("listen() failed for listener %s:%s", 
-					listener.host.c_str(), listener.port.c_str()));
-	}
-	return new Socket(socket_fd, service);
-}
-
-Socket* Webserver::make_client_socket(int server_socket_fd)
-{
-	int fd = accept(server_socket_fd, NULL, NULL);
-	if (fd == -1)
-	{
-		Logger::error("Failed to accept client connection!");
-		return (NULL);
-	}
-
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
-	{
-		Logger::error("fcntl() failed to set client socket to non-blocking mode!");
-		close(fd);
-		return (NULL);
-	}
-
-	std::map<int, Socket*>::iterator it = server_sockets_.find(server_socket_fd);
-	if (it == server_sockets_.end())
-	{
-		Logger::error("Server socket not found");
-		close(fd);
-		return (NULL);
-	}
-
-	return new Socket(fd, it->second->service());
+    // close sockets
+    for (std::map<int, Socket*>::iterator it = m_server_sockets.begin(); it != m_server_sockets.end(); it++)
+        delete it->second;
 }
 
 // if there's an error in setup(), server won't run
 void Webserver::setup()
 {
+    // signals
+    ::signal(SIGINT, Webserver::handle_sigint);
+    ::signal(SIGPIPE, SIG_IGN);
 
-	Logger::info("Webserver: setting up sockets");
-	for(size_t i = 0; i < config_.services.size(); i++)
-	{
-		const ServiceConfig& service = config_.services[i];
-		for (size_t j = 0; j < service.listeners.size(); j++)
-		{
-			// make server socket
-			const Listener& listener = service.listeners[j];
-			Socket* socket = make_server_socket(listener, service);
+    Logger::info("Webserver: setting up sockets");
+    for (size_t i = 0; i < m_config.services.size(); i++)
+    {
+        const ServiceConfig& service = m_config.services[i];
+        for (size_t j = 0; j < service.listeners.size(); j++)
+        {
+            // make server socket
+            const Listener& listener = service.listeners[j];
+            Socket* socket = make_server_socket(listener);
+            if (socket == NULL) // skip
+                continue;
 
-			// store socket
-			server_sockets_.insert(std::pair<int, Socket*>(socket->fd(), socket));
-			if (events_.add(socket->fd(), EPOLLIN) == -1)
-			{
-				throw std::runtime_error("Failed to add socket to events");
-			}
+            // store socket
+            m_server_sockets.insert(std::pair<int, Socket*>(socket->fd(), socket));
+            EventAction ea(EventAction::WantRead, EventAction::ServerSocket, socket->fd(), NULL);
+            if (m_events.apply(ea) == -1)
+            {
+                Logger::warn("Webserver: failed to add socket to events, skipping");
+                delete socket;
+                continue;
+            }
 
-			Logger::info("Webserver: listening on %s:%s", listener.host.c_str(), listener.port.c_str());
-		}
-	}
+            Logger::info(
+                "Webserver: listening on %s:%s", socket->listener().host.c_str(), socket->listener().port.c_str());
+        }
+    }
+
+    if (m_server_sockets.empty())
+        throw std::runtime_error("Webserver: no listeners could be bound, aborting");
 }
 
-void	Webserver::run()
+void Webserver::run()
 {
-	Logger::info("Webserver: running");
+    Logger::info("Webserver: running");
 
-	while (is_running)
-	{
-		int n_events = events_.wait();
+    while (is_running)
+    {
+        int n_events = m_events.wait();
+        if (n_events == -1)
+            continue;
 
-		if (n_events == -1)
-			continue ;
+        EventAction* event = NULL;
 
-		//@TODO colocar try catch dentro do for loop
-		for (int i = 0; i < n_events; ++i)
-		{
-			epoll_event& event = events_.getEvent(i);
-			int event_fd = event.data.fd;
+        while (m_events.next(event))
+        {
+            Connection* conn = event->conn;
+            if (conn)
+                conn->set(*event);
+            try
+            {
+                switch (event->type)
+                {
+                    case EventAction::ServerSocket:
+                    {
+                        Logger::trace("Webserver: Fd %d is a server socket", event->fd);
+                        const Socket* ss = get_server_socket(*event);
+                        const ServiceConfig& service = get_service(ss);
+                        const EventAction& ec = m_connection_pool.make(ss, service);
+                        m_events.apply(ec);
+                        continue;
+                    }
+                    case EventAction::Pipe:
+                    {
+                        INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
+                        Logger::trace(
+                            "Webserver: Connection wants to '%s': fd='%d'",
+                            event->action == EventAction::WantRead ? "read from" : "write to",
+                            event->fd);
 
-			if (event.events & (EPOLLERR | EPOLLHUP)) // event error
-			{
-				Logger::error("Webserver: Fd %d - something went wrong", event_fd);
-				Connection& conn = connection_pool_.get(event_fd);
-				connection_pool_.remove(conn);
-			}
-			else if (isServerSocket(event_fd))
-			{
-				Logger::trace("Webserver: Fd %d is a server socket", event_fd);
-				Socket* client_socket = make_client_socket(event_fd);
-				if (client_socket)
-					connection_pool_.make(*client_socket);
-			}
-			else // is an existing connection
-			{
-				Logger::trace("Webserver: Fd %d is an existing connection", event_fd);
-				Connection& conn = connection_pool_.get(event_fd);
-				conn.work(event);
-				if (conn.done())
-				{
-					connection_pool_.remove(conn);
-				}
-			}
-		}
-	}
+                        conn->process_request();
+
+                        break;
+                    }
+                    case EventAction::ClientSocket:
+                    {
+                        INVARIANT(conn != NULL, "Connection should never be null if it's not a server socket!");
+
+                        switch (event->action)
+                        {
+                            case EventAction::WantRead:
+                            {
+                                Logger::trace(
+                                    "Webserver: Connection wants to read to: '%s'",
+                                    event->type == EventAction::Pipe ? "pipe" : "socket");
+
+                                conn->read();
+
+                                break;
+                            }
+                            case EventAction::WantProcessRequest:
+                            {
+                                Logger::trace("Webserver: Connection wants to process request");
+
+                                conn->process_request();
+
+                                break;
+                            }
+                            case EventAction::WantWrite:
+                            {
+                                Logger::trace(
+                                    "Webserver: Connection wants to write to: '%s'",
+                                    event->type == EventAction::Pipe ? "pipe" : "socket");
+
+                                conn->write();
+
+                                break;
+                            }
+                            case EventAction::WantClose: //@NOTE rare path, only happens if something went wrong with
+                                                         // the
+                                                         // fds
+                            {
+                                Logger::trace("Webserver: Connection wants to be closed");
+
+                                if (event->type == EventAction::ClientSocket)
+                                    m_connection_pool.remove(*conn);
+
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                m_events.apply(conn->give_events());
+            }
+            catch (const std::exception& error)
+            {
+                Logger::error("Webserver: '%s'", error.what());
+                if (conn)
+                {
+                    conn->send_error_and_close(StatusCode::InternalServerError);
+                }
+            }
+        }
+    }
+
+    Logger::info("Webserver: stop running");
 }
 
+Socket* Webserver::make_server_socket(const Listener& listener)
+{
+    struct addrinfo hints = {};
+    struct addrinfo* result;
+
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    if (getaddrinfo(listener.host.c_str(), listener.port.c_str(), &hints, &result) != 0)
+    {
+        Logger::warn(
+            "Webserver: getaddrinfo() failed for listener %s:%s, skipping",
+            listener.host.c_str(),
+            listener.port.c_str());
+        return NULL;
+    }
+
+    int socket_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (socket_fd < 0)
+    {
+        ::freeaddrinfo(result);
+        Logger::warn(
+            "Webserver: socket() failed for listener %s:%s, skipping", listener.host.c_str(), listener.port.c_str());
+        return NULL;
+    }
+
+    int opt = 1;
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
+        setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) == -1)
+    {
+        ::close(socket_fd);
+        ::freeaddrinfo(result);
+        Logger::warn(
+            "Webserver: setsockopt() failed for listener %s:%s, skipping",
+            listener.host.c_str(),
+            listener.port.c_str());
+        return NULL;
+    }
+
+    if (fcntl(socket_fd, F_SETFL, O_NONBLOCK) == -1)
+    {
+        ::close(socket_fd);
+        ::freeaddrinfo(result);
+        Logger::warn(
+            "Webserver: fcntl() failed for listener %s:%s, skipping", listener.host.c_str(), listener.port.c_str());
+        return NULL;
+    }
+
+    if (bind(socket_fd, result->ai_addr, result->ai_addrlen) < 0)
+    {
+        ::close(socket_fd);
+        ::freeaddrinfo(result);
+        Logger::warn(
+            "Webserver: bind() failed for listener %s:%s, skipping", listener.host.c_str(), listener.port.c_str());
+        return NULL;
+    }
+    ::freeaddrinfo(result);
+
+    if (listen(socket_fd, 10) < 0)
+    {
+        ::close(socket_fd);
+        Logger::warn(
+            "Webserver: listen() failed for listener %s:%s, skipping", listener.host.c_str(), listener.port.c_str());
+        return NULL;
+    }
+
+    return new Socket(socket_fd, listener);
+}
+
+Socket* Webserver::get_server_socket(const EventAction& ea)
+{
+    REQUIRE(ea.type == EventAction::ServerSocket, "EventAction must be from server socket");
+
+    return m_server_sockets.find(ea.fd)->second;
+}
+
+const ServiceConfig& Webserver::get_service(const Socket* server_socket)
+{
+    REQUIRE(server_socket != NULL, "Socket is Null!");
+
+    for (size_t i = 0; i < m_config.services.size(); ++i)
+    {
+        const ServiceConfig& service = m_config.services[i];
+        for (size_t j = 0; j < service.listeners.size(); ++j)
+        {
+            const Listener& config_listener = service.listeners[j];
+            if (server_socket->listener() == config_listener)
+                return service;
+        }
+    }
+
+    INVARIANT(false, "No matching service found for socket");
+    return m_config.services[0]; // unreachable
+}
+
+void Webserver::handle_sigint(int sig)
+{
+    (void)sig;
+    Webserver::is_running = false;
+    ::write(STDOUT_FILENO, "\n", 1);
+}

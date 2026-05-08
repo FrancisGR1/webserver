@@ -1,54 +1,48 @@
 #ifndef WEBSERVER_HPP
 #define WEBSERVER_HPP
 
-#include <sys/socket.h> /* socket, setsockopt */
+#include <fcntl.h>
 #include <netdb.h>
-#include <netinet/in.h> /* sockaddr_in */
-#include <unistd.h>
+#include <netinet/in.h>
 #include <poll.h>
 #include <sys/epoll.h>
-#include <string>
-#include <fcntl.h>
+#include <unistd.h>
 
 #include "config/Config.hpp"
-#include "ConnectionPool.hpp"
-#include "EventManager.hpp"
-#include "Socket.hpp"
+#include "server/ConnectionPool.hpp"
+#include "server/EventManager.hpp"
+#include "server/Socket.hpp"
 
 class Connection;
 
 class Webserver
 {
-	public:
-		Webserver(const Config& config);
-		~Webserver();
+  public:
+    // constructor/destructor
+    Webserver(const Config& config);
+    ~Webserver();
 
-		void setup();
-		void run();
+    // api
+    void setup();
+    void run();
 
-		static bool is_running;
+    // for CTRL+C
+    static volatile bool is_running;
 
-		void	startServer();
-		int		setupSocket();
-		bool	isServerSocket(int fd);
-		void	acceptConnection(const int sock);
-		void	handleConnection(const int sock, epoll_event& event);
+  private:
+    const Config& m_config;
+    std::map<int, Socket*> m_server_sockets;
+    ConnectionPool m_connection_pool;
+    EventManager m_events;
 
-		void	log(const std::string &message);
+    // utils
+    Socket* make_server_socket(const Listener& listener);
+    Socket* get_server_socket(const EventAction& ea);
+    const ServiceConfig& get_service(const Socket* server_socket);
+    static void handle_sigint(int sig);
 
-	private:
-		const Config				&config_;
-		std::map<int, Socket*>		server_sockets_;
-		EventManager				events_;
-		ConnectionPool				connection_pool_;
-
-		// utils 
-		Socket* make_server_socket(const Listener& listener, const ServiceConfig& service);
-		Socket* make_client_socket(int fd);
-
-		// illegal 
-		Webserver(); // must be initialized with config
-
+    // illegal
+    Webserver(); // must be initialized with config
 };
 
 #endif /* WEBSERVER_HPP */

@@ -1,29 +1,38 @@
 #ifndef ERRORHANDLER_HPP
 #define ERRORHANDLER_HPP
 
-#include "config/ConfigTypes.hpp"
 #include "http/StatusCode.hpp"
-#include "http/response/Response.hpp"
-#include "http/response/ResponseError.hpp"
 #include "http/processor/RequestContext.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
+#include "http/response/Response.hpp"
+#include "http/response/ResponseError.hpp"
 
-class ErrorHandler : public IRequestHandler 
+class ErrorHandler : public IRequestHandler
 {
-	public:
-		ErrorHandler(const ResponseError& error);
-		ErrorHandler(StatusCode::Code code);
-		ErrorHandler(StatusCode::Code code, const RequestContext& ctx);
-		void process();
-		bool done() const;
-		const Response& response() const;
-		~ErrorHandler();
+  public:
+    // construct/destruct
+    ErrorHandler(const ResponseError& error);
+    ErrorHandler(StatusCode::Code code);
+    ErrorHandler(StatusCode::Code code, const RequestContext& ctx);
+    ~ErrorHandler();
 
-	private:
-		Response m_response;
-		StatusCode::Code m_code;
-		const RequestContext* m_ctx; // not owned, is nullable
-		bool m_done;
+    // IRequestHandler interface
+    void process();
+    bool done() const;
+    const Response& response() const;
+    std::vector<EventAction> give_events();
+
+    Response& response();
+
+    // utils
+    static std::string make_default_body(StatusCode::Code code);
+
+  private:
+    Response m_response;
+    StatusCode::Code m_code;
+    const RequestContext* m_ctx; // not owned, is nullable
+    bool m_done;
+    int m_error_fd;
 };
 
 #endif // ERRORHANDLER_HPP

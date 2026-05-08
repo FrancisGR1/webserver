@@ -1,35 +1,26 @@
 #include <unistd.h>
 
 #include "core/Logger.hpp"
-#include "Socket.hpp"
+#include "server/Socket.hpp"
 
-Socket::Socket(int fd, const ServiceConfig& service) 
-	: fd_(fd)
-	, service_(service) 
+Socket::Socket(int fd, const Listener& listener)
+    : m_fd(fd)
+    , m_listener(listener)
 {
-	Logger::trace("Socket: construct with fd=%d", fd_);
+    Logger::trace("Socket: construct with fd=%d", m_fd);
 }
 
-Socket::~Socket() 
+Socket::~Socket()
 {
-	close();
-	Logger::trace("Socket: destruct with fd=%d", fd_);
+    Logger::trace("Socket: destruct");
 }
 
-int	Socket::fd() const
+int Socket::fd() const
 {
-	return (fd_);
+    return (m_fd);
 }
 
-int Socket::close()
+const Listener& Socket::listener() const
 {
-	if (fd_ < 0)
-		return -1;
-
-	return ::close(fd_);
-}
-
-const ServiceConfig& Socket::service() const
-{
-	return (service_);
+    return (m_listener);
 }

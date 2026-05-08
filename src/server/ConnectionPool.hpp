@@ -1,28 +1,30 @@
 #ifndef CONNECTIONPOOL_HPP
 #define CONNECTIONPOOL_HPP
 
-#include <list>
+#include "server/Connection.hpp"
+#include "server/EventManager.hpp"
 
-#include "Connection.hpp"
+class EventManager;
 
 class ConnectionPool
 {
-	public:
-		ConnectionPool(EventManager& events);
-		Connection& make(Socket& conn_socket);
-		void associate_fd(int fd, Connection& conn);
+  public:
+    // construct/destruct
+    ConnectionPool(size_t max_connections);
+    ~ConnectionPool();
 
-		//@TODO: ainda não sei a melhor forma de remover?
-		void remove(Connection& conn);
-		void remove(int fd); //@TODO: impl
+    // api
+    EventAction make(const Socket* server_socket, const ServiceConfig& service);
+    void remove_idles(EventManager& event_manager);
+    void remove(Connection& conn);
+    void remove(std::vector<EventAction>& conns_to_remove);
+    Connection* contains(const Connection* conn) const;
+    Connection* contains(int conn_socket_fd) const;
+    bool is_full() const;
 
-		Connection& get(int fd);
-
-	private:
-		EventManager& events_;
-		// connections can have multiple associated ints
-		std::list<Connection*> connection_pool_; // std::list so connection pointers are stable
-		std::map<int, Connection*>	conn_by_fd_;
+  private:
+    size_t m_max_conns;
+    std::vector<Connection*> m_pool;
 };
 
 #endif // CONNECTIONPOOL_HPP

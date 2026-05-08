@@ -1,39 +1,44 @@
-NAME     = webserv
+NAME     = webserv.out
 LIB      = libwebserv.a
 
 CC       = c++
 OBJ_DIR  = obj
 VERSION  = -std=c++98
-CFLAGS   = -Werror -Wall -Wextra
-DEBUG    = -g
-OPTIMIZE = -O3
+CFLAGS   = -Werror -Wall -Wextra #-Weffc++
+DEBUG    = #-O0 -g
+RELEASE  = -O3 -DNDEBUG
 INC      = -Isrc
-FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG)
+FLAGS    = $(VERSION) $(CFLAGS) $(INC) $(DEBUG) $(RELEASE)
+
+TESTS_DIR = tests
 
 SOURCES  = \
 	   src/main.cpp \
 	  \
 	  src/core/Logger.cpp \
 	  src/core/MimeTypes.cpp \
+	  src/core/ResourceLocker.cpp \
 	  src/core/Path.cpp \
 	  src/core/Timer.cpp \
 	  src/core/constants.cpp \
 	  src/core/utils.cpp \
 	  \
-	  src/server/Webserver.cpp \
 	  src/server/Connection.cpp \
 	  src/server/ConnectionPool.cpp \
+	  src/server/EventAction.cpp \
 	  src/server/EventManager.cpp \
 	  src/server/Socket.cpp \
+	  src/server/Webserver.cpp \
 	  \
 	  src/config/Config.cpp \
-	  src/config/ConfigTypes.cpp \
-	  src/config/types/ServiceConfig.cpp \
-	  src/config/types/LocationConfig.cpp \
-	  src/config/types/Route.cpp \
 	  src/config/parser/ConfigLexer.cpp \
 	  src/config/parser/ConfigParser.cpp \
 	  src/config/parser/Token.cpp \
+	  src/config/types/Directive.cpp \
+	  src/config/types/Listener.cpp \
+	  src/config/types/LocationConfig.cpp \
+	  src/config/types/Route.cpp \
+	  src/config/types/ServiceConfig.cpp \
 	  \
 	  src/http/StatusCode.cpp \
 	  src/http/http_utils.cpp \
@@ -54,8 +59,6 @@ SOURCES  = \
 	  \
 	  src/http/response/Response.cpp \
 	  src/http/response/ResponseError.cpp
-
-
 
 OBJ      = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp, $(SOURCES)))
 OBJ     += $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter-out src/%.cpp, $(SOURCES)))
@@ -80,10 +83,13 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 	rm -f $(LIB)
+	$(MAKE) -C $(TESTS_DIR) fclean
 
 re: fclean all
 
-TESTS_DIR = tests/
 .PHONY: tests
-tests:
-	cd $(TESTS_DIR) && $(MAKE)
+tests: all lib
+	@echo "\t==============="
+	@echo "\t==== TESTS ===="
+	@echo "\t==============="
+	$(MAKE) -C $(TESTS_DIR) tests

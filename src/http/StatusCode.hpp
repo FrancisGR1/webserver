@@ -4,57 +4,58 @@
 #include <string>
 
 // @TODO mudar para classe
-// @TODO https://cs.opensource.google/go/go/+/refs/tags/go1.26.1:src/net/http/status.go;l=9
 struct StatusCode
 {
 
-	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
-	enum Code
-	{
-		None = 0, 
-		// === Informational ===
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
+    enum Code
+    {
+        None = 0,
+        // === Informational ===
 
-		// === Successful ===
-		Ok        = 200,
-		Created   = 201,
-		Accepted  = 202,
-		NoContent = 204,
+        // === Successful ===
+        Ok = 200,
+        Created = 201,
+        Accepted = 202,
+        NoContent = 204,
 
-		// === Redirection ===
-		MovedPermanently  = 301,
-		Found  		  = 302,
-		SeeOther          = 303,
-		TemporaryRedirect = 307,
-		PermanentRedirect = 308,
-		
-		// === Client Side Error ===
-		BadRequest                  = 400,
-		Forbidden                   = 403,
-		NotFound                    = 404,
-		MethodNotAllowed            = 405,
-		NotAcceptable               = 406,
-		Conflict                    = 409,
-		LengthRequired              = 411,
-		ContentTooLarge             = 413,
-		UriTooLong                  = 414,
-		UnsupportedMediaType        = 415,
-		TooManyRequests             = 429,
-		RequestHeaderFieldsTooLarge = 431,
+        // === Redirection ===
+        MovedPermanently = 301,
+        Found = 302,
+        SeeOther = 303,
+        TemporaryRedirect = 307,
+        PermanentRedirect = 308,
 
-		// === Server Side Error ===
-		InternalServerError     = 500,
-		NotImplemented          = 501,
-		BadGateway              = 502,
-		ServiceUnavailable      = 503,
-		GatewayTimeout          = 504,
-		HttpVersionNotSupported = 505,
-	};
+        // === Client Side Error ===
+        BadRequest = 400,
+        Forbidden = 403,
+        NotFound = 404,
+        MethodNotAllowed = 405,
+        NotAcceptable = 406,
+        RequestTimeout = 408,
+        Conflict = 409,
+        LengthRequired = 411,
+        ContentTooLarge = 413,
+        UriTooLong = 414,
+        UnsupportedMediaType = 415,
+        TooManyRequests = 429,
+        RequestHeaderFieldsTooLarge = 431,
 
-	static std::string to_reason(StatusCode::Code c);
-	static bool is_redirection(size_t code);
-	//@TODO:
-	//is_valid(size_t code)
-	//str()
+        // === Server Side Error ===
+        InternalServerError = 500,
+        NotImplemented = 501,
+        BadGateway = 502,
+        ServiceUnavailable = 503,
+        GatewayTimeout = 504,
+        HttpVersionNotSupported = 505,
+    };
+
+    static std::string to_reason(StatusCode::Code c);
+    static bool exists(StatusCode::Code code);
+    static bool is_redirection(size_t code);
+    //@TODO:
+    // is_valid(size_t code)
+    // str()
 };
 
-#endif //STATUSCODE_HPP
+#endif // STATUSCODE_HPP

@@ -1,12 +1,20 @@
 #ifndef LISTENER_HPP
-# define LISTENER_HPP
+#define LISTENER_HPP
 
 #include <string>
 
 struct Listener
 {
-	std::string host;
-	std::string port;
+    // construct
+    Listener();
+    Listener(const char* host, const char* port);
+
+    // api
+    bool operator==(const Listener& other) const;
+
+    // data
+    std::string host;
+    std::string port;
 };
 
 #endif // LISTENER_HPP

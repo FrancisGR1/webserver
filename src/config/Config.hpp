@@ -1,26 +1,29 @@
 #ifndef CONFIG_HPP
-# define CONFIG_HPP
+#define CONFIG_HPP
 
-#include <string>
 #include <ostream>
+#include <string>
 
 #include "config/types/ServiceConfig.hpp"
 
-//https://github.com/h5bp/server-configs-nginx
+// https://github.com/h5bp/server-configs-nginx
 
-class Config 
+class Config
 {
-	public: 
-		Config();
+  public:
+    Config();
 
-		std::vector<ServiceConfig> services;
+    std::vector<ServiceConfig> services;
 
-		void load(const char *file_path);
+    void load(const char* file_path);
 
-	private:
-		std::string m_file_content;
+  private:
+    std::string m_file_content;
+
+    // utils
+    void expect_unique_listeners(void) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const Config& cfg);
 
-#endif //CONFIG_HPP
+#endif // CONFIG_HPP

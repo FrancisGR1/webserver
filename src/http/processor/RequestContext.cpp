@@ -1,32 +1,41 @@
-#include <exception>
-
-#include "http/processor/RequestConfig.hpp"
 #include "http/processor/RequestContext.hpp"
+#include "core/contracts.hpp"
+#include "http/processor/RequestConfig.hpp"
+#include "server/Connection.hpp"
 
-RequestContext::RequestContext(const Socket& conn_socket, EventManager& events, const ServiceConfig& service)
-	: m_socket(conn_socket)
-	, m_events(events)
-	, m_request_config(new RequestConfig(service)) 
-	{
-		(void)m_socket;
-		(void)m_events;
-	}
+RequestContext::RequestContext(Connection* connection, const ServiceConfig& service)
+    : m_connection(connection)
+    , m_socket(connection->socket())
+    , m_request_config(new RequestConfig(service))
+{
+}
 
-const RequestConfig& RequestContext::config() const 
-{ 
-	if (m_request_config == NULL)
-		throw std::logic_error("RequestContext: Tried to access request config Null Pointer!");
-	return *m_request_config;
+const RequestConfig& RequestContext::config() const
+{
+    REQUIRE(m_request_config != NULL, "RequestContext: Tried to access request config Null Pointer!");
+
+    return *m_request_config;
 }
 
 RequestConfig& RequestContext::config()
-{ 
-	if (m_request_config == NULL)
-		throw std::logic_error("RequestContext: Tried to access request config Null Pointer!");
-	return *m_request_config;
+{
+    REQUIRE(m_request_config != NULL, "RequestContext: Tried to access request config Null Pointer!");
+
+    return *m_request_config;
+}
+
+Connection* RequestContext::connection() const
+{
+    return m_connection;
 }
 
 RequestContext::~RequestContext()
 {
-	delete m_request_config;
+    delete m_request_config;
+}
+
+std::ostream& operator<<(std::ostream& os, const RequestContext& ctx)
+{
+    os << ctx.config();
+    return os;
 }
