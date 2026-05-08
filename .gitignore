@@ -7,8 +7,5 @@ root/uploads/
 *.out
 webserv
 .cache
-
 .vscode
-
-
 compile_commands.json
