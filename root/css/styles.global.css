@@ -154,3 +154,23 @@ footer {
 	font-weight: bold;
 	text-decoration: underline;
 }
+
+.video-container {
+	display: flex;
+	justify-content: center;
+	gap: 30px;
+	flex-wrap: wrap;
+	margin-top: 40px;
+}
+
+.video-section {
+	background-color: rgba(0, 0, 0, 0.6);
+	padding: 20px;
+	border-radius: 12px;
+	width: 500px;
+}
+
+.main-video {
+	width: 100%;
+	border-radius: 10px;
+}

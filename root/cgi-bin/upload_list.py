@@ -43,8 +43,10 @@ def main():
 	</header>
 	<nav>
 		<a href="/index.html">Home</a>
+		<a href="/videos.html">Videos</a>
 		<a href="/upload.html">Upload</a>
 		<a href="/cgi-bin/upload_list.py">Upload list</a>
+		<a href="/wiki">Wikipedia</a>
 		<a href="/login.html">Login</a>
 		<a href="/register.html">Register</a>
 	</nav>
