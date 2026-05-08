@@ -1,7 +1,7 @@
 SERVER      = webserv.out # @MUST be the name of executable
 LIB         = ../libwebserv.a
 CXX         = c++ -g
-CXXFLAGS    = -Wall -Werror -Wextra -std=c++23 -I../src/
+CXXFLAGS    = -Wall -Werror -Wextra -std=c++20 -I../src/
 
 # Unit test binaries
 # Add here

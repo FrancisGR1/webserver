@@ -4,7 +4,7 @@
 #include <list>
 #include <set>
 #include <vector>
-
+#include <cerrno>
 #include "server/ConnectionPool.hpp"
 #include "server/EventAction.hpp"
 

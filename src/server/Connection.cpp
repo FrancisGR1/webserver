@@ -1,5 +1,5 @@
 #include <cstring>
-
+#include <cerrno>
 #include "core/Logger.hpp"
 #include "core/Timer.hpp"
 #include "core/constants.hpp"

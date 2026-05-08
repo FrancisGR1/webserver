@@ -1,6 +1,7 @@
 #ifndef DELETEHANDLER_HPP
 #define DELETEHANDLER_HPP
 
+#include <cerrno>
 #include "http/processor/RequestContext.hpp"
 #include "http/processor/handler/IRequestHandler.hpp"
 #include "http/response/Response.hpp"

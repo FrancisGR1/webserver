@@ -25,7 +25,6 @@ CgiHandler::CgiHandler(const Request& request, const RequestContext& ctx, Second
     , m_state(Init)
     , m_response(StatusCode::Ok) //@NOTE: rfc says response is ok by default
     , m_timeout(timeout)
-    , m_failed_reads(0)
     , m_reading_body(false)
     , m_env(init_env())
     , m_total_reads(0)

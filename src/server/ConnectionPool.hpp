@@ -23,7 +23,6 @@ class ConnectionPool
     bool is_full() const;
 
   private:
-    size_t m_max_conns;
     std::vector<Connection*> m_pool;
 };
 

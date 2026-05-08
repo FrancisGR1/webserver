@@ -284,7 +284,7 @@ ssize_t Response::send_body_from_fd(int socket_fd)
 
     // @TODO: substitute read() -> send() with sendfile()
     // read
-    char buffer[constants::read_chunk_size + 1] = {};
+    char buffer[READ_CHUNK_SIZE + 1] = {};
     ssize_t read_bytes = ::read(m_body_fd, buffer, constants::read_chunk_size);
     Logger::trace("%s: read %ld bytes: '%.30s'...", constants::res, read_bytes, buffer);
     if (read_bytes < 0)

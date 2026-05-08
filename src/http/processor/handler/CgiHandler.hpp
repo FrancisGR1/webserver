@@ -3,7 +3,7 @@
 
 #include <map>
 #include <string>
-
+#include <cerrno>
 #include "core/Path.hpp"
 #include "core/Timer.hpp"
 #include "core/constants.hpp"
@@ -51,7 +51,6 @@ class CgiHandler : public IRequestHandler
     Response m_response;
     Timer m_timer;
     Seconds m_timeout;
-    size_t m_failed_reads;
     std::vector<EventAction> m_events;
     bool m_reading_body;
 

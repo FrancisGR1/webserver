@@ -5,6 +5,7 @@
 #include <string>
 #include <sys/types.h>
 
+#include "core/macros.hpp"
 #include "config/types/Route.hpp"
 #include "core/Path.hpp"
 #include "http/StatusCode.hpp"

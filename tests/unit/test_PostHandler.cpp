@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <limits>
 
 #include "core/Logger.hpp"
 #include "core/constants.hpp"
