@@ -50,7 +50,9 @@ tests: unit integration
 
 $(SERVER):
 	$(MAKE) -C ../
-	cp ../$(SERVER) integration/
+	@if [ ! -f integration/$(SERVER) ]; then \
+		cp ../$(SERVER) integration/; \
+	fi
 
 $(LIB): $(SERVER)
 	$(MAKE) -C ../ lib
