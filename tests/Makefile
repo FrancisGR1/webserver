@@ -44,7 +44,11 @@ $(LIB): $(SERVER)
 unit/test_%.out: unit/test_%.cpp $(LIB)
 	$(CXX) $(CXXFLAGS) $< $(LIB) -o $@
 
-clean:
+clean_garbage:
+	@find ./integration -name "*.data" -delete
+	@echo "Cleaning every '*.data' file in ./integration"
+
+clean: clean_garbage
 	rm -f $(UNITS)
 
 fclean: clean
