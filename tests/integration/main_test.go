@@ -35,7 +35,7 @@ func TestGET(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := http.Get("http://127.0.0.1:8080" + tt.path)
+			resp, err := http.Get(baseURL + tt.path)
 			if err != nil {
 				t.Fatalf("Request failed: %v", err)
 			}
