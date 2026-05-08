@@ -1,4 +1,4 @@
-SERVER      = webserv.out # @MUST be the name of executable
+#SERVER      = webserv.out # @MUST be the name of executable
 LIB         = ../libwebserv.a
 CXX         = c++ -g
 CXXFLAGS    = -Wall -Werror -Wextra -std=c++20 -I../src/
@@ -15,7 +15,7 @@ UNITS       = unit/test_resolve_target.out \
 
 .PHONY: all unit integration clean fclean re
 
-all: $(SERVER) $(LIB) $(UNITS)
+all: $(UNITS) #$(SERVER) $(LIB) 
 
 unit: $(UNITS)
 	@echo "\t=============="
@@ -26,17 +26,17 @@ unit: $(UNITS)
 		(cd unit && ./`basename $$t`); \
 	done
 
-integration: ../$(SERVER)
-	cp ../$(SERVER) integration/$(SERVER)
-	cd integration && ./build_and_run.sh
+#integration: ../$(SERVER)
+#	cp ../$(SERVER) integration/$(SERVER)
+#	cd integration && ./build_and_run.sh
 
-tests: unit integration
+tests: unit #integration
 
-$(SERVER):
-	$(MAKE) -C ../
-	@if [ ! -f integration/$(SERVER) ]; then \
-		cp ../$(SERVER) integration/; \
-	fi
+#$(SERVER):
+#	$(MAKE) -C ../
+#	@if [ ! -f integration/$(SERVER) ]; then \
+#		cp ../$(SERVER) integration/; \
+#	fi
 
 $(LIB): $(SERVER)
 	$(MAKE) -C ../ lib

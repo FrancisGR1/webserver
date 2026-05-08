@@ -1,3 +1,0 @@
-# baz
-
-some markdown
