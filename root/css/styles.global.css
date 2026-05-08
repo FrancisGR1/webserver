@@ -174,3 +174,23 @@ footer {
 	width: 100%;
 	border-radius: 10px;
 }
+
+.diagram-section {
+	text-align: center;
+	margin-top: 40px;
+}
+
+.diagram-image {
+	width: 90%;
+	max-width: 1400px;
+	border-radius: 12px;
+	background-color: rgba(0, 0, 0, 0.6);
+	padding: 20px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.diagram-description {
+	margin-top: 20px;
+	color: white;
+	font-size: 18px;
+}

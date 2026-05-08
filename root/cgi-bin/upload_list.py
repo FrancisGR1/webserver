@@ -44,6 +44,7 @@ def main():
 	<nav>
 		<a href="/index.html">Home</a>
 		<a href="/videos.html">Videos</a>
+		<a href="/diagram.html">Diagram</a>
 		<a href="/upload.html">Upload</a>
 		<a href="/cgi-bin/upload_list.py">Upload list</a>
 		<a href="/wiki">Wikipedia</a>
