@@ -37,9 +37,9 @@ integration: $(SERVER)
 	echo ""; \
 	read -p "Press Enter when the server is ready..." dummy; \
 	echo "Makefile: Running lua quick.lua..."; \
-	lua quick.lua; \
+	./lua_bin quick.lua; \
 	echo "Makefile: Running lua big.lua..."; \
-	lua big.lua; \
+	./lua_bin big.lua; \
 	echo "Makefile: Running go test..."; \
 	go test; \
 	echo "Makefile: Running siege..."; \
