@@ -26,25 +26,9 @@ unit: $(UNITS)
 		(cd unit && ./`basename $$t`); \
 	done
 
-integration: $(SERVER)
-	@echo "\t======================="
-	@echo "\t===== INTEGRATION ====="
-	@echo "\t======================="
-	@cd ./integration; \
-	echo "Makefile: Please start the test server inside ./integration:"; \
-	echo ""; \
-	echo "    cd integration && ./$(SERVER)"; \
-	echo ""; \
-	read -p "Press Enter when the server is ready..." dummy; \
-	echo "Makefile: Running lua quick.lua..."; \
-	./lua_bin quick.lua; \
-	echo "Makefile: Running lua big.lua..."; \
-	./lua_bin big.lua; \
-	echo "Makefile: Running go test..."; \
-	go test; \
-	echo "Makefile: Running siege..."; \
-	./stress/run.sh; \
-	echo "Makefile: All tests done. You can stop the server now."
+integration: ../$(SERVER)
+	cp ../$(SERVER) integration/$(SERVER)
+	cd integration && ./build_and_run.sh
 
 tests: unit integration
 
