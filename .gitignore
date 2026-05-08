@@ -1,7 +1,10 @@
 tmp/*
+root/uploads/
 *.o
 *.a
 *.pdf
+*.data
+*.out
 webserv
 .cache
 
